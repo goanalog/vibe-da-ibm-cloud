@@ -1,0 +1,19 @@
+apiVersion: catalog.ibm.com/v1
+kind: DeployableArchitecture
+metadata:
+  name: vibe-code-landing-zone
+spec:
+  version: 1.0.0
+  description: >
+    Stop configuring. Start feeling. The Vibe Code Landing Zone deploys
+    your HTML app as a fully hosted static site on IBM Cloud Object Storage.
+  type: terraform
+  source:
+    type: terraform
+    path: .
+  outputs:
+    - name: vibe_url
+      description: Behold the consecrated endpoint for direct vibe consumption.
+      key_output: true
+    - name: vibe_bucket_url
+      description: Direct link to your sacred bucket.
