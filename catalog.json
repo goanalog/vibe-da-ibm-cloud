@@ -1,35 +1,22 @@
+
 {
-  "name": "vibe-da-ibm-cloud",
-  "display_name": "Vibe \u2014 IBM Cloud Static Site (COS)",
-  "version": "1.0.3",
-  "tags": [
-    "deployable-architecture",
-    "ibm-cloud",
-    "static-website",
-    "cos",
-    "vibe"
-  ],
-  "provider": "IBM",
-  "type": "terraform",
-  "short_description": "Deploy an IBM Cloud Object Storage instance and serve a static single-page app.",
-  "long_description": "This Deployable Architecture provisions a Cloud Object Storage instance (global) and a region-specific bucket, then uploads your index.html. Paste your HTML into the input field, or leave it empty to use the repo's bundled index.html automatically.",
-  "metadata": {
-    "badges": [
-      {
-        "label": "Version",
-        "message": "1.0.3",
-        "color": "blue"
-      },
-      {
-        "label": "Terraform",
-        "message": "enabled",
-        "color": "purple"
-      },
-      {
-        "label": "IBM Cloud",
-        "message": "COS",
-        "color": "navy"
-      }
-    ]
+  "id": "vibe-da-ibm-cloud",
+  "version": "1.0.4",
+  "displayName": "Vibe Coder — Deployable Architecture",
+  "description": "Instantly deploy a vibe-coded single-page app to IBM Cloud Object Storage using Terraform.",
+  "type": "deployable_architecture",
+  "deliveryMethod": "terraform",
+  "repository": {
+    "url": "https://github.com/goanalog/vibe-da-ibm-cloud",
+    "path": "https://github.com/goanalog/vibe-da-ibm-cloud"
+  },
+  "icons": {
+    "small": "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/icon-48@2x.png",
+    "large": "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/icon-256@2x.png"
+  },
+  "tags": ["vibe", "ibm-cloud", "cos", "static-website", "terraform"],
+  "support": {
+    "name": "Vibe Team",
+    "email": "realbrendan@us.ibm.com"
   }
 }
