@@ -1,33 +1,29 @@
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# VARIABLES — vibe-da-ibm-cloud
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 variable "resource_group" {
-  description = "The IBM Cloud resource group where your Vibe deployment will live. (Don’t worry — 'default' works fine for most users.)"
+  description = "IBM Cloud resource group to use (auto-created if missing)."
   type        = string
-  default     = "default"
+  default     = "Default"
 }
 
 variable "region" {
-  description = "Region where your COS bucket will be created (e.g. us-south, eu-de, jp-tok)."
+  description = "IBM Cloud region where your COS bucket will be created."
   type        = string
   default     = "us-south"
 }
 
 variable "cos_instance_name" {
-  description = "Name of your Cloud Object Storage instance. A random suffix is automatically added for uniqueness."
+  description = "Name for the IBM Cloud Object Storage instance (a unique suffix will be added)."
   type        = string
   default     = "vibe-instance"
 }
 
 variable "bucket_name" {
-  description = "Name of your bucket where your app’s vibe will reside. A random suffix is appended."
+  description = "Base name for your COS bucket (a unique suffix will be added)."
   type        = string
   default     = "vibe-bucket"
 }
 
 variable "index_html" {
-  description = "Optional: Paste your HTML code directly here. If left empty, the included sample app will be used."
+  description = "Inline HTML code to host. Leave blank to use the included sample."
   type        = string
   default     = ""
 }

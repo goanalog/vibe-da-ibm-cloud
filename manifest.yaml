@@ -1,22 +1,18 @@
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# manifest.yaml — IBM Cloud Deployable Architecture Metadata
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-name: vibe-da-ibm-cloud
-version: 0.1.0
-description: |
-  Deploy an instant single-page “vibe code” app to IBM Cloud Object Storage.
-  Just paste your HTML and vibe — this architecture handles the rest.
-type: terraform
-tags:
-  - static-website
-  - object-storage
-  - serverless
-  - sample
-  - ibm-cloud
-  - vibe
-  - deployable-architecture
-maintainers:
-  - name: Vibe Cloud Team
-    email: realbrendan@us.ibm.com
-default_locale: en
-license: Apache-2.0
+version: 1
+metadata:
+  name: vibe-da-ibm-cloud
+  displayName: Vibe Code Landing Zone
+  description: Deploys a single-page HTML app to IBM Cloud Object Storage in minutes.
+  version: 1.0.1
+  type: deployable_architecture
+  language: terraform
+  license: Apache-2.0
+  tags:
+    - ibm-cloud
+    - deployable-architecture
+    - object-storage
+    - static-website
+    - cos
+    - html
+    - vibe-coding
+  visible: true

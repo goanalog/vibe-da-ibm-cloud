@@ -1,6 +1,6 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Vibe Code Landing Zone — Terraform Deployable Architecture
-# Version: 1.0.0
+# Version: 1.0.1
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 terraform {
@@ -18,8 +18,8 @@ terraform {
 
 provider "ibm" {}
 
-# --- Resource Group Lookup ---
-data "ibm_resource_group" "group" {
+# --- Create Resource Group (auto-create if missing) ---
+resource "ibm_resource_group" "group" {
   name = var.resource_group
 }
 
@@ -35,8 +35,8 @@ resource "ibm_resource_instance" "cos_instance" {
   name              = "${var.cos_instance_name}-${random_string.suffix.result}"
   service           = "cloud-object-storage"
   plan              = "lite"
-  location          = "global" # ✅ FIXED: COS service instances are always global
-  resource_group_id = data.ibm_resource_group.group.id
+  location          = "global"
+  resource_group_id = ibm_resource_group.group.id
 
   tags = ["vibe", "static-website", "deployable-architecture", "ibm-cloud"]
 }
@@ -61,4 +61,15 @@ resource "ibm_cos_bucket_object" "index_html" {
   key             = "index.html"
   content         = local.index_html
   etag            = md5(local.index_html)
+}
+
+# --- Outputs ---
+output "vibe_bucket_url" {
+  description = "Direct link to your COS bucket."
+  value       = ibm_cos_bucket.bucket.bucket_name
+}
+
+output "vibe_url" {
+  description = "Public access endpoint for your hosted vibe."
+  value       = ibm_cos_bucket.bucket.s3_endpoint_public
 }
