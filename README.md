@@ -1,28 +1,73 @@
 # 🌈 Vibe Code Landing Zone
 
 **Stop configuring. Start feeling.**  
-This deployable architecture turns a single HTML document into a live static site on IBM Cloud Object Storage — in minutes.  
-Paste your vibe into a text area (or point to a file), press deploy, and breathe out.
+Deploy your HTML instantly as a hosted static site on IBM Cloud Object Storage — no config files, no frameworks, just vibes.
 
-## ✨ What you get
-- **COS instance (Lite)** created for you  
-- **Public bucket** with your `index.html`  
-- A **shareable URL** (key output) so your vibe can be consumed immediately  
+---
 
-## 🧘 How to use (Catalog UI)
-1. **Open** the Deployable Architecture in IBM Cloud Catalog.  
-2. In **Setup**, choose your **Resource Group** and confirm **Region** (default: `us-south`).  
-3. In **App Content**, either:
-   - Paste your full HTML into **HTML for app**, or  
-   - Provide a relative path in **Local HTML file path** (used only if the textarea is empty).  
-4. Click **Deploy**. Sip tea. Observe the vibe materialize.  
-5. Copy the **Vibe URL** from Outputs and share with your favorite humans.  
+## 🚀 Quick Start (IBM Cloud Schematics)
 
-> No escaping required in the textarea — just paste your raw HTML.
+1. Fork or clone this repo:
+   ```bash
+   git clone https://github.com/goanalog/vibe-da-ibm-cloud.git
+   ```
+2. In IBM Cloud, go to **Schematics → Workspaces → Create Workspace**.
+3. Choose **Source Type:** GitHub.
+4. Enter this repository URL:  
+   ```
+   https://github.com/goanalog/vibe-da-ibm-cloud
+   ```
+5. Click **Next → Generate Plan → Apply Plan**.
+6. Once deployed, copy your **Vibe URL** from the outputs tab.
 
-## 🧪 Local / Terraform CLI
-```bash
-terraform init
-terraform apply -auto-approve \
-  -var "bucket_name=vibe-coder-sample-bucket" \
-  -var "index_html_file=./index.html"
+---
+
+## 🧱 Inputs
+
+| Variable | Description | Default |
+|-----------|-------------|----------|
+| `resource_group` | IBM Cloud Resource Group | `"default"` |
+| `region` | IBM Cloud region (e.g., us-south) | `"us-south"` |
+| `cos_instance_name` | Object Storage instance name | `"vibe-coder-cos"` |
+| `bucket_name` | Base name for COS bucket | `"vibe-coder-sample-bucket"` |
+| `index_html` | Inline HTML to host | `""` |
+| `index_html_file` | Optional path to local HTML file | `""` |
+
+---
+
+## 🌐 Outputs
+
+| Name | Description |
+|------|--------------|
+| `vibe_url` | URL of your hosted HTML app |
+| `vibe_bucket_url` | Direct link to the COS bucket |
+
+---
+
+## 🪄 Publishing to IBM Cloud Catalog
+
+1. Create a GitHub release (tag version `v1.0.0`):
+   ```
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+2. Go to IBM Cloud:
+   - **Catalog Management → Products → Add Product → Deployable Architecture**
+3. Use:
+   - **Source type:** Public GitHub repository
+   - **URL:** `https://github.com/goanalog/vibe-da-ibm-cloud`
+   - **Release:** `v1.0.0`
+
+IBM Cloud will pull this repo and automatically register the deployable architecture using `catalog.json` and `manifest.yaml`.
+
+---
+
+## 💡 Support
+
+Vibe Support Team  
+📧 [support@vibecloud.io](mailto:support@vibecloud.io)  
+💬 Issues: [GitHub Issues](https://github.com/goanalog/vibe-da-ibm-cloud/issues)
+
+---
+
+> “Because the best uptime is emotional uptime.” ☁️
