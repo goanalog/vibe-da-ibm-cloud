@@ -1,42 +1,44 @@
-"variables": [
-  {
-    "name": "resource_group",
-    "type": "string",
-    "description": "Resource group for the deployment.",
-    "default": "default",
-    "ui_hints": { "group": "Setup", "label": "Resource Group", "control": "text" },
-    "required": true
-  },
-  {
-    "name": "region",
-    "type": "string",
-    "description": "IBM Cloud region (e.g., us-south).",
-    "default": "us-south",
-    "ui_hints": { "group": "Setup", "label": "Region", "control": "text" },
-    "required": true
-  },
-  {
-    "name": "cos_instance_name",
-    "type": "string",
-    "description": "COS instance name.",
-    "default": "vibe-instance-001",
-    "ui_hints": { "group": "Setup", "label": "COS Instance Name", "control": "text" },
-    "required": false
-  },
-  {
-    "name": "bucket_name",
-    "type": "string",
-    "description": "Bucket name (lowercase, no spaces).",
-    "default": "vibe-bucket-001",
-    "ui_hints": { "group": "Setup", "label": "Bucket Name", "control": "text" },
-    "required": true
-  },
-  {
-    "name": "index_html",
-    "type": "string",
-    "description": "Paste your full HTML here — it becomes your app’s index.html when deployed.",
-    "default": "",
-    "ui_hints": { "group": "App Content", "label": "App HTML", "control": "textarea" },
-    "required": false
-  }
-]
+{
+  "variables": [
+    {
+      "name": "resource_group",
+      "type": "string",
+      "description": "Resource group for the deployment.",
+      "default": "default",
+      "ui_hints": { "group": "Setup", "label": "Resource Group", "control": "text" },
+      "required": true
+    },
+    {
+      "name": "region",
+      "type": "string",
+      "description": "IBM Cloud region (e.g., us-south).",
+      "default": "us-south",
+      "ui_hints": { "group": "Setup", "label": "Region", "control": "text" },
+      "required": true
+    },
+    {
+      "name": "cos_instance_name",
+      "type": "string",
+      "description": "COS instance name.",
+      "default": "vibe-instance-001",
+      "ui_hints": { "group": "Setup", "label": "COS Instance Name", "control": "text" },
+      "required": false
+    },
+    {
+      "name": "bucket_name",
+      "type": "string",
+      "description": "Bucket name (lowercase, no spaces).",
+      "default": "vibe-bucket-001",
+      "ui_hints": { "group": "Setup", "label": "Bucket Name", "control": "text" },
+      "required": true
+    },
+    {
+      "name": "index_html",
+      "type": "string",
+      "description": "Paste your full HTML here — it becomes your app’s index.html when deployed.",
+      "default": "",
+      "ui_hints": { "group": "App Content", "label": "App HTML", "control": "textarea" },
+      "required": false
+    }
+  ]
+}

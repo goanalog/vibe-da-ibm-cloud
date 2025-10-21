@@ -1,6 +1,5 @@
 # 🌈 Vibe Code Landing Zone — variables.tf
 # Friendly inputs with reassuring descriptions.
-
 variable "resource_group" {
   description = "Where your vibe lives organizationally. If unsure, 'default' is a chill place to start."
   type        = string
@@ -26,13 +25,8 @@ variable "bucket_name" {
 }
 
 variable "index_html" {
-  description = "Paste your full HTML here — it becomes your app’s index.html when deployed. No escaping needed; just vibes."
+  description = "Paste your full HTML here — it becomes your app’s index.html when deployed. If left blank, the default Vibe-Driven IDE page will be used."
   type        = string
-  default     = ""
-}
-
-variable "index_html_file" {
-  description = "Optional path to a local HTML file (e.g., index.html). Used only if the textarea above is empty."
-  type        = string
-  default     = ""
+  # Set default to the file content
+  default     = file("${path.module}/index.html")
 }

@@ -12,11 +12,9 @@ terraform {
 provider "ibm" { region = var.region }
 
 locals {
-  html_content = var.index_html != "" ?
-    var.index_html :
-    (var.index_html_file != "" ?
-      file(var.index_html_file) :
-      "<!DOCTYPE html><html><body><h1>🌈 Awaiting your vibe...</h1></body></html>")
+  # Simplified logic: Uses the variable, which now correctly
+  # defaults to the file content from variables.tf.
+  html_content = var.index_html
 }
 
 resource "ibm_resource_instance" "cos" {
@@ -63,19 +61,10 @@ resource "ibm_cos_bucket_object" "synergy_realized_md" {
   key           = "sacred_scrolls/SYNERGY_REALIZED.md"
   content = <<-EOT
     ## ✨ Synergy Realized ✨
-    Manifested on ${timestamp()} UTC in ${var.region}.
+    Manifested on ${timestamp()} UTC in 
+ ${var.region}.
   EOT
   content_type = "text/markdown"
-}
-
-output "vibe_url" {
-  description = "Behold the consecrated endpoint for direct vibe consumption."
-  value       = "https://${var.bucket_name}.s3-web.${var.region}.cloud-object-storage.appdomain.cloud/"
-}
-
-output "vibe_bucket_url" {
-  description = "Direct link to your sacred bucket."
-  value       = "https://s3.${var.region}.cloud-object-storage.appdomain.cloud/${var.bucket_name}/"
 }
 
 # Enable static website hosting for the bucket
