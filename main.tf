@@ -16,15 +16,14 @@ provider "ibm" {
 }
 
 # ---------------------------------------------------------------------
-# Locals — smart fallback logic for HTML content
+# Locals
 # ---------------------------------------------------------------------
 locals {
-  # Logic simplified to use the required 'index_html' variable directly
   html_content = var.index_html
 }
 
 # ---------------------------------------------------------------------
-# Generate a random suffix for globally unique resource names
+# Random Suffix
 # ---------------------------------------------------------------------
 resource "random_string" "suffix" {
   length  = 6
@@ -33,14 +32,14 @@ resource "random_string" "suffix" {
 }
 
 # ---------------------------------------------------------------------
-# Get resource group
+# Resource Group
 # ---------------------------------------------------------------------
 data "ibm_resource_group" "selected" {
   name = var.resource_group
 }
 
 # ---------------------------------------------------------------------
-# Create COS instance
+# COS Instance
 # ---------------------------------------------------------------------
 resource "ibm_resource_instance" "cos_instance" {
   name              = var.cos_instance_name
@@ -51,7 +50,7 @@ resource "ibm_resource_instance" "cos_instance" {
 }
 
 # ---------------------------------------------------------------------
-# Create COS bucket
+# COS Bucket
 # ---------------------------------------------------------------------
 resource "ibm_cos_bucket" "bucket" {
   bucket_name          = "${var.bucket_name}-${random_string.suffix.result}"
@@ -92,26 +91,6 @@ resource "ibm_cos_bucket_object" "vibe_face" {
 }
 
 # ---------------------------------------------------------------------
-# Make the bucket public (Using your requested resource)
+# (The 'ibm_cos_bucket_policy' resource has been removed
+#  because it is not supported by provider v1.84.2)
 # ---------------------------------------------------------------------
-resource "ibm_cos_bucket_policy" "public_access" {
-  bucket_name          = ibm_cos_bucket.bucket.bucket_name
-  resource_instance_id = ibm_resource_instance.cos_instance.id
-
-  policy = <<EOT
-{
-  "Version": "2.0",
-  "Statement": [
-    {
-      "Sid": "PublicReadGetObject",
-      "Effect": "Allow",
-      "Principal": "*",
-      "Action": ["s3:GetObject"],
-      "Resource": ["arn:aws:s3:::${ibm_cos_bucket.bucket.bucket_name}/*"]
-    }
-  ]
-}
-EOT
-
-  depends_on = [ibm_cos_bucket.bucket]
-}
