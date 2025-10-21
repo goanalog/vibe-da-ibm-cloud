@@ -1,0 +1,88 @@
+{
+  "id": "vibe-da-ibm-cloud",
+  "version": "1.0.0",
+  "displayName": "Vibe Code Landing Zone",
+  "description": "Stop configuring. Start feeling. This deployable architecture turns a single HTML document into a live static site on IBM Cloud Object Storage — in minutes.",
+  "type": "deployable_architecture",
+  "deliveryMethod": "terraform",
+  "repository": {
+    "url": "https://github.com/goanalog/vibe-da-ibm-cloud",
+    "path": "/"
+  },
+  "tags": [
+    "ibm-cloud",
+    "deployable-architecture",
+    "object-storage",
+    "static-website",
+    "cos",
+    "vibe-coding",
+    "html"
+  ],
+  "variables": [
+    {
+      "name": "region",
+      "type": "string",
+      "description": "IBM Cloud region (e.g., us-south).",
+      "default": "us-south",
+      "ui_hints": {
+        "group": "Setup",
+        "label": "Region",
+        "control": "region"
+      },
+      "required": true
+    },
+    {
+      "name": "cos_instance_name",
+      "type": "string",
+      "description": "Friendly name for your IBM Cloud Object Storage instance.",
+      "default": "vibe-coder-cos",
+      "ui_hints": {
+        "group": "Setup",
+        "label": "COS Instance Name"
+      },
+      "required": true
+    },
+    {
+      "name": "bucket_name",
+      "type": "string",
+      "description": "Base name for your COS bucket (lowercase, no spaces).",
+      "default": "vibe-coder-sample-bucket",
+      "ui_hints": {
+        "group": "Setup",
+        "label": "Bucket Name"
+      },
+      "required": true
+    },
+    {
+      "name": "index_html",
+      "type": "string",
+      "description": "Inline HTML code pasted by the user.",
+      "default": "",
+      "ui_hints": {
+        "group": "App Content",
+        "label": "App HTML (Paste)"
+      },
+      "required": true
+    }
+  ],
+  "outputs": [
+    {
+      "name": "vibe_url",
+      "description": "Behold the consecrated endpoint for direct vibe consumption.",
+      "key_output": true
+    },
+    {
+      "name": "vibe_bucket_url",
+      "description": "Direct link to your sacred bucket."
+    }
+  ],
+  "icons": {
+    "small": "vibe-face.png",
+    "large": "vibe-face.png"
+  },
+  "support": {
+    "name": "Vibe Support Team",
+    "email": "support@vibecloud.io",
+    "url": "https://github.com/goanalog/vibe-da-ibm-cloud/issues"
+  }
+}
