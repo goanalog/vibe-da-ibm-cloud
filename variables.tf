@@ -1,22 +1,17 @@
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Vibe Code Landing Zone — Variables
-# Version: 1.0.0
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 variable "region" {
-  description = "IBM Cloud region (e.g., us-south)."
+  description = "IBM Cloud region for deployment (e.g., us-south)."
   type        = string
   default     = "us-south"
 }
 
 variable "resource_group" {
-  description = "IBM Cloud resource group to use."
+  description = "IBM Cloud resource group name (case-sensitive). Usually 'Default'."
   type        = string
-  default     = "default"
+  default     = "Default"
 }
 
 variable "cos_instance_name" {
-  description = "Friendly name for your IBM Cloud Object Storage instance."
+  description = "Name for your IBM Cloud Object Storage instance."
   type        = string
   default     = "vibe-coder-cos"
 }
@@ -28,13 +23,13 @@ variable "bucket_name" {
 }
 
 variable "index_html" {
-  description = "Inline HTML code pasted by the user. Leave blank to use the included sample app."
+  description = "Inline HTML code pasted by the user. Leave blank to use sample app."
   type        = string
   default     = ""
 }
 
 variable "public_access" {
-  description = "Whether to make the bucket publicly readable (recommended for hosting)."
+  description = "Deprecated: IBM Cloud no longer allows fully public buckets. Retained for compatibility only."
   type        = bool
   default     = true
 }

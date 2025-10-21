@@ -18,19 +18,19 @@ terraform {
 
 provider "ibm" {}
 
-# --- Resource Group ---
+# --- Resource Group Lookup ---
 data "ibm_resource_group" "group" {
   name = var.resource_group
 }
 
-# --- Random Suffix for Unique Names ---
+# --- Random suffix for uniqueness ---
 resource "random_string" "suffix" {
   length  = 6
   special = false
   upper   = false
 }
 
-# --- COS Instance ---
+# --- Create COS Instance ---
 resource "ibm_resource_instance" "cos_instance" {
   name              = "${var.cos_instance_name}-${random_string.suffix.result}"
   service           = "cloud-object-storage"
@@ -38,15 +38,10 @@ resource "ibm_resource_instance" "cos_instance" {
   location          = var.region
   resource_group_id = data.ibm_resource_group.group.id
 
-  tags = [
-    "vibe",
-    "deployable-architecture",
-    "static-website",
-    "ibm-cloud"
-  ]
+  tags = ["vibe", "static-website", "deployable-architecture", "ibm-cloud"]
 }
 
-# --- COS Bucket ---
+# --- Create COS Bucket ---
 resource "ibm_cos_bucket" "bucket" {
   bucket_name          = "${var.bucket_name}-${random_string.suffix.result}"
   resource_instance_id = ibm_resource_instance.cos_instance.id
@@ -54,16 +49,27 @@ resource "ibm_cos_bucket" "bucket" {
   storage_class        = "standard"
 }
 
-# --- Inline or Local HTML ---
+# --- Inline or sample HTML ---
 locals {
   index_html = var.index_html != "" ? var.index_html : file("${path.module}/index.html")
 }
 
-# --- Upload HTML to COS ---
+# --- Upload HTML file ---
 resource "ibm_cos_bucket_object" "index_html" {
   bucket_crn      = ibm_cos_bucket.bucket.crn
   bucket_location = var.region
   key             = "index.html"
   content         = local.index_html
   etag            = md5(local.index_html)
+}
+
+# --- Outputs ---
+output "vibe_bucket_url" {
+  description = "Direct link to your sacred bucket."
+  value       = "https://s3.${var.region}.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.bucket.bucket_name}"
+}
+
+output "vibe_url" {
+  description = "Behold the consecrated endpoint for direct vibe consumption."
+  value       = "https://s3.${var.region}.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.bucket.bucket_name}/index.html"
 }

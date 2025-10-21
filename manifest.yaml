@@ -26,8 +26,8 @@ inputs:
     description: IBM Cloud region (e.g., us-south).
   - name: resource_group
     type: string
-    default: default
-    description: IBM Cloud resource group to use.
+    default: Default
+    description: IBM Cloud resource group to use (case-sensitive). Usually 'Default'.
   - name: cos_instance_name
     type: string
     default: vibe-coder-cos
@@ -44,8 +44,8 @@ inputs:
     type: bool
     default: true
     description: >
-      Deprecated for new COS instances: IBM Cloud no longer allows fully public buckets.
-      This flag is retained for compatibility and has no effect on access permissions.
+      Deprecated: IBM Cloud no longer allows fully public buckets.
+      Retained for compatibility only.
 
 outputs:
   - name: vibe_url

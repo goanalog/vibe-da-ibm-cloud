@@ -34,8 +34,8 @@
     {
       "name": "resource_group",
       "type": "string",
-      "description": "IBM Cloud resource group to use.",
-      "default": "default",
+      "description": "IBM Cloud resource group to use (case-sensitive). Usually 'Default'.",
+      "default": "Default",
       "ui_hints": {
         "group": "Setup",
         "label": "Resource Group"
@@ -78,7 +78,7 @@
     {
       "name": "public_access",
       "type": "bool",
-      "description": "Deprecated for new COS instances: IBM Cloud no longer allows fully public buckets. This flag is retained for compatibility and has no effect on access permissions.",
+      "description": "Deprecated: IBM Cloud no longer allows fully public buckets. Retained for compatibility only.",
       "default": true,
       "ui_hints": {
         "group": "Setup",
