@@ -59,7 +59,6 @@ resource "ibm_cos_bucket" "bucket" {
   region_location      = var.region
   storage_class        = "standard"
   force_delete         = true
-  # 'acl' argument removed from here
 }
 
 # ---------------------------------------------------------------------
@@ -71,9 +70,8 @@ resource "ibm_cos_bucket_object" "index_html" {
   key             = "index.html"
   content         = local.html_content
   
-  # --- FIX: Set ACL on the object ---
-  acl             = "public-read"
-
+  # 'content_type' removed (fix from 19:38 log)
+  
   depends_on = [ibm_cos_bucket.bucket]
 }
 
@@ -84,10 +82,36 @@ resource "ibm_cos_bucket_object" "vibe_face" {
   bucket_crn      = ibm_cos_bucket.bucket.crn
   bucket_location = ibm_cos_bucket.bucket.region_location
   key             = "vibe-face.png"
+  
+  # Changed to 'filebase64' (fix from 19:38 log)
   content         = filebase64("${path.module}/vibe-face.png")
   
-  # --- FIX: Set ACL on the object ---
-  acl             = "public-read"
+  # 'content_type' removed (fix from 19:38 log)
+
+  depends_on = [ibm_cos_bucket.bucket]
+}
+
+# ---------------------------------------------------------------------
+# Make the bucket public (Using your requested resource)
+# ---------------------------------------------------------------------
+resource "ibm_cos_bucket_policy" "public_access" {
+  bucket_name          = ibm_cos_bucket.bucket.bucket_name
+  resource_instance_id = ibm_resource_instance.cos_instance.id
+
+  policy = <<EOT
+{
+  "Version": "2.0",
+  "Statement": [
+    {
+      "Sid": "PublicReadGetObject",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": ["s3:GetObject"],
+      "Resource": ["arn:aws:s3:::${ibm_cos_bucket.bucket.bucket_name}/*"]
+    }
+  ]
+}
+EOT
 
   depends_on = [ibm_cos_bucket.bucket]
 }
