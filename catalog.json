@@ -22,7 +22,7 @@
       "ui_hints": {
         "group": "Setup",
         "label": "Resource Group",
-        "control": "resource-group"
+        "control": "text"
       },
       "required": false
     },
@@ -34,7 +34,7 @@
       "ui_hints": {
         "group": "Setup",
         "label": "Region",
-        "control": "region"
+        "control": "text"
       },
       "required": false
     },
@@ -70,7 +70,7 @@
         "control": "textarea",
         "placeholder": "<!DOCTYPE html>\\n<html>\\n  <head>...</head>\\n  <body>...</body>\\n</html>"
       },
-      "required": false
+      "required": true
     },
     {
       "name": "index_html_file",
@@ -82,7 +82,7 @@
         "control": "text",
         "placeholder": "index.html"
       },
-      "required": true
+      "required": false
     }
   ],
   "outputs": [
@@ -95,5 +95,11 @@
       "name": "vibe_bucket_url",
       "description": "Direct link to your Vibe Bucket for browsing artifacts."
     }
-  ]
+  ],
+  "manifest_version": "1.0",
+  "metadata": {
+    "provider": "IBM",
+    "support_url": "https://cloud.ibm.com",
+    "license": "Apache-2.0"
+  }
 }
