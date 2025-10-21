@@ -59,7 +59,7 @@ resource "ibm_cos_bucket" "bucket" {
   region_location      = var.region
   storage_class        = "standard"
   force_delete         = true
-  acl                  = "public-read"
+  # 'acl' argument removed from here
 }
 
 # ---------------------------------------------------------------------
@@ -70,6 +70,9 @@ resource "ibm_cos_bucket_object" "index_html" {
   bucket_location = ibm_cos_bucket.bucket.region_location
   key             = "index.html"
   content         = local.html_content
+  
+  # --- FIX: Set ACL on the object ---
+  acl             = "public-read"
 
   depends_on = [ibm_cos_bucket.bucket]
 }
@@ -82,6 +85,9 @@ resource "ibm_cos_bucket_object" "vibe_face" {
   bucket_location = ibm_cos_bucket.bucket.region_location
   key             = "vibe-face.png"
   content         = filebase64("${path.module}/vibe-face.png")
+  
+  # --- FIX: Set ACL on the object ---
+  acl             = "public-read"
 
   depends_on = [ibm_cos_bucket.bucket]
 }
