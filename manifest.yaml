@@ -1,18 +1,25 @@
-version: 1
+apiVersion: v1
+kind: Solution
 metadata:
-  name: vibe-da-ibm-cloud
-  displayName: Vibe Code Landing Zone
-  description: Deploys a single-page HTML app to IBM Cloud Object Storage in minutes.
-  version: 1.0.2
-  type: deployable_architecture
-  language: terraform
-  license: Apache-2.0
+  name: vibe-da-ibm-cloud-cos-static-website
+  displayName: Vibe DA - IBM Cloud Static Website
+  version: 1.0.3
   tags:
-    - ibm-cloud
     - deployable-architecture
-    - object-storage
-    - static-website
-    - cos
-    - html
-    - vibe-coding
-  visible: true
+    - ibm-cloud
+    - terraform
+spec:
+  source:
+    url: https://github.com/goanalog/vibe-da-ibm-cloud
+  artifacts:
+    - name: main.tf
+      type: terraform
+    - name: variables.tf
+      type: terraform
+    - name: outputs.tf
+      type: terraform
+    - name: catalog.json
+      type: metadata
+  ui:
+    icon: https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/assets/icon.png
+    banner: https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/assets/banner.png
