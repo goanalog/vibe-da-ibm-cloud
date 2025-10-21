@@ -19,11 +19,6 @@ locals {
       "<!DOCTYPE html><html><body><h1>🌈 Awaiting your vibe...</h1></body></html>")
 }
 
-resource "local_file" "index_html" {
-  content  = local.html_content
-  filename = "${path.module}/index.html"
-}
-
 resource "ibm_resource_instance" "cos" {
   name           = var.cos_instance_name
   service        = "cloud-object-storage"
@@ -38,8 +33,6 @@ resource "ibm_cos_bucket" "bucket" {
   region_location      = var.region
   storage_class        = "standard"
   force_destroy        = true
-
-  
 }
 
 resource "ibm_cos_bucket_object" "index" {
@@ -77,14 +70,13 @@ resource "ibm_cos_bucket_object" "synergy_realized_md" {
 
 output "vibe_url" {
   description = "Behold the consecrated endpoint for direct vibe consumption."
-  value       = "https://${var.bucket_name}.s3-web.${var.region}.cloud-object-storage.appdomain.cloud/"
+  value       = "https://://${var.bucket_name}.s3-web.${var.region}.cloud-object-storage.appdomain.cloud/"
 }
 
 output "vibe_bucket_url" {
   description = "Direct link to your sacred bucket."
-  value       = "https://s3.${var.region}.cloud-object-storage.appdomain.cloud/${var.bucket_name}/"
+  value       = "https://://s3.${var.region}.cloud-object-storage.appdomain.cloud/${var.bucket_name}/"
 }
-
 
 # Enable static website hosting for the bucket
 resource "ibm_cos_bucket_website_config" "website" {
