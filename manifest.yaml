@@ -1,41 +1,56 @@
-version: 0.1.0
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Vibe Code Landing Zone — Deployable Architecture Manifest
+# Version: 1.0.0
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+schema_version: 1.0.0
+name: vibe-da-ibm-cloud
 type: deployable-architecture
-metadata:
-  name: vibe-code-landing-zone
-  displayName: "Vibe Code Landing Zone"
-  description: >
-    Stop configuring. Start feeling. This deployable architecture turns a
-    single HTML document into a live static site on IBM Cloud Object Storage — in minutes.
-  tags:
-    - ibm-cloud
-    - deployable-architecture
-    - object-storage
-    - static-website
-    - cos
-    - vibe-coding
-    - html
+description: >
+  Stop configuring. Start feeling. This deployable architecture turns a single HTML document
+  into a live static site on IBM Cloud Object Storage — in minutes.
+version: 1.0.0
+tags:
+  - ibm-cloud
+  - deployable-architecture
+  - object-storage
+  - static-website
+  - cos
+  - vibe-coding
+  - html
+
+# Inputs and outputs externalized for IBM Cloud Catalog compatibility
 inputs:
   - name: region
     type: string
-    ui_hints:
-      label: "Region"
-      control: region
+    default: us-south
+    description: IBM Cloud region (e.g., us-south).
+  - name: resource_group
+    type: string
+    default: default
+    description: IBM Cloud resource group to use.
   - name: cos_instance_name
     type: string
-    ui_hints:
-      label: "COS Instance Name"
+    default: vibe-coder-cos
+    description: Friendly name for your IBM Cloud Object Storage instance.
   - name: bucket_name
     type: string
-    ui_hints:
-      label: "Bucket Name"
+    default: vibe-coder-sample-bucket
+    description: Base name for your COS bucket (lowercase, no spaces).
   - name: index_html
     type: string
-    ui_hints:
-      label: "App HTML (Paste)"
-      group: "App Content"
+    default: ""
+    description: Inline HTML code pasted by the user. If blank, a sample app is provided.
+  - name: public_access
+    type: bool
+    default: true
+    description: Whether to make the bucket publicly readable.
+
 outputs:
   - name: vibe_url
-    type: string
+    description: Behold the consecrated endpoint for direct vibe consumption.
+    kind: url
     key_output: true
   - name: vibe_bucket_url
-    type: string
+    description: Direct link to your sacred bucket.
+    kind: url

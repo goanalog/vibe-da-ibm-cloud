@@ -1,8 +1,13 @@
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Vibe Code Landing Zone — Terraform Deployable Architecture
+# Version: 1.0.0
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 terraform {
   required_providers {
     ibm = {
       source  = "IBM-Cloud/ibm"
-      version = ">= 1.62.0"
+      version = ">= 1.84.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -13,45 +18,99 @@ terraform {
 
 provider "ibm" {}
 
-# Random suffix for unique names
+# --- Resource Group ---
+data "ibm_resource_group" "group" {
+  name = var.resource_group
+}
+
+# --- Random Suffix for Unique Names ---
 resource "random_string" "suffix" {
   length  = 6
   special = false
   upper   = false
 }
 
-# Create Object Storage instance
+# --- COS Instance ---
 resource "ibm_resource_instance" "cos_instance" {
-  name     = var.cos_instance_name
-  service  = "cloud-object-storage"
-  plan     = "lite"
-  location = var.region
+  name              = "${var.cos_instance_name}-${random_string.suffix.result}"
+  service           = "cloud-object-storage"
+  plan              = "lite"
+  location          = var.region
+  resource_group_id = data.ibm_resource_group.group.id
+  tags              = ["vibe", "deployable-architecture", "static-website"]
 }
 
-# Create COS bucket
-resource "ibm_cos_bucket" "vibe_bucket" {
+# --- COS Bucket ---
+resource "ibm_cos_bucket" "bucket" {
   bucket_name          = "${var.bucket_name}-${random_string.suffix.result}"
   resource_instance_id = ibm_resource_instance.cos_instance.id
   region_location      = var.region
   storage_class        = "standard"
-  force_delete         = true
+
+  dynamic "access" {
+    for_each = var.public_access ? [1] : []
+    content {
+      type = "public"
+    }
+  }
 }
 
-# Upload index.html
-resource "ibm_cos_object" "index_html" {
-  bucket_crn   = ibm_cos_bucket.vibe_bucket.crn
-  key          = "index.html"
-  content_base64 = base64encode(var.index_html)
-  content_type = "text/html"
+# --- Upload HTML (either inline or sample) ---
+locals {
+  index_html = var.index_html != "" ? var.index_html : file("${path.module}/index.html")
 }
 
-# Outputs
-output "vibe_url" {
-  value       = "https://${ibm_cos_bucket.vibe_bucket.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud/index.html"
-  description = "Behold the consecrated endpoint for direct vibe consumption."
+resource "ibm_cos_bucket_object" "index_html" {
+  bucket_crn = ibm_cos_bucket.bucket.crn
+  key        = "index.html"
+  content    = local.index_html
+  etag       = md5(local.index_html)
 }
 
+# --- Outputs ---
 output "vibe_bucket_url" {
-  value       = "https://${ibm_cos_bucket.vibe_bucket.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud"
   description = "Direct link to your sacred bucket."
+  value       = "https://s3.${var.region}.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.bucket.bucket_name}/"
+}
+
+output "vibe_url" {
+  description = "Behold the consecrated endpoint for direct vibe consumption."
+  value       = "https://s3.${var.region}.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.bucket.bucket_name}/index.html"
+}
+
+# --- Variables ---
+variable "region" {
+  description = "IBM Cloud region (e.g., us-south)."
+  type        = string
+  default     = "us-south"
+}
+
+variable "resource_group" {
+  description = "IBM Cloud resource group name."
+  type        = string
+  default     = "default"
+}
+
+variable "cos_instance_name" {
+  description = "Friendly name for your IBM Cloud Object Storage instance."
+  type        = string
+  default     = "vibe-coder-cos"
+}
+
+variable "bucket_name" {
+  description = "Base name for your COS bucket (lowercase, no spaces)."
+  type        = string
+  default     = "vibe-coder-sample-bucket"
+}
+
+variable "index_html" {
+  description = "Inline HTML code pasted by the user."
+  type        = string
+  default     = ""
+}
+
+variable "public_access" {
+  description = "Whether to make the bucket publicly readable (recommended for hosting)."
+  type        = bool
+  default     = true
 }
