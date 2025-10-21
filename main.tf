@@ -30,12 +30,12 @@ resource "random_string" "suffix" {
   upper   = false
 }
 
-# --- Create COS Instance ---
+# --- Create COS Instance (must always be global) ---
 resource "ibm_resource_instance" "cos_instance" {
   name              = "${var.cos_instance_name}-${random_string.suffix.result}"
   service           = "cloud-object-storage"
   plan              = "lite"
-  location          = var.region
+  location          = "global" # ✅ FIXED: COS service instances are always global
   resource_group_id = data.ibm_resource_group.group.id
 
   tags = ["vibe", "static-website", "deployable-architecture", "ibm-cloud"]
