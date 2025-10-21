@@ -70,42 +70,31 @@ resource "ibm_cos_bucket" "bucket" {
 # ---------------------------------------------------------------------
 # Upload the index.html (inline or default)
 # ---------------------------------------------------------------------
-resource "ibm_cos_object" "index_html" {
-  bucket        = ibm_cos_bucket.bucket.bucket_name
-  key           = "index.html"
-  content       = local.html_content
-  content_type  = "text/html"
+# --- FIXED: Changed from "ibm_cos_object" to "ibm_cos_bucket_object" ---
+resource "ibm_cos_bucket_object" "index_html" {
+  bucket       = ibm_cos_bucket.bucket.bucket_name
+  key          = "index.html"
+  content      = local.html_content
+  content_type = "text/html"
 }
 
 # ---------------------------------------------------------------------
 # Upload the vibe-face.png asset
 # ---------------------------------------------------------------------
-resource "ibm_cos_object" "vibe_face" {
-  bucket        = ibm_cos_bucket.bucket.bucket_name
-  key           = "vibe-face.png"
-  source        = "${path.module}/vibe-face.png"
-  content_type  = "image/png"
+# --- FIXED: Changed from "ibm_cos_object" to "ibm_cos_bucket_object" ---
+resource "ibm_cos_bucket_object" "vibe_face" {
+  bucket       = ibm_cos_bucket.bucket.bucket_name
+  key          = "vibe-face.png"
+  source       = "${path.module}/vibe-face.png"
+  content_type = "image/png"
 }
 
 # ---------------------------------------------------------------------
 # Make the bucket public
 # ---------------------------------------------------------------------
-resource "ibm_cos_bucket_policy" "public_access" {
+# --- FIXED: Replaced "ibm_cos_bucket_policy" with "ibm_cos_bucket_public_access" ---
+resource "ibm_cos_bucket_public_access" "public_access" {
   bucket_name          = ibm_cos_bucket.bucket.bucket_name
   resource_instance_id = ibm_resource_instance.cos_instance.id
-
-  policy = <<EOT
-{
-  "Version": "2.0",
-  "Statement": [
-    {
-      "Sid": "PublicReadGetObject",
-      "Effect": "Allow",
-      "Principal": "*",
-      "Action": ["s3:GetObject"],
-      "Resource": ["arn:aws:s3:::${ibm_cos_bucket.bucket.bucket_name}/*"]
-    }
-  ]
-}
-EOT
+  public_access        = "public-read"
 }
