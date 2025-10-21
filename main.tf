@@ -49,13 +49,3 @@ resource "ibm_cos_bucket_object" "index_html" {
   endpoint_type   = "public"
   force_delete    = true
 }
-
-output "vibe_url" {
-  description = "Public URL of your deployed vibe app."
-  value       = "https://${ibm_cos_bucket.bucket.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud/index.html"
-}
-
-output "vibe_bucket_url" {
-  description = "Public bucket root URL."
-  value       = "https://${ibm_cos_bucket.bucket.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud/"
-}
