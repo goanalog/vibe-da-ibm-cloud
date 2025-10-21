@@ -1,39 +1,25 @@
+# Vibe DA — IBM Cloud Object Storage
 
-# 🌐 Vibe Coder — IBM Cloud Deployable Architecture (v1.0.5)
+[![IBM Cloud](https://img.shields.io/badge/IBM%20Cloud-Deployable%20Architecture-blue)](https://github.com/goanalog/vibe-da-ibm-cloud)
+[![Terraform](https://img.shields.io/badge/Terraform-Ready-623CE4)](https://github.com/goanalog/vibe-da-ibm-cloud)
+[![Version](https://img.shields.io/badge/Version-1.0.6-brightgreen)](https://github.com/goanalog/vibe-da-ibm-cloud/releases)
 
-A deployable architecture that hosts your vibe-coded single-page app on **IBM Cloud Object Storage**.
-
----
-
-## 🚀 Quick Start
-
-1. Paste your HTML code into the **Vibe Code Input** field during deployment.
-2. Or leave it blank — and the included `index.html` sample app will deploy automatically.
+Instantly deploy your **vibe-coded** HTML or SPA to IBM Cloud Object Storage.  
+If no HTML is provided, the included `index.html` sample app will be used automatically.
 
 ---
 
-## ✅ Verify Your Deployment
-
-Once your deployment completes, your hosted app will be instantly available at:
-
-```
-https://<bucket-name>.<region>.cloud-object-storage.appdomain.cloud/index.html
-```
-
-Or simply click the **`vibe_bucket_public_url`** output in your catalog workspace.
-
-If you see an XML "AccessDenied" message, wait a few seconds and refresh — the public access policy may take a moment to propagate.
+### 🚀 Quick Start
+1. Upload this ZIP to **IBM Cloud Catalog → Create → Deployable Architecture**.
+2. Enter your resource group, region, and any custom HTML (optional).
+3. Click **Deploy** — your app will be instantly live.
 
 ---
 
-## 📦 Resources
-
-- **Cloud Object Storage (COS)** — Lite or Standard plan
-- **Public bucket** with index hosting enabled
-- **IBM Schematics** for Terraform automation
+### 🧠 About
+Vibe DA is a minimalistic, instant-deploy architecture that turns any HTML snippet into a live, hosted web app using **IBM Cloud Object Storage (COS)**.
 
 ---
 
-## 💬 Support
-
-For support, contact **realbrendan@us.ibm.com**.
+### 🪄 Default Sample App
+If you leave the HTML input blank, a built-in interactive demo (from `index.html`) will be deployed automatically.

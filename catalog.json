@@ -1,22 +1,17 @@
-
 {
   "id": "vibe-da-ibm-cloud",
-  "version": "1.0.5",
-  "displayName": "Vibe Coder — Deployable Architecture",
-  "description": "Instantly deploy a vibe-coded single-page app to IBM Cloud Object Storage using Terraform.",
+  "version": "1.0.6",
+  "displayName": "Vibe DA — IBM Cloud Object Storage",
+  "description": "Deploy and host your vibe-coded HTML instantly in IBM Cloud Object Storage.",
   "type": "deployable_architecture",
   "deliveryMethod": "terraform",
   "repository": {
     "url": "https://github.com/goanalog/vibe-da-ibm-cloud",
     "path": "https://github.com/goanalog/vibe-da-ibm-cloud"
   },
+  "tags": ["ibm", "cloud", "terraform", "vibe", "object-storage", "spa", "sample-app"],
   "icons": {
     "small": "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/icon-48@2x.png",
     "large": "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/icon-256@2x.png"
-  },
-  "tags": ["vibe", "ibm-cloud", "cos", "static-website", "terraform"],
-  "support": {
-    "name": "Vibe Team",
-    "email": "realbrendan@us.ibm.com"
   }
 }
