@@ -82,7 +82,7 @@
         "control": "text",
         "placeholder": "index.html"
       },
-      "required": false
+      "required": true
     }
   ],
   "outputs": [
