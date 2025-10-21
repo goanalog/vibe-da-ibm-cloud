@@ -28,7 +28,7 @@ variable "bucket_name" {
 }
 
 variable "index_html" {
-  description = "Inline HTML code pasted by the user. If left blank, a sample app is included automatically."
+  description = "Inline HTML code pasted by the user. Leave blank to use the included sample app."
   type        = string
   default     = ""
 }

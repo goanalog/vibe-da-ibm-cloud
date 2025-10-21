@@ -32,6 +32,17 @@
       "required": true
     },
     {
+      "name": "resource_group",
+      "type": "string",
+      "description": "IBM Cloud resource group to use.",
+      "default": "default",
+      "ui_hints": {
+        "group": "Setup",
+        "label": "Resource Group"
+      },
+      "required": true
+    },
+    {
       "name": "cos_instance_name",
       "type": "string",
       "description": "Friendly name for your IBM Cloud Object Storage instance.",
@@ -56,13 +67,24 @@
     {
       "name": "index_html",
       "type": "string",
-      "description": "Inline HTML code pasted by the user.",
+      "description": "Inline HTML code pasted by the user. Leave blank to use the included sample app.",
       "default": "",
       "ui_hints": {
         "group": "App Content",
         "label": "App HTML (Paste)"
       },
-      "required": true
+      "required": false
+    },
+    {
+      "name": "public_access",
+      "type": "bool",
+      "description": "Whether to make the bucket publicly readable (recommended for hosting).",
+      "default": true,
+      "ui_hints": {
+        "group": "Setup",
+        "label": "Public Access"
+      },
+      "required": false
     }
   ],
   "outputs": [

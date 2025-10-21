@@ -19,7 +19,6 @@ tags:
   - vibe-coding
   - html
 
-# Inputs and outputs externalized for IBM Cloud Catalog compatibility
 inputs:
   - name: region
     type: string

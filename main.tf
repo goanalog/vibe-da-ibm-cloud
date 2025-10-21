@@ -52,13 +52,24 @@ resource "ibm_cos_bucket" "bucket" {
   resource_instance_id = ibm_resource_instance.cos_instance.id
   region_location      = var.region
   storage_class        = "standard"
+}
 
-  dynamic "access" {
-    for_each = var.public_access ? [1] : []
-    content {
-      type = "public"
-    }
-  }
+# --- Optional Public Access Policy ---
+resource "ibm_cos_bucket_policy" "public_read" {
+  count      = var.public_access ? 1 : 0
+  bucket_crn = ibm_cos_bucket.bucket.crn
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect    = "Allow",
+        Principal = "*",
+        Action    = ["s3:GetObject"],
+        Resource  = "arn:aws:s3:::${ibm_cos_bucket.bucket.bucket_name}/*"
+      }
+    ]
+  })
 }
 
 # --- Inline or Local HTML ---
@@ -73,4 +84,3 @@ resource "ibm_cos_bucket_object" "index_html" {
   content    = local.index_html
   etag       = md5(local.index_html)
 }
-
