@@ -1,29 +1,35 @@
 {
-  "name": "vibe-da-ibm-cloud-cos-static-website",
-  "version": "2.0.0",
-  "displayName": "Vibe Coder's Energetic Landing Zone",
-  "shortDescription": "Stop configuring. Start feeling. Deploy a static HTML artifact to IBM Cloud Object Storage with pure, resonant vibes.",
-  "longDescription": "Embark on a spiritual deployment journey. The Vibe Coder's Energetic Landing Zone transcends traditional infrastructure-as-code, inviting you to manifest a single-page static website through sheer force of intention. This Deployable Architecture channels your creative energy, provisioning a Cloud Object Storage instance and bucket, and breathing your HTML essence into the cloud. Forget YAML fatigue and pipeline purgatory—achieve digital harmony and emotional uptime.",
-  "features": [
-    {
-      "title": "Mindful Manifestation",
-      "description": "Deploys a static website to a globally resilient Cloud Object Storage instance using a 'lite' plan, perfect for humble beginnings."
-    },
-    {
-      "title": "Energetic Resonance",
-      "description": "Automatically generates a unique, energetically-aligned bucket name to avoid collisions with other realities (or deployments)."
-    },
-    {
-      "title": "Instantaneous Blossoming",
-      "description": "Provides an immediate public URL to your manifested creation, allowing the world to attune to your frequency."
-    }
-  ],
+  "name": "vibe-da-ibm-cloud",
+  "display_name": "Vibe \u2014 IBM Cloud Static Site (COS)",
+  "version": "1.0.3",
   "tags": [
-    "vibe-aligned",
-    "static-website",
-    "serverless",
-    "terraform",
+    "deployable-architecture",
     "ibm-cloud",
-    "deployable-architecture"
-  ]
+    "static-website",
+    "cos",
+    "vibe"
+  ],
+  "provider": "IBM",
+  "type": "terraform",
+  "short_description": "Deploy an IBM Cloud Object Storage instance and serve a static single-page app.",
+  "long_description": "This Deployable Architecture provisions a Cloud Object Storage instance (global) and a region-specific bucket, then uploads your index.html. Paste your HTML into the input field, or leave it empty to use the repo's bundled index.html automatically.",
+  "metadata": {
+    "badges": [
+      {
+        "label": "Version",
+        "message": "1.0.3",
+        "color": "blue"
+      },
+      {
+        "label": "Terraform",
+        "message": "enabled",
+        "color": "purple"
+      },
+      {
+        "label": "IBM Cloud",
+        "message": "COS",
+        "color": "navy"
+      }
+    ]
+  }
 }

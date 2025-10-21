@@ -1,3 +1,31 @@
+# Vibe — IBM Cloud Static Site (COS)
+
+![Version](https://img.shields.io/badge/version-1.0.3-blue) ![Terraform](https://img.shields.io/badge/Terraform-%F0%9F%94%A7-623CE4) ![IBM Cloud](https://img.shields.io/badge/IBM%20Cloud-COS-052FAD) ![License](https://img.shields.io/badge/license-Apache--2.0-green)
+
+This Deployable Architecture stands up an IBM Cloud Object Storage (COS) instance and bucket, then uploads your single-page app.
+
+![Banner](https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/assets/banner.png)
+
+## How it works
+- Paste HTML in the **Catalog text field** to upload it as `index.html`.
+- If the field appears **empty**, the repo’s bundled [`index.html`](https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/index.html) is used automatically.
+- COS instance is provisioned in **global** (Lite), bucket in your target **region**.
+
+![Diagram](https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/assets/diagram.svg)
+
+## Inputs
+- **resource_group**: Target resource group (default: `Default`).
+- **region**: Bucket region (default: `us-south`).
+- **cos_instance_name**: COS instance base name (default: `vibe-cos`).
+- **bucket_name**: Base bucket name (default: `vibe-bucket` + random suffix).
+- **index_html**: _Paste your vibe code (HTML) here_. If blank, repo `index.html` is used.
+
+## Outputs
+- `vibe_bucket_url`: Public URL to the `index.html` in your bucket.
+- `vibe_url`: Convenience alias to the same page.
+
+---
+
 # **🌈 The Vibe Manifesto: An Energetic Landing Zone**
 
 **Stop configuring. Start feeling.**
@@ -52,4 +80,5 @@ Upon completion of the ritual, the universe provides these sacred links as Terra
 | :---- | :---- |
 | vibe\_url | The public URL where our manifested vibe now blooms for all to see. |
 | vibe\_bucket\_url | A direct resonance link to the vessel of creation (the COS bucket) itself. |
+
 

@@ -1,29 +1,4 @@
-# This sacred scroll attunes the offering to the IBM Cloud catalog's frequency.
-# Edit with intention, for it defines how our vibe is perceived by the collective.
-apiVersion: v1
-kind: Solution
-metadata:
-  name: vibe-da-ibm-cloud-cos-static-website
-  displayName: "Vibe Coder's Energetic Landing Zone"
-  version: 2.0.0 # A new vibrational epoch
-  tags:
-    - deployable-architecture
-    - ibm-cloud
-    - terraform
-    - vibe-aligned
-spec:
-  source:
-    url: https://github.com/goanalog/vibe-da-ibm-cloud
-  artifacts:
-    # These are the sacred texts of our ritual.
-    - name: main.tf
-      type: terraform
-    - name: variables.tf
-      type: terraform
-    - name: outputs.tf
-      type: terraform
-  ui:
-    # Visual mantras for the catalog portal.
-    icon: https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/assets/icon.png
-    banner: https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/assets/banner.png
-
+version: 1.0.3
+name: Vibe — IBM Cloud Static Site (COS)
+description: Deploy a Cloud Object Storage instance and bucket, upload your index.html, and get a public URL.
+icon: assets/icon.png
