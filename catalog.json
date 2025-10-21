@@ -2,25 +2,36 @@
   {
     "name": "resource_group",
     "type": "string",
-    "description": "Resource group for the deployment.",
+    "description": "Where your vibe lives organizationally. If unsure, 'default' is a chill place to start.",
     "default": "default",
-    "ui_hints": { "group": "Setup", "label": "Resource Group", "control": "text" },
+    "ui_hints": {
+      "group": "Setup",
+      "label": "Resource Group",
+      "control": "resource-group"
+    },
     "required": true
   },
   {
     "name": "region",
     "type": "string",
-    "description": "IBM Cloud region (e.g., us-south).",
+    "description": "Cosmic region for your bucket. us-south is a steady groove.",
     "default": "us-south",
-    "ui_hints": { "group": "Setup", "label": "Region", "control": "text" },
+    "ui_hints": {
+      "group": "Setup",
+      "label": "Region",
+      "control": "region"
+    },
     "required": true
   },
   {
     "name": "cos_instance_name",
     "type": "string",
-    "description": "COS instance name.",
+    "description": "A friendly name for your IBM Cloud Object Storage instance.",
     "default": "vibe-instance-001",
-    "ui_hints": { "group": "Setup", "label": "COS Instance Name", "control": "text" },
+    "ui_hints": {
+      "group": "Setup",
+      "label": "COS Instance Name"
+    },
     "required": false
   },
   {
@@ -28,7 +39,10 @@
     "type": "string",
     "description": "Bucket name (lowercase, no spaces).",
     "default": "vibe-bucket-001",
-    "ui_hints": { "group": "Setup", "label": "Bucket Name", "control": "text" },
+    "ui_hints": {
+      "group": "Setup",
+      "label": "Bucket Name"
+    },
     "required": true
   },
   {
@@ -36,7 +50,21 @@
     "type": "string",
     "description": "Paste your full HTML here — it becomes your app’s index.html when deployed.",
     "default": "",
-    "ui_hints": { "group": "App Content", "label": "App HTML", "control": "textarea" },
+    "ui_hints": {
+      "group": "App Content",
+      "label": "App HTML"
+    },
+    "required": false
+  },
+  {
+    "name": "index_html_file",
+    "type": "string",
+    "description": "Optional path to a local HTML file (e.g., index.html). Used only if the textarea above is empty.",
+    "default": "",
+    "ui_hints": {
+      "group": "App Content",
+      "label": "Local HTML file path"
+    },
     "required": false
   }
 ]
