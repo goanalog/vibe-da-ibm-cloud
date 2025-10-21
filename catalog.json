@@ -78,11 +78,11 @@
     {
       "name": "public_access",
       "type": "bool",
-      "description": "Whether to make the bucket publicly readable (recommended for hosting).",
+      "description": "Deprecated for new COS instances: IBM Cloud no longer allows fully public buckets. This flag is retained for compatibility and has no effect on access permissions.",
       "default": true,
       "ui_hints": {
         "group": "Setup",
-        "label": "Public Access"
+        "label": "Public Access (Limited)"
       },
       "required": false
     }

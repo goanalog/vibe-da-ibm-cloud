@@ -43,7 +43,9 @@ inputs:
   - name: public_access
     type: bool
     default: true
-    description: Whether to make the bucket publicly readable.
+    description: >
+      Deprecated for new COS instances: IBM Cloud no longer allows fully public buckets.
+      This flag is retained for compatibility and has no effect on access permissions.
 
 outputs:
   - name: vibe_url

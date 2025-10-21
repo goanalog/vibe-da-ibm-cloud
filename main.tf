@@ -54,24 +54,6 @@ resource "ibm_cos_bucket" "bucket" {
   storage_class        = "standard"
 }
 
-# --- Optional Public Access Policy ---
-resource "ibm_cos_bucket_policy" "public_read" {
-  count      = var.public_access ? 1 : 0
-  bucket_crn = ibm_cos_bucket.bucket.crn
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect    = "Allow",
-        Principal = "*",
-        Action    = ["s3:GetObject"],
-        Resource  = "arn:aws:s3:::${ibm_cos_bucket.bucket.bucket_name}/*"
-      }
-    ]
-  })
-}
-
 # --- Inline or Local HTML ---
 locals {
   index_html = var.index_html != "" ? var.index_html : file("${path.module}/index.html")
@@ -79,8 +61,9 @@ locals {
 
 # --- Upload HTML to COS ---
 resource "ibm_cos_bucket_object" "index_html" {
-  bucket_crn = ibm_cos_bucket.bucket.crn
-  key        = "index.html"
-  content    = local.index_html
-  etag       = md5(local.index_html)
+  bucket_crn      = ibm_cos_bucket.bucket.crn
+  bucket_location = var.region
+  key             = "index.html"
+  content         = local.index_html
+  etag            = md5(local.index_html)
 }
