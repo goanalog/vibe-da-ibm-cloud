@@ -1,105 +1,42 @@
-{
-  "id": "vibe-code-landing-zone",
-  "version": "1.0.1",
-  "displayName": "Vibe Code Landing Zone",
-  "description": "Paste your vibe, exhale, and ship. This deployable architecture turns raw HTML into a live static site on IBM Cloud Object Storage \u2014 optimized for \u2728vibe-driven development\u2728.",
-  "type": "deployable_architecture",
-  "deliveryMethod": "terraform",
-  "tags": [
-    "ibm-cloud",
-    "deployable-architecture",
-    "object-storage",
-    "static-website",
-    "cos",
-    "html",
-    "vibe-coding"
-  ],
-  "variables": [
-    {
-      "name": "resource_group",
-      "type": "string",
-      "description": "Where your vibe lives organizationally. If unsure, 'default' is a chill place to start.",
-      "ui_hints": {
-        "group": "Setup",
-        "label": "Resource Group",
-        "control": "text"
-      },
-      "required": false
-    },
-    {
-      "name": "region",
-      "type": "string",
-      "description": "Cosmic region for your bucket. us-south is a steady groove.",
-      "default": "us-south",
-      "ui_hints": {
-        "group": "Setup",
-        "label": "Region",
-        "control": "text"
-      },
-      "required": false
-    },
-    {
-      "name": "cos_instance_name",
-      "type": "string",
-      "description": "A friendly name for your IBM Cloud Object Storage instance. Don\u2019t overthink it \u2014 the vibe is in the content.",
-      "default": "vibe-coder-cos",
-      "ui_hints": {
-        "group": "Setup",
-        "label": "COS Instance Name"
-      },
-      "required": false
-    },
-    {
-      "name": "bucket_name",
-      "type": "string",
-      "description": "Your public bucket name (lowercase, no spaces). This becomes the home of your vibe.",
-      "default": "vibe-coder-sample-bucket",
-      "ui_hints": {
-        "group": "Setup",
-        "label": "Bucket Name (public)"
-      },
-      "required": true
-    },
-    {
-      "name": "index_html",
-      "type": "string",
-      "description": "Paste your full HTML here \u2014 it becomes your app\u2019s index.html when deployed. No escaping needed; just vibes.",
-      "ui_hints": {
-        "group": "App Content",
-        "label": "HTML for app",
-        "control": "textarea",
-        "placeholder": "<!DOCTYPE html>\\n<html>\\n  <head>...</head>\\n  <body>...</body>\\n</html>"
-      },
-      "required": true
-    },
-    {
-      "name": "index_html_file",
-      "type": "string",
-      "description": "Optional path to a local HTML file (e.g., index.html). Used only if the textarea above is empty.",
-      "ui_hints": {
-        "group": "App Content",
-        "label": "Local HTML file path",
-        "control": "text",
-        "placeholder": "index.html"
-      },
-      "required": false
-    }
-  ],
-  "outputs": [
-    {
-      "name": "vibe_url",
-      "key_output": true,
-      "description": "Your live vibe. Share with care."
-    },
-    {
-      "name": "vibe_bucket_url",
-      "description": "Direct link to your Vibe Bucket for browsing artifacts."
-    }
-  ],
-  "manifest_version": "1.0",
-  "metadata": {
-    "provider": "IBM",
-    "support_url": "https://cloud.ibm.com",
-    "license": "Apache-2.0"
+"variables": [
+  {
+    "name": "resource_group",
+    "type": "string",
+    "description": "Resource group for the deployment.",
+    "default": "default",
+    "ui_hints": { "group": "Setup", "label": "Resource Group", "control": "text" },
+    "required": true
+  },
+  {
+    "name": "region",
+    "type": "string",
+    "description": "IBM Cloud region (e.g., us-south).",
+    "default": "us-south",
+    "ui_hints": { "group": "Setup", "label": "Region", "control": "text" },
+    "required": true
+  },
+  {
+    "name": "cos_instance_name",
+    "type": "string",
+    "description": "COS instance name.",
+    "default": "vibe-instance-001",
+    "ui_hints": { "group": "Setup", "label": "COS Instance Name", "control": "text" },
+    "required": false
+  },
+  {
+    "name": "bucket_name",
+    "type": "string",
+    "description": "Bucket name (lowercase, no spaces).",
+    "default": "vibe-bucket-001",
+    "ui_hints": { "group": "Setup", "label": "Bucket Name", "control": "text" },
+    "required": true
+  },
+  {
+    "name": "index_html",
+    "type": "string",
+    "description": "Paste your full HTML here — it becomes your app’s index.html when deployed.",
+    "default": "",
+    "ui_hints": { "group": "App Content", "label": "App HTML", "control": "textarea" },
+    "required": false
   }
-}
+]
