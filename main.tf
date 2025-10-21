@@ -19,6 +19,10 @@ resource "random_string" "suffix" {
   numeric = true
 }
 
+data "ibm_resource_group" "group" {
+  name = var.resource_group
+}
+
 resource "ibm_resource_instance" "cos_instance" {
   name              = "vibe-instance-${random_string.suffix.result}"
   service           = "cloud-object-storage"
@@ -28,10 +32,6 @@ resource "ibm_resource_instance" "cos_instance" {
   tags              = ["deployable-architecture", "ibm-cloud", "static-website", "vibe"]
 }
 
-data "ibm_resource_group" "group" {
-  name = var.resource_group
-}
-
 resource "ibm_cos_bucket" "bucket" {
   bucket_name          = "vibe-bucket-${random_string.suffix.result}"
   region_location      = var.region
@@ -39,7 +39,20 @@ resource "ibm_cos_bucket" "bucket" {
   storage_class        = "standard"
   force_delete         = true
   endpoint_type        = "public"
-  acl                  = "public-read"
+}
+
+# Make the bucket publicly readable
+resource "ibm_cos_bucket_policy" "public_read" {
+  bucket_crn = ibm_cos_bucket.bucket.crn
+  policy = jsonencode({
+    Version = "2.0"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = "*"
+      Action    = ["s3:GetObject"]
+      Resource  = "${ibm_cos_bucket.bucket.crn}/*"
+    }]
+  })
 }
 
 resource "ibm_cos_bucket_object" "index_html" {
