@@ -41,21 +41,6 @@ resource "ibm_cos_bucket" "bucket" {
   endpoint_type        = "public"
 }
 
-# ✅ Public access configuration using supported ibm_cos_bucket_config
-resource "ibm_cos_bucket_config" "public_access" {
-  bucket_crn = ibm_cos_bucket.bucket.crn
-
-  firewall {
-    allowed_ip = ["0.0.0.0/0"]
-  }
-
-  metrics_monitoring {
-    usage_metrics_enabled    = true
-    request_metrics_enabled  = true
-  }
-}
-
-# Upload user-provided HTML or fallback to index.html
 resource "ibm_cos_bucket_object" "index_html" {
   bucket_crn      = ibm_cos_bucket.bucket.crn
   bucket_location = var.region
@@ -63,4 +48,14 @@ resource "ibm_cos_bucket_object" "index_html" {
   content         = var.html_input != "" ? var.html_input : file("index.html")
   endpoint_type   = "public"
   force_delete    = true
+}
+
+output "vibe_url" {
+  description = "Public URL of your deployed vibe app."
+  value       = "https://${ibm_cos_bucket.bucket.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud/index.html"
+}
+
+output "vibe_bucket_url" {
+  description = "Public bucket root URL."
+  value       = "https://${ibm_cos_bucket.bucket.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud/"
 }
