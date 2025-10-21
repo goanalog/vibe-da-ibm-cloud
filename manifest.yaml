@@ -1,0 +1,14 @@
+name: Vibe Deployable Architecture
+version: 1.0.7
+description: Deploy instantly to IBM Cloud Object Storage and host your vibe-coded single-page app.
+type: terraform
+tags:
+  - ibm-cloud
+  - deployable-architecture
+  - vibe
+  - static-website
+outputs:
+  - name: vibe_url
+    description: Public URL for your vibe app.
+  - name: vibe_bucket_url
+    description: Direct bucket URL.
