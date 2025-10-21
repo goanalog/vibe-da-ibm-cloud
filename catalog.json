@@ -1,7 +1,7 @@
 
 {
   "id": "vibe-da-ibm-cloud",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "displayName": "Vibe Coder — Deployable Architecture",
   "description": "Instantly deploy a vibe-coded single-page app to IBM Cloud Object Storage using Terraform.",
   "type": "deployable_architecture",

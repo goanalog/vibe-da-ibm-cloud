@@ -18,7 +18,7 @@ resource "random_string" "suffix" {
   length  = 6
   lower   = true
   upper   = false
-  number  = true
+  numeric = true
   special = false
 }
 
@@ -37,21 +37,10 @@ resource "ibm_cos_bucket" "bucket" {
   storage_class        = "standard"
   endpoint_type        = "public"
   force_delete         = true
-}
 
-resource "ibm_cos_bucket_policy" "public_read" {
-  bucket_crn      = ibm_cos_bucket.bucket.crn
-  bucket_location = ibm_cos_bucket.bucket.region_location
-  policy          = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Sid       = "PublicReadGetObject"
-      Effect    = "Allow"
-      Principal = "*"
-      Action    = ["s3:GetObject"]
-      Resource  = ["arn:aws:s3:::${ibm_cos_bucket.bucket.bucket_name}/*"]
-    }]
-  })
+  access {
+    type = "public"
+  }
 }
 
 resource "ibm_cos_bucket_object" "index_html" {

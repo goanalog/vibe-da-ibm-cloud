@@ -2,4 +2,4 @@
 name: vibe-da-ibm-cloud
 type: terraform
 description: Deploys a vibe-coded HTML app to IBM Cloud Object Storage.
-version: 1.0.4
+version: 1.0.5

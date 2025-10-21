@@ -1,5 +1,5 @@
 
-# 🌐 Vibe Coder — IBM Cloud Deployable Architecture
+# 🌐 Vibe Coder — IBM Cloud Deployable Architecture (v1.0.5)
 
 A deployable architecture that hosts your vibe-coded single-page app on **IBM Cloud Object Storage**.
 
@@ -22,7 +22,7 @@ https://<bucket-name>.<region>.cloud-object-storage.appdomain.cloud/index.html
 
 Or simply click the **`vibe_bucket_public_url`** output in your catalog workspace.
 
-If you see an XML "AccessDenied" message, wait a few seconds and refresh — the public read policy may take a moment to propagate.
+If you see an XML "AccessDenied" message, wait a few seconds and refresh — the public access policy may take a moment to propagate.
 
 ---
 
