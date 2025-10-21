@@ -61,61 +61,41 @@ resource "ibm_cos_bucket" "bucket" {
   region_location      = var.region
   storage_class        = "standard"
   force_delete         = true
+  
+  # --- FIX 3: Replaced policy resource with 'acl' ---
+  acl                  = "public-read" 
 }
 
 # ---------------------------------------------------------------------
 # Upload the index.html
 # ---------------------------------------------------------------------
 resource "ibm_cos_bucket_object" "index_html" {
-  # --- FIX 1: Replaced 'bucket' with 'bucket_crn' ---
-  bucket_crn = ibm_cos_bucket.bucket.crn
-  # --- FIX 2: Added 'bucket_location' ---
+  bucket_crn      = ibm_cos_bucket.bucket.crn
   bucket_location = ibm_cos_bucket.bucket.region_location
+  key             = "index.html"
+  content         = local.html_content
   
-  key          = "index.html"
-  content      = local.html_content
-  content_type = "text/html"
-  depends_on   = [ibm_cos_bucket.bucket]
+  # --- FIX 1: Removed 'content_type' ---
+  
+  depends_on = [ibm_cos_bucket.bucket]
 }
 
 # ---------------------------------------------------------------------
 # Upload the vibe-face.png asset
 # ---------------------------------------------------------------------
 resource "ibm_cos_bucket_object" "vibe_face" {
-  # --- FIX 1: Replaced 'bucket' with 'bucket_crn' ---
-  bucket_crn = ibm_cos_bucket.bucket.crn
-  # --- FIX 2: Added 'bucket_location' ---
+  bucket_crn      = ibm_cos_bucket.bucket.crn
   bucket_location = ibm_cos_bucket.bucket.region_location
+  key             = "vibe-face.png"
   
-  key = "vibe-face.png"
+  # --- FIX 2: Changed 'file' to 'filebase64' ---
+  content         = filebase64("${path.module}/vibe-face.png")
   
-  # --- FIX 3: Changed 'file' to 'content(file(...))' ---
-  content      = file("${path.module}/vibe-face.png")
-  content_type = "image/png"
-  depends_on   = [ibm_cos_bucket.bucket]
-}
-
-# ---------------------------------------------------------------------
-# Make the bucket public (Restoring original policy block)
-# ---------------------------------------------------------------------
-resource "ibm_cos_bucket_policy" "public_access" {
-  bucket_name          = ibm_cos_bucket.bucket.bucket_name
-  resource_instance_id = ibm_resource_instance.cos_instance.id
-
-  policy = <<EOT
-{
-  "Version": "2.0",
-  "Statement": [
-    {
-      "Sid": "PublicReadGetObject",
-      "Effect": "Allow",
-      "Principal": "*",
-      "Action": ["s3:GetObject"],
-      "Resource": ["arn:aws:s3:::${ibm_cos_bucket.bucket.bucket_name}/*"]
-    }
-  ]
-}
-EOT
-
+  # --- FIX 1: Removed 'content_type' ---
+  
   depends_on = [ibm_cos_bucket.bucket]
 }
+
+# ---------------------------------------------------------------------
+# (The 'ibm_cos_bucket_policy' resource has been deleted)
+# ---------------------------------------------------------------------
