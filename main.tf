@@ -41,20 +41,21 @@ resource "ibm_cos_bucket" "bucket" {
   endpoint_type        = "public"
 }
 
-# Make the bucket publicly readable
-resource "ibm_cos_bucket_policy" "public_read" {
+# ✅ Public access configuration using supported ibm_cos_bucket_config
+resource "ibm_cos_bucket_config" "public_access" {
   bucket_crn = ibm_cos_bucket.bucket.crn
-  policy = jsonencode({
-    Version = "2.0"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = "*"
-      Action    = ["s3:GetObject"]
-      Resource  = "${ibm_cos_bucket.bucket.crn}/*"
-    }]
-  })
+
+  firewall {
+    allowed_ip = ["0.0.0.0/0"]
+  }
+
+  metrics_monitoring {
+    usage_metrics_enabled    = true
+    request_metrics_enabled  = true
+  }
 }
 
+# Upload user-provided HTML or fallback to index.html
 resource "ibm_cos_bucket_object" "index_html" {
   bucket_crn      = ibm_cos_bucket.bucket.crn
   bucket_location = var.region
