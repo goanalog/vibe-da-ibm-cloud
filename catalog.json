@@ -1,6 +1,6 @@
 {
   "id": "vibe-da-ibm-cloud",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "displayName": "Vibe Code Landing Zone",
   "description": "Turn HTML into a live IBM Cloud Object Storage site — instantly.",
   "type": "deployable_architecture",

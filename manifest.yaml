@@ -3,7 +3,7 @@ metadata:
   name: vibe-da-ibm-cloud
   displayName: Vibe Code Landing Zone
   description: Deploys a single-page HTML app to IBM Cloud Object Storage in minutes.
-  version: 1.0.1
+  version: 1.0.2
   type: deployable_architecture
   language: terraform
   license: Apache-2.0
