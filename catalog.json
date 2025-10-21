@@ -1,70 +1,98 @@
-"variables": [
-  {
-    "name": "resource_group",
-    "type": "string",
-    "description": "Where your vibe lives organizationally. If unsure, 'default' is a chill place to start.",
-    "default": "default",
-    "ui_hints": {
-      "group": "Setup",
-      "label": "Resource Group",
-      "control": "resource-group"
+{
+  "id": "vibe-code-landing-zone",
+  "version": "1.0.0",
+  "displayName": "Vibe Code Landing Zone",
+  "description": "Stop configuring. Start feeling. This deployable architecture turns a single HTML document into a live static site on IBM Cloud Object Storage — in minutes.",
+  "type": "deployable_architecture",
+  "deliveryMethod": "terraform",
+  "tags": [
+    "ibm-cloud",
+    "deployable-architecture",
+    "object-storage",
+    "static-website",
+    "cos",
+    "vibe-coding",
+    "html"
+  ],
+  "variables": [
+    {
+      "name": "resource_group",
+      "type": "string",
+      "description": "Where your vibe lives organizationally. If unsure, 'default' is a chill place to start.",
+      "default": "default",
+      "ui_hints": {
+        "group": "Setup",
+        "label": "Resource Group",
+        "control": "resource-group"
+      },
+      "required": true
     },
-    "required": true
-  },
-  {
-    "name": "region",
-    "type": "string",
-    "description": "Cosmic region for your bucket. us-south is a steady groove.",
-    "default": "us-south",
-    "ui_hints": {
-      "group": "Setup",
-      "label": "Region",
-      "control": "region"
+    {
+      "name": "region",
+      "type": "string",
+      "description": "Cosmic region for your bucket. us-south is a steady groove.",
+      "default": "us-south",
+      "ui_hints": {
+        "group": "Setup",
+        "label": "Region",
+        "control": "region"
+      },
+      "required": true
     },
-    "required": true
-  },
-  {
-    "name": "cos_instance_name",
-    "type": "string",
-    "description": "A friendly name for your IBM Cloud Object Storage instance.",
-    "default": "vibe-instance-001",
-    "ui_hints": {
-      "group": "Setup",
-      "label": "COS Instance Name"
+    {
+      "name": "cos_instance_name",
+      "type": "string",
+      "description": "A friendly name for your IBM Cloud Object Storage instance. Don’t overthink it — the vibe is in the content.",
+      "default": "vibe-coder-cos",
+      "ui_hints": {
+        "group": "Setup",
+        "label": "COS Instance Name"
+      },
+      "required": true
     },
-    "required": false
-  },
-  {
-    "name": "bucket_name",
-    "type": "string",
-    "description": "Bucket name (lowercase, no spaces).",
-    "default": "vibe-bucket-001",
-    "ui_hints": {
-      "group": "Setup",
-      "label": "Bucket Name"
+    {
+      "name": "bucket_name",
+      "type": "string",
+      "description": "Your public bucket name (lowercase, no spaces). This becomes the home of your vibe.",
+      "default": "vibe-coder-sample-bucket",
+      "ui_hints": {
+        "group": "Setup",
+        "label": "Bucket Name"
+      },
+      "required": true
     },
-    "required": true
-  },
-  {
-    "name": "index_html",
-    "type": "string",
-    "description": "Paste your full HTML here — it becomes your app’s index.html when deployed.",
-    "default": "",
-    "ui_hints": {
-      "group": "App Content",
-      "label": "App HTML"
+    {
+      "name": "index_html",
+      "type": "string",
+      "description": "Paste your full HTML here — it becomes your app’s index.html when deployed.",
+      "default": "",
+      "ui_hints": {
+        "group": "App Content",
+        "label": "App HTML (Paste)"
+      },
+      "required": true
     },
-    "required": false
-  },
-  {
-    "name": "index_html_file",
-    "type": "string",
-    "description": "Optional path to a local HTML file (e.g., index.html). Used only if the textarea above is empty.",
-    "default": "",
-    "ui_hints": {
-      "group": "App Content",
-      "label": "Local HTML file path"
+    {
+      "name": "index_html_file",
+      "type": "string",
+      "description": "Optional path to a local HTML file (e.g., index.html). Used only if the textarea above is empty.",
+      "default": "",
+      "ui_hints": {
+        "group": "App Content",
+        "label": "Local HTML file path (Optional)"
+      },
+      "required": false
+    }
+  ],
+  "outputs": [
+    {
+      "name": "vibe_url",
+      "description": "Behold the consecrated endpoint for direct vibe consumption.",
+      "key_output": true
     },
-    "required": false
-  }
-]
+    {
+      "name": "vibe_bucket_url",
+      "description": "Direct link to your sacred bucket."
+    }
+  ]
+}
