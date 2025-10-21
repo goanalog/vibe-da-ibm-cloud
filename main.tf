@@ -32,14 +32,15 @@ resource "random_string" "suffix" {
 }
 
 # ---------------------------------------------------------------------
-# Resource Group
+# Get resource group
 # ---------------------------------------------------------------------
 data "ibm_resource_group" "selected" {
-  name = var.resource_group
+  # --- FIX: Find the default resource group automatically ---
+  is_default = true
 }
 
 # ---------------------------------------------------------------------
-# COS Instance
+# Create COS instance
 # ---------------------------------------------------------------------
 resource "ibm_resource_instance" "cos_instance" {
   name              = var.cos_instance_name
@@ -50,7 +51,7 @@ resource "ibm_resource_instance" "cos_instance" {
 }
 
 # ---------------------------------------------------------------------
-# COS Bucket
+# Create COS bucket
 # ---------------------------------------------------------------------
 resource "ibm_cos_bucket" "bucket" {
   bucket_name          = "${var.bucket_name}-${random_string.suffix.result}"
@@ -68,9 +69,7 @@ resource "ibm_cos_bucket_object" "index_html" {
   bucket_location = ibm_cos_bucket.bucket.region_location
   key             = "index.html"
   content         = local.html_content
-  
-  # 'content_type' removed (fix from 19:38 log)
-  
+
   depends_on = [ibm_cos_bucket.bucket]
 }
 
@@ -81,16 +80,11 @@ resource "ibm_cos_bucket_object" "vibe_face" {
   bucket_crn      = ibm_cos_bucket.bucket.crn
   bucket_location = ibm_cos_bucket.bucket.region_location
   key             = "vibe-face.png"
-  
-  # Changed to 'filebase64' (fix from 19:38 log)
   content         = filebase64("${path.module}/vibe-face.png")
-  
-  # 'content_type' removed (fix from 19:38 log)
 
   depends_on = [ibm_cos_bucket.bucket]
 }
 
 # ---------------------------------------------------------------------
-# (The 'ibm_cos_bucket_policy' resource has been removed
-#  because it is not supported by provider v1.84.2)
+# (Public access policy removed due to provider limitations)
 # ---------------------------------------------------------------------

@@ -20,18 +20,6 @@
   ],
   "variables": [
     {
-      "name": "resource_group",
-      "type": "string",
-      "description": "IBM Cloud Resource Group where your vibe lives.",
-      "default": "default",
-      "ui_hints": {
-        "group": "Setup",
-        "label": "Resource Group",
-        "control": "resource-group"
-      },
-      "required": true
-    },
-    {
       "name": "region",
       "type": "string",
       "description": "IBM Cloud region (e.g., us-south).",

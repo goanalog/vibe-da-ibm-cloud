@@ -1,9 +1,3 @@
-variable "resource_group" {
-  description = "IBM Cloud Resource Group where your vibe lives."
-  type        = string
-  default     = "default"
-}
-
 variable "region" {
   description = "IBM Cloud region (e.g., us-south)."
   type        = string
@@ -25,5 +19,4 @@ variable "bucket_name" {
 variable "index_html" {
   description = "Inline HTML code pasted by the user."
   type        = string
-  # 'default' attribute removed to make this variable required
 }
