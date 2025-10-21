@@ -17,7 +17,7 @@ resource "random_string" "suffix" {
   length  = 6
   lower   = true
   upper   = false
-  numeric = true
+  number  = true
   special = false
 }
 
@@ -26,7 +26,7 @@ data "ibm_resource_group" "group" {
 }
 
 resource "ibm_resource_instance" "cos_instance" {
-  name              = "vibe-instance-${regexreplace(random_string.suffix.result, "[^a-z0-9]", "")}"
+  name              = "vibe-instance-${random_string.suffix.result}"
   service           = "cloud-object-storage"
   plan              = var.cos_plan
   location          = "global"
@@ -35,7 +35,7 @@ resource "ibm_resource_instance" "cos_instance" {
 }
 
 resource "ibm_cos_bucket" "bucket" {
-  bucket_name          = "vibe-bucket-${regexreplace(random_string.suffix.result, "[^a-z0-9]", "")}"
+  bucket_name          = "vibe-bucket-${random_string.suffix.result}"
   region_location      = var.region
   resource_instance_id = ibm_resource_instance.cos_instance.id
   storage_class        = "standard"
