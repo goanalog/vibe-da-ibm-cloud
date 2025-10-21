@@ -1,36 +1,41 @@
 version: 0.1.0
 type: deployable-architecture
 metadata:
-  name: vibe-coder
-  displayName: "Vibe Coder — Instant SPA Hosting"
+  name: vibe-code-landing-zone
+  displayName: "Vibe Code Landing Zone"
   description: >
-    Deploy an instant 'vibe coding' single-page app — paste your HTML or use
-    the included sample to host it automatically in IBM Cloud Object Storage.
+    Stop configuring. Start feeling. This deployable architecture turns a
+    single HTML document into a live static site on IBM Cloud Object Storage — in minutes.
   tags:
-    - static-site
     - ibm-cloud
-    - object-storage
-    - vibe
-    - developer-sample
     - deployable-architecture
-    - instant-app
+    - object-storage
+    - static-website
+    - cos
+    - vibe-coding
+    - html
 inputs:
-  - name: cos_name
-    type: string
-  - name: cos_plan
-    type: string
-  - name: cos_bucket_name
-    type: string
   - name: region
     type: string
-  - name: resource_group
+    ui_hints:
+      label: "Region"
+      control: region
+  - name: cos_instance_name
     type: string
-  - name: public_access
-    type: bool
-  - name: vibe_code
+    ui_hints:
+      label: "COS Instance Name"
+  - name: bucket_name
     type: string
+    ui_hints:
+      label: "Bucket Name"
+  - name: index_html
+    type: string
+    ui_hints:
+      label: "App HTML (Paste)"
+      group: "App Content"
 outputs:
   - name: vibe_url
     type: string
+    key_output: true
   - name: vibe_bucket_url
     type: string
