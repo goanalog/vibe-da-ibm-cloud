@@ -1,25 +1,26 @@
-# Vibe DA — IBM Cloud Object Storage
+# Vibe — Deployable Architecture (v1.0.7)
 
 [![IBM Cloud](https://img.shields.io/badge/IBM%20Cloud-Deployable%20Architecture-blue)](https://github.com/goanalog/vibe-da-ibm-cloud)
 [![Terraform](https://img.shields.io/badge/Terraform-Ready-623CE4)](https://github.com/goanalog/vibe-da-ibm-cloud)
-[![Version](https://img.shields.io/badge/Version-1.0.6-brightgreen)](https://github.com/goanalog/vibe-da-ibm-cloud/releases)
+[![Version](https://img.shields.io/badge/Version-1.0.7-brightgreen)](https://github.com/goanalog/vibe-da-ibm-cloud/releases)
 
-Instantly deploy your **vibe-coded** HTML or SPA to IBM Cloud Object Storage.  
-If no HTML is provided, the included `index.html` sample app will be used automatically.
-
----
-
-### 🚀 Quick Start
-1. Upload this ZIP to **IBM Cloud Catalog → Create → Deployable Architecture**.
-2. Enter your resource group, region, and any custom HTML (optional).
-3. Click **Deploy** — your app will be instantly live.
+Deploy instantly to **IBM Cloud Object Storage** and host your vibe-coded single-page app.
 
 ---
 
-### 🧠 About
-Vibe DA is a minimalistic, instant-deploy architecture that turns any HTML snippet into a live, hosted web app using **IBM Cloud Object Storage (COS)**.
+### 🚀 How it Works
+- Paste your **vibe-coded HTML** into the catalog input field.  
+- If you leave it blank, your included **index.html** sample will deploy automatically.  
+- Terraform provisions a free COS Lite instance and hosts your content publicly.
 
 ---
 
-### 🪄 Default Sample App
-If you leave the HTML input blank, a built-in interactive demo (from `index.html`) will be deployed automatically.
+### 📦 Outputs
+| Name | Description |
+|------|--------------|
+| `vibe_url` | Public URL of your hosted app |
+| `vibe_bucket_url` | Direct COS bucket URL |
+
+---
+
+Made with 💙 by [GoAnalog](https://github.com/goanalog)

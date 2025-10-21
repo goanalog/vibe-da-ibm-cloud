@@ -1,35 +1,23 @@
-variable "resource_group" {
-  description = "IBM Cloud resource group name (Default)."
-  type        = string
-  default     = "Default"
-}
-
 variable "region" {
-  description = "IBM Cloud region for deployment (e.g., us-south)."
+  description = "IBM Cloud region for the deployment."
   type        = string
   default     = "us-south"
 }
 
-variable "cos_instance_name" {
-  description = "Base name for the Cloud Object Storage instance."
+variable "resource_group" {
+  description = "Name of the IBM Cloud resource group (use 'Default' if on a trial account)."
   type        = string
-  default     = "vibe-instance"
-}
-
-variable "bucket_name" {
-  description = "Base name for your COS bucket."
-  type        = string
-  default     = "vibe-bucket"
+  default     = "Default"
 }
 
 variable "cos_plan" {
-  description = "COS plan type — 'lite' for free tier."
+  description = "Plan for the Cloud Object Storage instance (Lite is free)."
   type        = string
   default     = "lite"
 }
 
-variable "index_html" {
-  description = "Paste your vibe code here. Leave empty to use the built-in sample app."
+variable "html_input" {
+  description = "Paste your vibe-coded HTML here. If left empty, the included sample app (index.html) will be used automatically."
   type        = string
   default     = ""
 }

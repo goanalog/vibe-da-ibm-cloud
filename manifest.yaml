@@ -1,14 +1,14 @@
-apiVersion: v1
-kind: deployable-architecture
-metadata:
-  name: vibe-da-ibm-cloud
-  version: 1.0.6
-  displayName: "Vibe DA — IBM Cloud Object Storage"
-  description: "Instantly host any HTML or vibe-coded single-page app on IBM Cloud Object Storage."
-spec:
-  type: terraform
-  terraformVersion: 1.12
-  provider: IBM-Cloud/ibm
-  license: Apache-2.0
-  repository: https://github.com/goanalog/vibe-da-ibm-cloud
-  readme: README.md
+name: Vibe Deployable Architecture
+version: 1.0.7
+description: Deploy instantly to IBM Cloud Object Storage and host your vibe-coded single-page app.
+type: terraform
+tags:
+  - ibm-cloud
+  - deployable-architecture
+  - vibe
+  - static-website
+outputs:
+  - name: vibe_url
+    description: Public URL for your vibe app.
+  - name: vibe_bucket_url
+    description: Direct bucket URL.

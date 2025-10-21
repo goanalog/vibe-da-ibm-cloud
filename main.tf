@@ -16,44 +16,37 @@ provider "ibm" {}
 resource "random_string" "suffix" {
   length  = 6
   lower   = true
-  upper   = false
   numeric = true
-  special = false
+}
+
+resource "ibm_resource_instance" "cos_instance" {
+  name              = "vibe-instance-${random_string.suffix.result}"
+  service           = "cloud-object-storage"
+  plan              = var.cos_plan
+  location          = "global"
+  resource_group_id = data.ibm_resource_group.group.id
+  tags              = ["deployable-architecture", "ibm-cloud", "static-website", "vibe"]
 }
 
 data "ibm_resource_group" "group" {
   name = var.resource_group
 }
 
-resource "ibm_resource_instance" "cos_instance" {
-  name              = "${var.cos_instance_name}-${random_string.suffix.result}"
-  service           = "cloud-object-storage"
-  plan              = var.cos_plan
-  location          = var.region
-  resource_group_id = data.ibm_resource_group.group.id
-}
-
 resource "ibm_cos_bucket" "bucket" {
-  bucket_name        = "${var.bucket_name}-${random_string.suffix.result}"
+  bucket_name          = "vibe-bucket-${random_string.suffix.result}"
+  region_location      = var.region
   resource_instance_id = ibm_resource_instance.cos_instance.id
-  storage_class      = "standard"
-  allowed_ip         = ["0.0.0.0/0"]
-  acl                = "public-read"
+  storage_class        = "standard"
+  force_delete         = true
+  endpoint_type        = "public"
+  acl                  = "public-read"
 }
 
-resource "ibm_cos_bucket_object" "index" {
-  bucket_crn = ibm_cos_bucket.bucket.crn
-  key        = "index.html"
-  content    = var.index_html != "" ? var.index_html : file("${path.module}/index.html")
-  etag       = md5(var.index_html)
-}
-
-output "vibe_url" {
-  description = "Public URL for your vibe app."
-  value       = "https://s3.${var.region}.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.bucket.bucket_name}/index.html"
-}
-
-output "vibe_bucket_url" {
-  description = "Direct bucket URL."
-  value       = "https://s3.${var.region}.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.bucket.bucket_name}/"
+resource "ibm_cos_bucket_object" "index_html" {
+  bucket_crn      = ibm_cos_bucket.bucket.crn
+  bucket_location = var.region
+  key             = "index.html"
+  content         = var.html_input != "" ? var.html_input : file("index.html")
+  endpoint_type   = "public"
+  force_delete    = true
 }
