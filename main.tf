@@ -62,14 +62,3 @@ resource "ibm_cos_bucket_object" "index_html" {
   content         = local.index_html
   etag            = md5(local.index_html)
 }
-
-# --- Outputs ---
-output "vibe_bucket_url" {
-  description = "Direct link to your sacred bucket."
-  value       = "https://s3.${var.region}.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.bucket.bucket_name}"
-}
-
-output "vibe_url" {
-  description = "Behold the consecrated endpoint for direct vibe consumption."
-  value       = "https://s3.${var.region}.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.bucket.bucket_name}/index.html"
-}
