@@ -1,57 +1,22 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Vibe Code Landing Zone — Deployable Architecture Manifest
-# Version: 1.0.0
+# manifest.yaml — IBM Cloud Deployable Architecture Metadata
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-schema_version: 1.0.0
 name: vibe-da-ibm-cloud
-type: deployable-architecture
-description: >
-  Stop configuring. Start feeling. This deployable architecture turns a single HTML document
-  into a live static site on IBM Cloud Object Storage — in minutes.
-version: 1.0.0
+version: 0.1.0
+description: |
+  Deploy an instant single-page “vibe code” app to IBM Cloud Object Storage.
+  Just paste your HTML and vibe — this architecture handles the rest.
+type: terraform
 tags:
-  - ibm-cloud
-  - deployable-architecture
-  - object-storage
   - static-website
-  - cos
-  - vibe-coding
-  - html
-
-inputs:
-  - name: region
-    type: string
-    default: us-south
-    description: IBM Cloud region (e.g., us-south).
-  - name: resource_group
-    type: string
-    default: Default
-    description: IBM Cloud resource group to use (case-sensitive). Usually 'Default'.
-  - name: cos_instance_name
-    type: string
-    default: vibe-coder-cos
-    description: Friendly name for your IBM Cloud Object Storage instance.
-  - name: bucket_name
-    type: string
-    default: vibe-coder-sample-bucket
-    description: Base name for your COS bucket (lowercase, no spaces).
-  - name: index_html
-    type: string
-    default: ""
-    description: Inline HTML code pasted by the user. If blank, a sample app is provided.
-  - name: public_access
-    type: bool
-    default: true
-    description: >
-      Deprecated: IBM Cloud no longer allows fully public buckets.
-      Retained for compatibility only.
-
-outputs:
-  - name: vibe_url
-    description: Behold the consecrated endpoint for direct vibe consumption.
-    kind: url
-    key_output: true
-  - name: vibe_bucket_url
-    description: Direct link to your sacred bucket.
-    kind: url
+  - object-storage
+  - serverless
+  - sample
+  - ibm-cloud
+  - vibe
+  - deployable-architecture
+maintainers:
+  - name: Vibe Cloud Team
+    email: realbrendan@us.ibm.com
+default_locale: en
+license: Apache-2.0

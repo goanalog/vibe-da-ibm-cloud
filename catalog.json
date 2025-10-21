@@ -1,110 +1,36 @@
 {
   "id": "vibe-da-ibm-cloud",
-  "version": "1.0.0",
-  "displayName": "Vibe Code Landing Zone",
-  "description": "Stop configuring. Start feeling. This deployable architecture turns a single HTML document into a live static site on IBM Cloud Object Storage — in minutes.",
+  "version": "0.1.0",
+  "displayName": "Vibe Code Landing Zone — IBM Cloud",
+  "description": "A deployable architecture that turns your pasted HTML into a live single-page app hosted on IBM Cloud Object Storage.",
   "type": "deployable_architecture",
   "deliveryMethod": "terraform",
   "repository": {
-    "url": "https://github.com/goanalog/vibe-da-ibm-cloud",
-    "path": "/"
+    "url": "https://github.com/goanalog/vibe-da-ibm-cloud/archive/refs/tags/milwaukee.tar.gz",
+    "path": "."
+  },
+  "icons": {
+    "small": "https://github.com/goanalog/vibe-da-ibm-cloud/blob/main/icon-48@2x.png?raw=true",
+    "large": "https://github.com/goanalog/vibe-da-ibm-cloud/blob/main/icon-256@2x.png?raw=true"
   },
   "tags": [
+    "vibe",
     "ibm-cloud",
-    "deployable-architecture",
     "object-storage",
     "static-website",
-    "cos",
-    "vibe-coding",
-    "html"
+    "serverless",
+    "terraform",
+    "deployable-architecture"
   ],
-  "variables": [
-    {
-      "name": "region",
-      "type": "string",
-      "description": "IBM Cloud region (e.g., us-south).",
-      "default": "us-south",
-      "ui_hints": {
-        "group": "Setup",
-        "label": "Region",
-        "control": "region"
-      },
-      "required": true
-    },
-    {
-      "name": "resource_group",
-      "type": "string",
-      "description": "IBM Cloud resource group to use (case-sensitive). Usually 'Default'.",
-      "default": "Default",
-      "ui_hints": {
-        "group": "Setup",
-        "label": "Resource Group"
-      },
-      "required": true
-    },
-    {
-      "name": "cos_instance_name",
-      "type": "string",
-      "description": "Friendly name for your IBM Cloud Object Storage instance.",
-      "default": "vibe-coder-cos",
-      "ui_hints": {
-        "group": "Setup",
-        "label": "COS Instance Name"
-      },
-      "required": true
-    },
-    {
-      "name": "bucket_name",
-      "type": "string",
-      "description": "Base name for your COS bucket (lowercase, no spaces).",
-      "default": "vibe-coder-sample-bucket",
-      "ui_hints": {
-        "group": "Setup",
-        "label": "Bucket Name"
-      },
-      "required": true
-    },
-    {
-      "name": "index_html",
-      "type": "string",
-      "description": "Inline HTML code pasted by the user. Leave blank to use the included sample app.",
-      "default": "",
-      "ui_hints": {
-        "group": "App Content",
-        "label": "App HTML (Paste)"
-      },
-      "required": false
-    },
-    {
-      "name": "public_access",
-      "type": "bool",
-      "description": "Deprecated: IBM Cloud no longer allows fully public buckets. Retained for compatibility only.",
-      "default": true,
-      "ui_hints": {
-        "group": "Setup",
-        "label": "Public Access (Limited)"
-      },
-      "required": false
-    }
-  ],
-  "outputs": [
-    {
-      "name": "vibe_url",
-      "description": "Behold the consecrated endpoint for direct vibe consumption.",
-      "key_output": true
-    },
-    {
-      "name": "vibe_bucket_url",
-      "description": "Direct link to your sacred bucket."
-    }
-  ],
-  "icons": {
-    "small": "vibe-face.png",
-    "large": "vibe-face.png"
-  },
   "support": {
-    "name": "Vibe Support Team",
-    "email": "support@vibecloud.io",
-    "url": "https://github.com/goanalog/vibe-da-ibm-cloud/issues"
+    "name": "Vibe Cloud Team",
+    "email": "realbrendan@us.ibm.com",
+    "url": "https://cloud.ibm.com/catalog"
+  },
+  "metadata": {
+    "architecture": "single-page-app",
+    "category": "web-hosting",
+    "runtime": "terraform",
+    "visibility": "public"
   }
 }
