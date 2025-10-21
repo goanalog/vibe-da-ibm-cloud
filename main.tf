@@ -16,17 +16,15 @@ provider "ibm" {
 }
 
 # ---------------------------------------------------------------------
-# Locals
+# Locals — smart fallback logic for HTML content
 # ---------------------------------------------------------------------
 locals {
-  html_content = (
-    length(trimspace(var.index_html)) > 0 ? var.index_html :
-    (length(trimspace(var.index_html_file)) > 0 ? file(var.index_html_file) : file("${path.module}/index.html"))
-  )
+  # Logic simplified to use the required 'index_html' variable directly
+  html_content = var.index_html
 }
 
 # ---------------------------------------------------------------------
-# Random Suffix
+# Generate a random suffix for globally unique resource names
 # ---------------------------------------------------------------------
 resource "random_string" "suffix" {
   length  = 6
@@ -35,14 +33,14 @@ resource "random_string" "suffix" {
 }
 
 # ---------------------------------------------------------------------
-# Resource Group
+# Get resource group
 # ---------------------------------------------------------------------
 data "ibm_resource_group" "selected" {
   name = var.resource_group
 }
 
 # ---------------------------------------------------------------------
-# COS Instance
+# Create COS instance
 # ---------------------------------------------------------------------
 resource "ibm_resource_instance" "cos_instance" {
   name              = var.cos_instance_name
@@ -53,7 +51,7 @@ resource "ibm_resource_instance" "cos_instance" {
 }
 
 # ---------------------------------------------------------------------
-# COS Bucket
+# Create COS bucket
 # ---------------------------------------------------------------------
 resource "ibm_cos_bucket" "bucket" {
   bucket_name          = "${var.bucket_name}-${random_string.suffix.result}"
@@ -61,9 +59,7 @@ resource "ibm_cos_bucket" "bucket" {
   region_location      = var.region
   storage_class        = "standard"
   force_delete         = true
-  
-  # --- FIX 3: Replaced policy resource with 'acl' ---
-  acl                  = "public-read" 
+  acl                  = "public-read"
 }
 
 # ---------------------------------------------------------------------
@@ -74,9 +70,7 @@ resource "ibm_cos_bucket_object" "index_html" {
   bucket_location = ibm_cos_bucket.bucket.region_location
   key             = "index.html"
   content         = local.html_content
-  
-  # --- FIX 1: Removed 'content_type' ---
-  
+
   depends_on = [ibm_cos_bucket.bucket]
 }
 
@@ -87,15 +81,7 @@ resource "ibm_cos_bucket_object" "vibe_face" {
   bucket_crn      = ibm_cos_bucket.bucket.crn
   bucket_location = ibm_cos_bucket.bucket.region_location
   key             = "vibe-face.png"
-  
-  # --- FIX 2: Changed 'file' to 'filebase64' ---
   content         = filebase64("${path.module}/vibe-face.png")
-  
-  # --- FIX 1: Removed 'content_type' ---
-  
+
   depends_on = [ibm_cos_bucket.bucket]
 }
-
-# ---------------------------------------------------------------------
-# (The 'ibm_cos_bucket_policy' resource has been deleted)
-# ---------------------------------------------------------------------

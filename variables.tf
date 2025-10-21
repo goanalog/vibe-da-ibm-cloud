@@ -25,11 +25,5 @@ variable "bucket_name" {
 variable "index_html" {
   description = "Inline HTML code pasted by the user."
   type        = string
-  default     = ""
-}
-
-variable "index_html_file" {
-  description = "Optional local path to an index.html file, used if inline HTML is not provided."
-  type        = string
-  default     = ""
+  # 'default' attribute removed to make this variable required
 }

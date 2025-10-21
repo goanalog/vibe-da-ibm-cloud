@@ -75,17 +75,6 @@
         "label": "App HTML (Paste)"
       },
       "required": true
-    },
-    {
-      "name": "index_html_file",
-      "type": "string",
-      "description": "Optional local path to an index.html file, used if inline HTML is not provided.",
-      "default": "",
-      "ui_hints": {
-        "group": "App Content",
-        "label": "Local HTML file path (Optional)"
-      },
-      "required": false
     }
   ],
   "outputs": [
