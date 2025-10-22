@@ -13,15 +13,36 @@ authors:
 license: Apache-2.0
 
 inputs:
-  - name: vibe_html_input
+  - name: vibe_html_input_base64
     type: string
     required: false
-    description: "Paste your HTML code here (leave blank for sample app)."
+    description: "Your HTML code, Base64 encoded. (Leave blank for sample app)."
+    default: ""
   - name: region
     type: string
-    required: true
+    required: false
     description: "IBM Cloud region for your COS instance."
     default: us-south
+  - name: resource_group_name
+    type: string
+    required: false
+    description: "IBM Cloud resource group name."
+    default: "Default"
+  - name: cos_plan
+    type: string
+    required: false
+    description: "Cloud Object Storage plan."
+    default: "lite"
+  - name: vibe_instance_name
+    type: string
+    required: false
+    description: "Prefix for your Object Storage instance name."
+    default: "vibe-instance"
+  - name: vibe_bucket_name
+    type: string
+    required: false
+    description: "Prefix for your Object Storage bucket name."
+    default: "vibe-bucket"
 
 outputs:
   - name: vibe_url

@@ -22,13 +22,13 @@
       }
     },
     {
-      "name": "resource_group",
+      "name": "resource_group_name",
       "type": "string",
-      "description": "IBM Cloud resource group (use 'Default' if on a trial).",
+      "description": "IBM Cloud resource group name (use 'Default' if on a trial).",
       "default": "Default",
       "ui_hints": {
         "group": "Setup",
-        "label": "Resource group"
+        "label": "Resource group name"
       }
     },
     {
@@ -49,31 +49,31 @@
     {
       "name": "vibe_instance_name",
       "type": "string",
-      "description": "Name of your Object Storage instance.",
+      "description": "Prefix for your Object Storage instance name.",
       "default": "vibe-instance",
       "ui_hints": {
         "group": "Setup",
-        "label": "Instance name"
+        "label": "Instance name prefix"
       }
     },
     {
       "name": "vibe_bucket_name",
       "type": "string",
-      "description": "Name of your vibe bucket.",
+      "description": "Prefix for your vibe bucket name.",
       "default": "vibe-bucket",
       "ui_hints": {
         "group": "Setup",
-        "label": "Bucket name"
+        "label": "Bucket name prefix"
       }
     },
     {
-      "name": "html_input",
+      "name": "vibe_html_input_base64",
       "type": "string",
-      "description": "Paste your HTML here — it’ll be auto-escaped and uploaded.",
+      "description": "Your HTML, Base64 encoded. Use an online tool to encode your file first.",
       "ui_hints": {
         "group": "Vibe Code",
-        "label": "HTML input",
-        "placeholder": "<!DOCTYPE html>..."
+        "label": "HTML (Base64 Encoded)",
+        "placeholder": "PCFET0NUWVBFIGh0bWw+PGh0bWw+..."
       },
       "required": false
     }
