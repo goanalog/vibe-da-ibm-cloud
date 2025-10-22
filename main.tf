@@ -3,7 +3,6 @@
 #############################
 provider "ibm" {}
 
-# Internal constants (not exposed to Catalog)
 locals {
   region               = "us-south"
   resource_group_name  = "Default"

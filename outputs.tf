@@ -11,7 +11,6 @@ output "vibe_bucket_url" {
   value       = "https://${ibm_cos_bucket.vibe_bucket.bucket_name}.s3.${local.region}.cloud-object-storage.appdomain.cloud/"
 }
 
-# IBM Cloud Projects: promote this output as the primary link
 output "primaryoutputlink" {
   description = "Primary output link for IBM Cloud Projects."
   value       = "https://${ibm_cos_bucket.vibe_bucket.bucket_name}.s3.${local.region}.cloud-object-storage.appdomain.cloud/${local.website_key}"
