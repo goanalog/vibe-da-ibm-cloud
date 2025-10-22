@@ -1,13 +1,26 @@
-provider "ibm" {
-  region = var.region
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#  Vibe Manifestation Engine v1.1
+#  Terraform logic to manifest a user’s pasted HTML (or default sample app)
+#  into an IBM Cloud Object Storage bucket with base64 auto-handling.
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+terraform {
+  required_providers {
+    ibm = {
+      source  = "IBM-Cloud/ibm"
+      version = ">= 1.62.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = ">= 3.0"
+    }
+  }
 }
 
-resource "ibm_resource_instance" "vibe_instance" {
-  name             = var.vibe_instance_name
-  service          = "cloud-object-storage"
-  plan             = var.cos_plan # <-- Fixed (was hardcoded)
-  location         = var.region
-  resource_group   = var.resource_group # <-- Added
+provider "ibm" {}
+
+data "ibm_resource_group" "group" {
+  name = "Default"
 }
 
 resource "random_string" "suffix" {
@@ -16,33 +29,50 @@ resource "random_string" "suffix" {
   special = false
 }
 
+resource "ibm_resource_instance" "vibe_instance" {
+  name              = "vibe-instance-${random_string.suffix.result}"
+  service           = "cloud-object-storage"
+  plan              = "lite"
+  location          = var.region
+  resource_group_id = data.ibm_resource_group.group.id
+}
+
 resource "ibm_cos_bucket" "vibe_bucket" {
-  bucket_name          = "${var.vibe_bucket_name}-${random_string.suffix.result}"
+  bucket_name         = "vibe-bucket-${random_string.suffix.result}"
   resource_instance_id = ibm_resource_instance.vibe_instance.id
-  region_location      = var.region
   storage_class        = "standard"
+  region_location      = var.region
   force_delete         = true
 }
 
 locals {
-  escaped_html = replace(
-    replace(
-      replace(
-        replace(
-          replace(trimspace(var.html_input), "&", "&amp;"),
-        "<", "&lt;"),
-      ">", "&gt;"),
-    "\"", "&quot;"),
-  "'", "&#39;")
+  html_content = (
+    length(trimspace(var.vibe_html_input)) > 0 ?
+    var.vibe_html_input :
+    file("${path.module}/index.html")
+  )
+
+  html_base64 = base64encode(local.html_content)
 }
 
-resource "local_file" "html_file" {
-  filename = "${path.module}/rendered_index.html"
-  content  = var.html_input != "" ? local.escaped_html : file("${path.module}/index.html")
+resource "ibm_cos_object" "vibe_app" {
+  bucket          = ibm_cos_bucket.vibe_bucket.bucket_name
+  key             = "index.html"
+  content_base64  = local.html_base64
+  content_type    = "text/html"
 }
 
-resource "ibm_cos_bucket_object" "html" {
-  bucket  = ibm_cos_bucket.vibe_bucket.bucket_name
-  key     = "index.html"
-  content = file(local_file.html_file.filename)
+output "vibe_url" {
+  description = "Your live Vibe App URL (public endpoint)"
+  value       = "https://${ibm_cos_bucket.vibe_bucket.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud/index.html"
+}
+
+output "vibe_bucket_url" {
+  description = "Raw COS bucket URL"
+  value       = "https://${ibm_cos_bucket.vibe_bucket.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud/"
+}
+
+output "primaryoutputlink" {
+  description = "Primary output link for IBM Cloud Projects"
+  value       = "https://${ibm_cos_bucket.vibe_bucket.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud/index.html"
 }
