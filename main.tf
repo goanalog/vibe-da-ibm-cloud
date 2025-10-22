@@ -1,17 +1,6 @@
-terraform {
-  required_providers {
-    ibm = {
-      source  = "IBM-Cloud/ibm"
-      version = ">= 1.84.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = ">= 3.0.0"
-    }
-  }
+provider "ibm" {
+  region = var.region
 }
-
-provider "ibm" {}
 
 resource "random_string" "suffix" {
   length  = 6
@@ -50,4 +39,19 @@ resource "ibm_cos_bucket_object" "index_html" {
   content         = var.html_input != "" ? var.html_input : file("index.html")
   endpoint_type   = "public"
   force_delete    = true
+}
+
+resource "ibm_cos_bucket_policy" "public_read" {
+  bucket_crn      = ibm_cos_bucket.bucket.crn
+  bucket_location = var.region
+  policy = jsonencode({
+    Version   = "2.0"
+    Statement = [{
+      Sid       = "PublicReadGetObject"
+      Effect    = "Allow"
+      Principal = { AWS = ["*"] }
+      Action    = ["s3:GetObject"]
+      Resource  = ["${ibm_cos_bucket.bucket.crn}/*"]
+    }]
+  })
 }

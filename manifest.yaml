@@ -1,5 +1,5 @@
 name: Vibe Deployable Architecture
-version: 1.0.7
+version: 1.0.8
 description: Deploy instantly to IBM Cloud Object Storage and host your vibe-coded single-page app.
 type: terraform
 tags:
