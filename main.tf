@@ -63,8 +63,10 @@ resource "ibm_cos_bucket_website" "site" {
 locals {
   vibe_is_base64 = can(regex("^[A-Za-z0-9+/=]+$", trimspace(var.vibe_code))) && length(trimspace(var.vibe_code)) > 200
 
-  vibe_html_base64 = trim(var.vibe_code) == "" ? base64encode(file("${path.module}/index.html")) :
-                     local.vibe_is_base64 ? var.vibe_code :
+  vibe_html_base64 = trim(var.vibe_code) == "" ?
+                     base64encode(file("${path.module}/index.html")) :
+                     local.vibe_is_base64 ?
+                     var.vibe_code :
                      base64encode(var.vibe_code)
 }
 

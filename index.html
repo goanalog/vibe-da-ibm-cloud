@@ -1,28 +1,328 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Vibe IDE — Hello</title>
-  <style>
-    :root{--bg1:#0a0018;--bg2:#1a0036;--glow:#ff2bd6;--glow2:#21f3ff;--text:#f6f7fb}
-    *{box-sizing:border-box} html,body{height:100%}
-    body{margin:0;color:var(--text);font-family:system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, 'Helvetica Neue', Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
-      background:linear-gradient(135deg,var(--bg1),var(--bg2));background-size:300% 300%;
-      animation:shift 20s ease-in-out infinite alternate;display:grid;place-items:center;padding:24px}
-    @keyframes shift{from{background-position:0 0}to{background-position:100% 100%}}
-    .card{max-width:720px;width:100%;background:rgba(255,255,255,0.06);backdrop-filter:blur(8px);
-      border:1px solid rgba(255,255,255,0.15);border-radius:20px;box-shadow:0 10px 40px rgba(0,0,0,.35);padding:28px}
-    h1{margin:0 0 12px 0;font-size:28px}
-    p{line-height:1.6}
-    code{background:rgba(0,0,0,.35);padding:2px 6px;border-radius:6px}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vibe Landing Zone — Deluxe Final (Fixed)</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link id="favicon" rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=" />
+<style>
+  :root { --hue: 220; --fg: #e5e7eb; --bg: #000; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--fg); overflow: hidden; font-family: "IBM Plex Sans", system-ui; }
+
+  /* Layers */
+  #bg, #particles { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #bg     { z-index: 0; }
+  #particles { z-index: 1; pointer-events: none; }
+
+  /* Editor */
+  #editor { position: fixed; inset: 7vh 6vw auto 6vw; min-height: 40vh; z-index: 4; overflow: hidden;
+    background: rgba(10,12,18,0.75); border: 1px solid rgba(147,197,253,0.15);
+    border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 40px hsla(var(--hue),90%,60%,0.22) inset;
+    transition: opacity .35s ease, transform .35s ease; }
+  #editor-title { display: flex; align-items: center; gap: .6rem; padding: .8rem 1rem; font-weight: 600;
+    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0)); border-bottom: 1px solid rgba(147,197,253,0.15); }
+  .dot { width: .7rem; height: .7rem; border-radius: 50%; }
+  #code { width: 100%; min-height: 36vh; padding: 1rem 1.2rem; outline: none; border: 0; resize: vertical;
+    background: #0b0d14; color: #c7d2fe; font-family: "IBM Plex Mono", monospace; font-size: .92rem; line-height: 1.4; }
+  #actions { display: flex; justify-content: flex-end; padding: .8rem 1rem 1rem; }
+  .btn { appearance: none; border: none; outline: none; cursor: pointer; border-radius: 9999px;
+    padding: .7rem 1.3rem; color: white; font-weight: 800; letter-spacing: .02em;
+    background: linear-gradient(135deg, hsl(var(--hue),90%,60%), hsl(calc(var(--hue)+60),80%,55%));
+    box-shadow: 0 0 20px hsla(var(--hue),90%,60%,.4), 0 0 40px hsla(var(--hue),90%,60%,.2);
+    transition: all .25s ease, transform .2s ease; }
+  .btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+  /* Preview */
+  #preview { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; z-index: 3; }
+  #remix { position: fixed; bottom: 28vh; right: 2.8vw; z-index: 10; display: none; }
+
+  /* Orb + Dock */
+  #orb { position: fixed; right: 22px; bottom: 22px; z-index: 5; transition: opacity .3s ease, transform .3s ease; }
+  #orb.hidden { opacity: 0; pointer-events: none; transform: scale(0.98); }
+  #orbCore { width: 128px; height: 128px; border-radius: 50%; display: flex; flex-direction: column; gap: .35rem; align-items: center; justify-content: center;
+    background: radial-gradient(120px 120px at 50% 30%, hsla(var(--hue),70%,60%,.28), rgba(15,18,26,.65));
+    border: 1px solid hsla(var(--hue),80%,60%,.4);
+    box-shadow: 0 0 40px hsla(var(--hue),80%,60%,.35), inset 0 0 40px hsla(var(--hue),80%,60%,.12); }
+  #orbLabel { font-size: .68rem; opacity: .85; letter-spacing: .08em; text-transform: uppercase; }
+  #hue { width: 92px; }
+
+  #dock { position: fixed; right: 22px; bottom: 164px; display: grid; gap: 10px; padding: 10px 12px; border-radius: 14px;
+    background: rgba(8,10,16,0.92); border: 1px solid rgba(147,197,253,0.18);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 28px hsla(var(--hue),90%,60%,.22) inset; z-index: 6; }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .emo { width: 20px; text-align: center; }
+  .slider { appearance: none; height: 8px; width: 160px; background: rgba(147,197,253,0.18); border-radius: 9999px; }
+  .slider::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; border-radius: 50%;
+    background: hsl(var(--hue),90%,60%); border: 2px solid rgba(20,20,30,0.9); box-shadow: 0 0 12px hsla(var(--hue),90%,60%,.6); }
+  .toggle { appearance: none; width: 42px; height: 26px; border-radius: 9999px; position: relative;
+    background: rgba(147,197,253,0.18); border: 1px solid rgba(147,197,253,0.25); cursor: pointer; }
+  .toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%;
+    background: hsl(var(--hue),90%,60%); box-shadow: 0 0 12px hsla(var(--hue),90%,60%,.6); transition: transform .2s ease; }
+  .toggle[aria-pressed="true"]::after { transform: translateX(16px); }
+
+  /* Hints & Project */
+  #hint { position: fixed; bottom: 10vh; right: 3vw; z-index: 12; opacity: 0; pointer-events: none; transition: opacity 1s ease;
+    background: rgba(12,14,20,0.9); color: #c7d2fe; padding: .7rem 1rem; border-radius: 10px; font-size: .9rem; box-shadow: 0 0 15px rgba(15,98,254,.3); }
+  #projectToast { position: fixed; bottom: 4.5rem; left: 1.5rem; z-index: 12; display: none;
+    background: rgba(10,12,18,0.85); border: 1px solid hsla(var(--hue),90%,60%,.4); color: #e0e7ff; font-size: .85rem; line-height: 1.4;
+    padding: .75rem 1rem; border-radius: 12px; box-shadow: 0 0 25px hsla(var(--hue),90%,60%,.3); }
+  @keyframes fadeUp { 0% { opacity: 0; transform: translateY(4px); } 100% { opacity: 1; transform: translateY(0); } }
+  @keyframes shimmer { 0%,100%{ box-shadow: 0 0 20px hsla(var(--hue),90%,60%,.5);} 50%{ box-shadow: 0 0 30px hsla(var(--hue),90%,65%,.8);} }
+
+  #projectLink { position: fixed; bottom: 1.25rem; left: 1.25rem; z-index: 11;
+    font-size: .85rem; color: #93c5fd; background: rgba(0,0,0,0.45);
+    border: 1px solid rgba(147,197,253,0.25); border-radius: 9999px; padding: .4rem .8rem; text-decoration: none; }
+
+  /* IBM Cloud CTA */
+  #ibmCta { position: fixed; bottom: .75rem; left: 1.25rem; z-index: 11; display: none;
+    font-size: .85rem; color: #c7d2fe; background: rgba(10,12,18,0.85);
+    border: 1px solid hsla(var(--hue),90%,60%,.35); border-radius: 10px; padding: .5rem .9rem;
+    box-shadow: 0 0 18px hsla(var(--hue),90%,60%,.25); }
+  #ibmCta a { color: hsl(var(--hue),90%,70%); text-decoration: underline; }
+  #ibmCta a:hover { text-decoration: none; color: hsl(var(--hue),90%,80%); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
 </head>
 <body>
-  <div class="card">
-    <h1>✨ Vibe IDE sample</h1>
-    <p>This file lives in your bucket and is served as <code>index.html</code>. Paste your own HTML into the <em>vibe_code</em> input and redeploy to overwrite this page.</p>
-    <p>Have fun and ship vibes.</p>
+
+<canvas id="bg" aria-hidden="true"></canvas>
+<canvas id="particles" aria-hidden="true"></canvas>
+
+<iframe id="preview" class="hidden" title="Vibe Preview"></iframe>
+
+<section id="editor" aria-label="Vibe code editor">
+  <div id="editor-title">
+    <span class="dot" style="background:#ff5f56" aria-hidden="true"></span>
+    <span class="dot" style="background:#ffbd2f" aria-hidden="true"></span>
+    <span class="dot" style="background:#27c93f" aria-hidden="true"></span>
+    <span class="ml-2 opacity-80 text-sm select-none">/vibe-code.html</span>
   </div>
+  <textarea id="code" spellcheck="false" aria-label="Edit vibe HTML code" placeholder="Paste your vibe code here..."></textarea>
+  <div id="actions">
+    <button id="manifest" class="btn" type="button" aria-label="Manifest your vibe">Manifest ✨</button>
+  </div>
+</section>
+
+<div id="orb" role="group" aria-label="Vibe controls">
+  <div id="orbCore">
+    <div id="orbLabel" aria-hidden="true">Vibe</div>
+    <input id="hue" class="slider" type="range" min="0" max="360" value="220" aria-label="Hue slider" />
+  </div>
+</div>
+
+<div id="dock" role="group" aria-label="Mini control dock">
+  <div class="row"><div class="emo" title="Hue">🌈</div><input id="hue2" class="slider" type="range" min="0" max="360" value="220" aria-label="Hue slider duplicate" /></div>
+  <div class="row"><div class="emo" title="Spark">⚡</div><input id="spark" class="slider" type="range" min="1" max="12" value="6" aria-label="Particle intensity" /></div>
+  <div class="row"><div class="emo" title="Pulse">💫</div><button id="pulse" class="toggle" aria-pressed="false" aria-label="Toggle pulsing"></button></div>
+  <div class="row"><div class="emo" title="Zen">🧘</div><button id="zen" class="toggle" aria-pressed="false" aria-label="Toggle zen mode"></button></div>
+</div>
+
+<button id="remix" class="btn" aria-label="Remix your vibe (return to editor)">Remix 🎨</button>
+<div id="hint" role="status" aria-live="polite">💡 Press <b>Remix 🎨</b> (bottom-right) to edit your vibe again</div>
+
+<div id="projectToast" role="status" aria-live="polite">
+  🔮 This vibe was manifested through an IBM Cloud Project.<br/>
+  You can overwrite it forever by updating the “vibe_code” variable in your project inputs.
+</div>
+
+<a id="projectLink" href="${project_url}" target="_blank" class="hidden" aria-label="Open IBM Cloud Project">☁️ View IBM Cloud Project</a>
+
+<!-- IBM Cloud CTA -->
+<section id="ibmCta" role="complementary" aria-label="Explore more Deployable Architectures from IBM Cloud">
+  💡 See what other vibes IBM Cloud can manifest —
+  <a href="https://www.ibm.com/architectures/deployable-architectures" target="_blank" rel="noopener noreferrer">
+    Explore more Deployable Architectures →
+  </a>
+</section>
+<!-- /IBM Cloud CTA -->
+
+<script>
+  /* ===== Dynamic favicon (orb) ===== */
+  const fav = document.getElementById('favicon');
+  const favCanvas = document.createElement('canvas'); favCanvas.width = favCanvas.height = 64;
+  const fctx = favCanvas.getContext('2d');
+  function setFavicon(h){
+    fctx.clearRect(0,0,64,64);
+    const r = fctx.createRadialGradient(32,28,6, 32,32,28);
+    r.addColorStop(0, `hsl(${h},95%,70%)`);
+    r.addColorStop(1, `hsl(${(h+60)%360},80%,45%)`);
+    fctx.fillStyle = r; fctx.beginPath(); fctx.arc(32,32,26,0,Math.PI*2); fctx.fill();
+    fav.href = favCanvas.toDataURL('image/png');
+  }
+
+  /* ===== Background gradient + particles ===== */
+  const bg = document.getElementById('bg'), btx = bg.getContext('2d');
+  const pc = document.getElementById('particles'), ptx = pc.getContext('2d');
+  let W = bg.width = pc.width = innerWidth, H = bg.height = pc.height = innerHeight;
+  addEventListener('resize', () => { W = bg.width = pc.width = innerWidth; H = bg.height = pc.height = innerHeight; });
+
+  let baseHue = 220, t = 0, pulseOn = false, zenOn = false, sparkAmt = 6;
+  function drawBG(){
+    t += 0.0025 * (pulseOn ? 2.2 : 1);
+    const h1 = (baseHue + Math.sin(t) * (pulseOn ? 55 : 40) + 360) % 360;
+    const h2 = (h1 + 120) % 360;
+    const g = btx.createLinearGradient(0,0,W,H);
+    g.addColorStop(0, `hsl(${h1},75%,${zenOn?48:55}%)`);
+    g.addColorStop(1, `hsl(${h2},70%,${zenOn?36:40}%)`);
+    btx.fillStyle = g; btx.fillRect(0,0,W,H);
+    requestAnimationFrame(drawBG);
+  } drawBG();
+
+  const particles = [];
+  function drawParticles(){
+    ptx.clearRect(0,0,W,H);
+    for(let i=particles.length-1;i>=0;i--){
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy; p.life -= p.decay;
+      if(p.life <= 0){ particles.splice(i,1); continue; }
+      ptx.globalAlpha = Math.max(p.life * (zenOn ? 0.5 : 0.85), 0);
+      const rd = ptx.createRadialGradient(p.x,p.y,0, p.x,p.y,p.size*6);
+      rd.addColorStop(0, `hsla(${p.hue},90%,60%,${0.9*p.life})`);
+      rd.addColorStop(1, `hsla(${p.hue},90%,60%,0)`);
+      ptx.fillStyle = rd; ptx.beginPath(); ptx.arc(p.x,p.y,p.size*4,0,Math.PI*2); ptx.fill();
+    }
+    requestAnimationFrame(drawParticles);
+  } drawParticles();
+
+  addEventListener('mousemove', e => {
+    for(let i=0;i<sparkAmt;i++){
+      if(particles.length > 360) particles.shift();
+      const ang = Math.random()*Math.PI*2, spd = .4 + Math.random()*1.6 * (zenOn ? .7 : 1);
+      particles.push({ x:e.clientX, y:e.clientY, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd,
+        life:1, decay:.012+Math.random()*.02, size:1+Math.random()*2, hue:(baseHue+Math.random()*40)%360 });
+    }
+  }, {passive:true});
+
+  /* ===== Controls wiring ===== */
+  const hue = document.getElementById('hue');
+  const hue2 = document.getElementById('hue2');
+  const spark = document.getElementById('spark');
+  const pulse = document.getElementById('pulse');
+  const zen = document.getElementById('zen');
+  function setHue(h){ baseHue = h % 360; document.documentElement.style.setProperty('--hue', baseHue); setFavicon(baseHue); }
+  hue.addEventListener('input', ()=>{ setHue(parseInt(hue.value,10)); hue2.value = hue.value; });
+  hue2.addEventListener('input', ()=>{ setHue(parseInt(hue2.value,10)); hue.value = hue2.value; });
+  spark.addEventListener('input', ()=>{ sparkAmt = parseInt(spark.value,10); });
+  function toggle(btn, flag){ btn.setAttribute('aria-pressed', flag ? 'true':'false'); }
+  pulse.addEventListener('click', ()=>{ pulseOn = !pulseOn; toggle(pulse, pulseOn); });
+  zen.addEventListener('click', ()=>{ zenOn = !zenOn; toggle(zen, zenOn); });
+
+  // init hue & favicon
+  setHue(parseInt(hue.value,10));
+
+  /* ===== Project awareness + CTA ===== */
+  const projectLink = document.getElementById('projectLink');
+  const projectToast = document.getElementById('projectToast');
+  function showProjectToast(){
+    projectToast.style.display = 'block';
+    projectToast.style.animation = 'fadeUp .6s ease forwards, shimmer 3s ease-in-out infinite';
+    setTimeout(()=>{ projectToast.style.opacity = 1; }, 50);
+    setTimeout(()=>{ projectToast.style.opacity = 0; }, 8000);
+  }
+  if(projectLink.getAttribute('href') && projectLink.getAttribute('href').startsWith('http')){
+    // expose project link and initial toast
+    projectLink.style.display = 'inline-block';
+    setTimeout(showProjectToast, 1200);
+  } else {
+    projectLink.style.display = 'none';
+  }
+
+  // CTA: reveal on interaction in editor view; reset on remix
+  const ibmCta = document.getElementById('ibmCta');
+  let ctaShown = false;
+  function revealCtaOnce(){
+    if(!ctaShown){
+      ibmCta.style.display = 'block';
+      ctaShown = true;
+    }
+  }
+  function armCtaReveal(){
+    ctaShown = false;
+    ibmCta.style.display = 'none';
+    window.addEventListener('click', revealCtaOnce, { once:true });
+    window.addEventListener('keydown', revealCtaOnce, { once:true });
+    window.addEventListener('mousemove', revealCtaOnce, { once:true });
+  }
+  armCtaReveal();
+
+  /* ===== Manifest / Remix ===== */
+  const editor = document.getElementById('editor');
+  const code = document.getElementById('code');
+  const manifest = document.getElementById('manifest');
+  const preview = document.getElementById('preview');
+  const remix = document.getElementById('remix');
+  const orb = document.getElementById('orb');
+  const hint = document.getElementById('hint');
+
+  // default sample
+  function sampleHTML(h){
+    return `<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
+    <title>Vibe Sample</title>
+    <style>
+      :root{ --hue:${h}; }
+      body{ font-family: IBM Plex Sans, system-ui; background:#0b0d14; color:white; text-align:center; margin-top:20vh; }
+      .vibe-btn{ appearance:none; border:none; outline:none; cursor:pointer; padding:12px 26px; border-radius:9999px; font-weight:800;
+        background: linear-gradient(135deg, hsl(var(--hue),90%,60%), hsl(calc(var(--hue)+60),80%,55%));
+        box-shadow: 0 0 25px hsla(var(--hue),90%,60%,.5); color:white; transition: transform .2s ease, filter .2s ease; }
+      .vibe-btn:hover{ transform: translateY(-2px) scale(1.03); filter: brightness(1.1); }
+      h1{ margin-bottom: 8px; } p{ opacity:.9 }
+    </style>
+    </head>
+    <body>
+      <h1>🚀 Your vibe just deployed</h1>
+      <p>Edit your code in the Vibe editor and Manifest again to remix live.</p>
+      <button class="vibe-btn" onclick="alert('Vibe acknowledged ✨')">Acknowledge Vibe</button>
+    </body></html>`;
+  }
+  code.value = sampleHTML(baseHue);
+
+  function doManifest(){
+    // write into iframe (same-origin)
+    const doc = preview.contentWindow.document;
+    doc.open(); doc.write(code.value || sampleHTML(baseHue)); doc.close();
+
+    preview.classList.remove('hidden');
+    remix.style.display = 'inline-block';
+
+    editor.style.opacity = 0;
+    orb.classList.add('hidden');
+
+    // hint
+    hint.style.opacity = 1;
+    setTimeout(()=>{ hint.style.opacity = 0; }, 4000);
+
+    // project toast again (if applicable)
+    if(projectLink.style.display !== 'none'){
+      setTimeout(showProjectToast, 1500);
+    }
+  }
+
+  function doRemix(){
+    preview.classList.add('hidden');
+    remix.style.display = 'none';
+
+    editor.style.opacity = 1;
+    orb.classList.remove('hidden');
+
+    // re-arm CTA for this editor session
+    armCtaReveal();
+  }
+
+  manifest.addEventListener('click', doManifest);
+  remix.addEventListener('click', doRemix);
+
+  // Keyboard shortcut: Cmd/Ctrl + Enter toggles
+  addEventListener('keydown', (e)=>{
+    if((e.metaKey || e.ctrlKey) && e.key === 'Enter'){
+      if(preview.classList.contains('hidden')) doManifest(); else doRemix();
+    }
+  });
+</script>
 </body>
 </html>
