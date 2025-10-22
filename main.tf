@@ -1,16 +1,3 @@
-terraform {
-  required_providers {
-    ibm = {
-      source  = "IBM-Cloud/ibm"
-      version = ">= 1.84.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = ">= 3.0.0"
-    }
-  }
-}
-
 provider "ibm" {}
 
 resource "random_string" "suffix" {
@@ -50,4 +37,20 @@ resource "ibm_cos_bucket_object" "index_html" {
   content         = var.html_input != "" ? var.html_input : file("index.html")
   endpoint_type   = "public"
   force_delete    = true
+}
+
+data "ibm_iam_access_group" "public_access" {
+  access_group_name = "Public Access"
+}
+
+resource "ibm_iam_access_group_policy" "public_read_policy" {
+  access_group_id = data.ibm_iam_access_group.public_access.groups[0].id
+  roles           = ["Object Reader"]
+
+  resources {
+    service              = "cloud-object-storage"
+    resource_instance_id = ibm_resource_instance.cos_instance.guid
+    resource_type        = "bucket"
+    resource             = ibm_cos_bucket.bucket.bucket_name
+  }
 }
