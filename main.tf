@@ -1,4 +1,4 @@
-# Vibe Manifestation Engine v1.3 — Catalog-Visible Edition
+# Vibe Manifestation Engine v1.4 — JSON Schema Final Edition
 terraform {
   required_version = ">= 1.0.0"
   required_providers {
@@ -39,6 +39,7 @@ resource "ibm_cos_object" "vibe_app" {
   content_base64 = local.html_base64
   content_type = "text/html"
 }
+# Ensure all variables are visible to IBM Catalog
 resource "null_resource" "expose_vars" {
   triggers = {
     vibe_html_input = var.vibe_html_input

@@ -1,5 +1,5 @@
 {
-  "version": "0.1.2",
+  "version": "0.1.4",
   "name": "vibe-da-ibm-cloud",
   "display_name": "Vibe Deployable Architecture",
   "description": "A zero-cost, paste-or-upload web app that manifests live via IBM Cloud Object Storage.",

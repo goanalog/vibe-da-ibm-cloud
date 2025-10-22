@@ -1,8 +1,7 @@
-version: 0.1.2
+version: 0.1.4
 name: vibe-da-ibm-cloud
 description: >
-  The Free Vibe Bucket — a zero-cost cosmic cache where anyone can paste HTML
-  or upload a file to manifest a live web app on IBM Cloud Object Storage (Lite).
+  The Free Vibe Bucket — paste or upload HTML to manifest a live web app on IBM Cloud Object Storage (Lite).
 primary_output: primaryoutputlink
 authors:
   - name: "Brendan Fitzpatrick"
