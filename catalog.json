@@ -22,13 +22,13 @@
       }
     },
     {
-      "name": "resource_group_name",
+      "name": "resource_group",
       "type": "string",
-      "description": "IBM Cloud resource group name (use 'Default' if on a trial).",
+      "description": "IBM Cloud resource group (use 'Default' if on a trial).",
       "default": "Default",
       "ui_hints": {
         "group": "Setup",
-        "label": "Resource group name"
+        "label": "Resource group"
       }
     },
     {
@@ -49,21 +49,21 @@
     {
       "name": "vibe_instance_name",
       "type": "string",
-      "description": "Prefix for your Object Storage instance name.",
+      "description": "Name of your Object Storage instance.",
       "default": "vibe-instance",
       "ui_hints": {
         "group": "Setup",
-        "label": "Instance name prefix"
+        "label": "Instance name"
       }
     },
     {
       "name": "vibe_bucket_name",
       "type": "string",
-      "description": "Prefix for your vibe bucket name.",
+      "description": "Name of your vibe bucket.",
       "default": "vibe-bucket",
       "ui_hints": {
         "group": "Setup",
-        "label": "Bucket name prefix"
+        "label": "Bucket name"
       }
     },
     {

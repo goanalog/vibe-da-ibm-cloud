@@ -1,5 +1,5 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#  Vibe Manifestation Engine v1.1
+#  Vibe Manifestation Engine v1.2
 #  Terraform logic to manifest a user’s pasted HTML (or default sample app)
 #  into an IBM Cloud Object Storage bucket with base64 auto-handling.
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -7,7 +7,7 @@
 provider "ibm" {}
 
 data "ibm_resource_group" "group" {
-  name = var.resource_group_name
+  name = var.resource_group
 }
 
 resource "random_string" "suffix" {

@@ -5,7 +5,7 @@ description: >
   into the cloud and watch it beam across the internet as a live web app.
   All powered by IBM Cloud Object Storage (Lite).
 
-primary_output: primaryoutputlink
+primary_output: vibe_url
 
 authors:
   - name: "Brendan Fitzpatrick"
@@ -23,25 +23,25 @@ inputs:
     required: false
     description: "IBM Cloud region for your COS instance."
     default: us-south
-  - name: resource_group_name
+  - name: resource_group
     type: string
     required: false
-    description: "IBM Cloud resource group name."
+    description: "IBM Cloud resource group (use 'Default' if on a trial)."
     default: "Default"
   - name: cos_plan
     type: string
     required: false
-    description: "Cloud Object Storage plan."
+    description: "Cloud Object Storage plan (Lite is free)."
     default: "lite"
   - name: vibe_instance_name
     type: string
     required: false
-    description: "Prefix for your Object Storage instance name."
+    description: "Name of your Object Storage instance."
     default: "vibe-instance"
   - name: vibe_bucket_name
     type: string
     required: false
-    description: "Prefix for your Object Storage bucket name."
+    description: "Name of your vibe bucket."
     default: "vibe-bucket"
 
 outputs:
@@ -51,6 +51,3 @@ outputs:
   - name: vibe_bucket_url
     type: string
     description: "Raw COS bucket listing URL."
-  - name: primaryoutputlink
-    type: string
-    description: "Primary output link promoted for IBM Cloud Projects."
