@@ -1,5 +1,5 @@
-variable "vibe_code" {
+variable "vibe_code_b64" {
   type        = string
-  description = "Paste your HTML code here. This replaces the sample index.html when you deploy."
-  default     = "Paste your HTML code here"
+  description = "Base64-encoded HTML code to deploy. Paste your HTML — it will be encoded automatically and decoded by Terraform."
+  default     = ""
 }
