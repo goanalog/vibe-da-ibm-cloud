@@ -1,9 +1,8 @@
-schema_version: "1.0.0"
+schema_version: "1.0"
 name: "vibe-da-ibm-cloud"
 type: "terraform"
 variables:
   - name: vibe_code
     type: string
-    description: Paste your HTML code here. This replaces the sample index.html when you deploy.
+    description: "Paste your HTML code here. This replaces the sample index.html when you deploy."
     default: "Paste your HTML code here"
-    input_type: text
