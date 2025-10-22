@@ -1,56 +1,56 @@
-# Local reference to surface variable for Catalog Management
-locals {
-  _catalog_var_ref = var.vibe_code
+# Configure the IBM Cloud Provider
+terraform {
+  required_providers {
+    ibm = {
+      source  = "IBM-Cloud/ibm"
+      version = ">= 1.60.0" # Use a recent version
+    }
+  }
 }
 
-# Vibe Manifestation Engine v1.4 — JSON Schema Final Edition
-
-provider "ibm" {}
-
-data "ibm_resource_group" "group" { name = "Default" }
-
-resource "random_string" "suffix" {
-  length  = 6
-  upper   = false
-  special = false
-}
-
-resource "ibm_resource_instance" "vibe_instance" {
-  name              = "vibe-instance-${random_string.suffix.result}"
+# Create the COS (Cloud Object Storage) instance
+# This uses the "lite" plan, which is free, as described in the Readme.
+resource "ibm_resource_instance" "cos_instance" {
+  name              = var.cos_instance_name
   service           = "cloud-object-storage"
   plan              = "lite"
-  location          = var.region
-  resource_group_id = data.ibm_resource_group.group.id
+  location          = "global"
+  resource_group_id = var.resource_group_id
 }
 
-resource "ibm_cos_bucket" "vibe_bucket" {
-  bucket_name          = "vibe-bucket-${random_string.suffix.result}"
-  resource_instance_id = ibm_resource_instance.vibe_instance.id
-  storage_class        = "standard"
+# Create the COS bucket
+# Note: Bucket names must be globally unique.
+resource "ibm_cos_bucket" "cos_bucket" {
+  bucket_name          = var.bucket_name
+  resource_instance_id = ibm_resource_instance.cos_instance.id
   region_location      = var.region
-  force_delete         = true
-}
+  storage_class        = "standard"
 
-locals {
-  html_source = (
-    length(trimspace(var.vibe_html_input)) > 0 ?
-      var.vibe_html_input :
-      file("${path.module}/index.html")
-  )
-  html_base64 = base64encode(local.html_source)
-}
-
-resource "ibm_cos_object" "vibe_app" {
-  bucket         = ibm_cos_bucket.vibe_bucket.bucket_name
-  key            = "index.html"
-  content_base64 = local.html_base64
-  content_type   = "text/html"
-}
-
-# Ensure all variables are visible to IBM Catalog
-resource "null_resource" "expose_vars" {
-  triggers = {
-    vibe_html_input = var.vibe_html_input
-    region          = var.region
+  # This is the magic that makes it a public website
+  website_configuration {
+    index_document = "index.html"
   }
+}
+
+# Set the public access policy for the bucket
+resource "ibm_cos_bucket_public_access" "public_access" {
+  bucket_name = ibm_cos_bucket.cos_bucket.bucket_name
+  public_access = "public-read"
+}
+
+# Determine which HTML content to use
+locals {
+  # If the user provides HTML, use it. Otherwise, use the sample app file.
+  html_to_deploy = var.vibe_html_content != "" ? var.vibe_html_content : file("${path.module}/index.html")
+}
+
+# Upload the index.html file to the bucket
+resource "ibm_cos_bucket_object" "index_object" {
+  bucket_name    = ibm_cos_bucket.cos_bucket.bucket_name
+  key            = "index.html"
+  content_type   = "text/html"
+  content        = local.html_to_deploy
+  
+  # Ensure public access is set before uploading
+  depends_on = [ibm_cos_bucket_public_access.public_access]
 }
