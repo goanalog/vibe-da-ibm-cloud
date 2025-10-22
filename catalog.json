@@ -4,20 +4,12 @@
   "display_name": "Vibe Deployable Architecture (IBM Cloud)",
   "version": "0.2.2",
   "type": "terraform",
-  "description": "Paste HTML, deploy to IBM Cloud Object Storage (Lite) with public website hosting \u2014 instantly.",
+  "description": "Paste HTML, deploy to IBM Cloud Object Storage (Lite) with public website hosting — instantly.",
   "tags": [
     "ibm-cloud",
     "object-storage",
     "static-website",
     "vibe"
-  ],
-  "variables": [
-    {
-      "name": "vibe_code",
-      "type": "string",
-      "description": "Paste your HTML code here. This replaces the sample index.html when you deploy.",
-      "default": "Paste your HTML code here"
-    }
   ],
   "variable_metadata": [
     {
