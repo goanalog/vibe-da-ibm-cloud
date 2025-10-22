@@ -1,8 +1,8 @@
 {
   "id": "vibe-da-ibm-cloud",
-  "version": "0.1.0",
-  "displayName": "Vibe \u2014 Deployable Architecture",
-  "description": "Instantly deploy and host your vibe-coded HTML app on IBM Cloud Object Storage.",
+  "version": "1.0.7",
+  "displayName": "Vibe Deployable Architecture",
+  "description": "Deploy instantly to IBM Cloud Object Storage and host your vibe-coded single-page app.",
   "type": "deployable_architecture",
   "deliveryMethod": "terraform",
   "tags": [
@@ -21,11 +21,11 @@
   "outputs": [
     {
       "name": "vibe_url",
-      "description": "Public URL for your vibe app."
+      "description": "Public URL for your deployed vibe-coded app — your key output."
     },
     {
       "name": "vibe_bucket_url",
-      "description": "Direct bucket URL."
+      "description": "Direct Cloud Object Storage bucket URL (advanced access)."
     }
   ],
   "icons": {

@@ -1,15 +1,3 @@
-Here's the updated version of your `main.tf` file.
-
-I've made two key changes to fix the errors from your log:
-
-1.  **Removed `acl`:** I deleted the `acl = "public-read"` line from the `ibm_cos_bucket_object` resource, as it's no longer a supported argument.
-2.  **Replaced `ibm_cos_bucket_policy`:** I removed the entire `ibm_cos_bucket_policy` resource (which doesn't exist) and replaced it with the correct `ibm_cos_bucket_public_access` resource to make the bucket public.
-
------
-
-### Updated `main.tf`
-
-```terraform
 ###############################################################
 # Vibe Deployable Architecture — Main Terraform Configuration #
 # Deploys an IBM Cloud Object Storage bucket and hosts your
@@ -95,4 +83,3 @@ resource "ibm_iam_access_group_policy" "public_read_policy" {
 ###############################################################
 # Outputs (see outputs.tf for values)
 ###############################################################
-```

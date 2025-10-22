@@ -1,5 +1,5 @@
 name: Vibe Deployable Architecture
-version: 0.1.0
+version: 1.0.7
 description: Deploy instantly to IBM Cloud Object Storage and host your vibe-coded
   single-page app.
 type: deployable-architecture
@@ -83,7 +83,7 @@ inputs:
   default: ''
 outputs:
 - name: vibe_url
-  description: "Public URL for your deployed vibe-coded app \u2014 your key output."
+  description: "Public URL for your deployed vibe-coded app — your key output."
   visibility: key
   ui:
     group: Outputs
