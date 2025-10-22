@@ -34,7 +34,7 @@ variable "website_key" {
 
 variable "vibe_code" {
   type        = string
-  description = "Paste your HTML here. Leave empty to use the included index.html sample."
+  description = "Paste your HTML (or base64) here. Leave empty to use the included index.html sample."
   default     = ""
 }
 

@@ -49,17 +49,25 @@ resource "ibm_cos_bucket_website" "site" {
 }
 
 #############################
-# HTML content: take input or fall back to local file
+# Safe HTML auto-encoding logic
 #############################
 locals {
-  html_source  = trim(var.vibe_code) != "" ? var.vibe_code : file("${path.module}/index.html")
-  html_base64  = base64encode(local.html_source)
+  # Detect if user pasted base64 (long alphanumeric string)
+  vibe_is_base64 = can(regex("^[A-Za-z0-9+/=]+$", trimspace(var.vibe_code))) && length(trimspace(var.vibe_code)) > 200
+
+  # If blank, use sample. If HTML, auto-encode. If base64, use directly.
+  vibe_html_base64 = trim(var.vibe_code) == "" ? base64encode(file("${path.module}/index.html")) :
+                     local.vibe_is_base64 ? var.vibe_code :
+                     base64encode(var.vibe_code)
 }
 
+#############################
+# Upload HTML or Base64
+#############################
 resource "ibm_cos_object" "vibe_app" {
   bucket         = ibm_cos_bucket.vibe_bucket.bucket_name
   key            = var.website_key
-  content_base64 = local.html_base64
+  content_base64 = local.vibe_html_base64
   content_type   = "text/html"
 }
 
