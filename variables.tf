@@ -1,19 +1,11 @@
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Inputs for Vibe Manifestation Engine
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+variable "vibe_html_input" {
+  description = "Paste your HTML code here (if left blank, a default sample app will be deployed)."
+  type        = string
+  default     = ""
+}
 
 variable "region" {
-  description = "IBM Cloud region for the bucket (e.g., us-south)"
+  description = "IBM Cloud region for the COS instance."
   type        = string
   default     = "us-south"
-}
-
-variable "resource_group_id" {
-  description = "Resource group ID for deploying the COS instance"
-  type        = string
-}
-
-variable "html_input_b64" {
-  description = "Base64-encoded HTML input (auto-encoded by catalog UI)"
-  type        = string
 }

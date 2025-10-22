@@ -1,51 +1,5 @@
 {
   "version": "0.1.0",
   "name": "vibe-da-ibm-cloud",
-  "display_name": "Vibe Manifestation Engine",
-  "description": "Safely deploy arbitrary HTML as a public IBM Cloud Object Storage website. Paste, manifest, vibe.",
-  "type": "terraform",
-  "metadata": {
-    "architectures": ["x86_64"],
-    "categories": ["Developer Tools", "Web Hosting"],
-    "icon": "https://cloud.ibm.com/media/icon/object-storage.svg"
-  },
-  "inputs": [
-    {
-      "name": "region",
-      "type": "string",
-      "ui:control": "select",
-      "ui:options": ["us-south", "eu-de", "jp-tok"],
-      "default": "us-south",
-      "description": "Select IBM Cloud region for deployment."
-    },
-    {
-      "name": "resource_group_id",
-      "type": "string",
-      "ui:control": "text",
-      "description": "Resource group ID for your account."
-    },
-    {
-      "name": "html_input",
-      "type": "string",
-      "ui:control": "textarea",
-      "ui:help": "Paste your raw HTML here. It will be safely encoded before deployment.",
-      "transform": "base64encode",
-      "map_to": "html_input_b64"
-    }
-  ],
-  "outputs": [
-    {
-      "name": "primary_output",
-      "description": "Your live app URL (primary output).",
-      "ui:promote": true
-    },
-    {
-      "name": "vibe_url",
-      "description": "Public URL of the deployed HTML."
-    },
-    {
-      "name": "vibe_bucket_name",
-      "description": "The COS bucket name hosting your HTML."
-    }
-  ]
+  "primary_output": "primaryoutputlink"
 }
