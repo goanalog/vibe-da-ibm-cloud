@@ -1,5 +1,5 @@
 name: vibe-da-ibm-cloud
-version: 0.2.8
+version: 0.2.9
 description: |
   Deploys a Vibe-driven IDE experience to IBM Cloud Object Storage. Paste code, hit deploy, manifest your vibe live on the web.
 tags:

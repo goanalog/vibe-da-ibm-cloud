@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "name": "vibe-da-ibm-cloud",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "type": "terraform",
   "provider": "ibm",
   "display_name": "Vibe IDE — Deployable Architecture",
