@@ -1,9 +1,14 @@
-name: vibe-da-ibm-cloud
-version: 0.3.0
+name: vibe-da-ibm-cloud-max-vibe-lite-autoseed-auto-vars
+version: 0.1.0
 description: |
-  Deploys a Vibe-driven IDE experience to IBM Cloud Object Storage. Paste code, hit deploy, manifest your vibe live on the web.
+  Lite-tier only. COS (public-read) + auto-generated HMAC + web action for presigned PUT URLs + auto-seeded index.html + vibey CodeMirror IDE that can publish itself.
 tags:
   - terraform
   - ibm-cloud
   - object-storage
   - deployable-architecture
+  - demo
+  - codemirror
+  - lite
+  - autoseed
+  - autovars

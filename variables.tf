@@ -1,5 +1,11 @@
-variable "vibe_code_raw" {
+variable "region" {
   type        = string
-  description = "Paste your HTML directly — Terraform will base64 encode it safely before deployment."
-  default     = ""
+  default     = "us-south"
+  description = "IBM Cloud region (auto; us-south recommended)."
+}
+
+variable "bucket_prefix" {
+  type        = string
+  default     = "vibe-bucket"
+  description = "Prefix for the bucket name (a 6-char suffix is added)."
 }

@@ -1,25 +1,57 @@
 {
   "schema_version": "1.0.0",
-  "name": "vibe-da-ibm-cloud",
-  "version": "0.3.0",
+  "name": "vibe-da-ibm-cloud-max-vibe-lite-autoseed-auto-vars",
+  "version": "0.1.0",
   "type": "terraform",
   "provider": "ibm",
-  "display_name": "Vibe IDE — Deployable Architecture",
-  "description": "A deployable architecture that turns raw HTML into a live Vibe app hosted on IBM Cloud Object Storage.",
+  "display_name": "Vibe Landing Zone \u2014 Max Vibe (Lite, Secure, Auto-Seed, Auto-Vars)",
+  "description": "Lite-tier only. Provisions COS (public-read), auto-generates HMAC, embeds a Cloud Function web action for presigned PUT URLs, auto-uploads the vibey CodeMirror IDE as index.html during apply, and opens a primary output link to the live app. Manifest \u2728 pushes updates securely via signed URLs.",
   "variables": [
     {
-      "name": "vibe_code_raw",
+      "name": "region",
       "type": "string",
-      "description": "Paste your HTML directly — Terraform will handle encoding.",
-      "ui:widget": "textarea"
+      "default": "us-south",
+      "description": "IBM Cloud region (auto; us-south recommended)."
+    },
+    {
+      "name": "bucket_prefix",
+      "type": "string",
+      "default": "vibe-bucket",
+      "description": "Prefix for the bucket name; a 6-char suffix is added."
     }
   ],
   "outputs": [
     {
+      "name": "bucket_name",
+      "type": "string",
+      "description": "Unique COS bucket name."
+    },
+    {
+      "name": "vibe_bucket_url",
+      "type": "string",
+      "description": "Base bucket endpoint."
+    },
+    {
       "name": "vibe_url",
       "type": "string",
-      "description": "Public URL for your deployed Vibe app",
+      "description": "Public URL to the IDE (index.html).",
       "is_primary_output": true
+    },
+    {
+      "name": "upload_endpoint",
+      "type": "string",
+      "description": "Web action URL for get-presigned-url (pre-embedded guest/default)."
+    },
+    {
+      "name": "hmac_access_key_id",
+      "type": "string",
+      "description": "Generated COS HMAC access key id (for reference)."
+    },
+    {
+      "name": "hmac_secret_access_key",
+      "type": "string",
+      "description": "Generated COS HMAC secret access key (for reference).",
+      "sensitive": true
     }
   ]
 }
