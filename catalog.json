@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "name": "vibe-da-ibm-cloud",
   "display_name": "Vibe Deployable Architecture (IBM Cloud)",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "type": "terraform",
   "description": "Paste HTML, deploy to IBM Cloud Object Storage (Lite) with public website hosting \u2014 instantly.",
   "tags": [
