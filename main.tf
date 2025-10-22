@@ -35,8 +35,41 @@ resource "ibm_cos_bucket_object" "index_html" {
   bucket_location = ibm_cos_bucket.bucket.region_location
   key             = "index.html"
   content         = var.html_input != "" ? var.html_input : file("index.html")
+  content_type    = "text/html; charset=utf-8"
   endpoint_type   = "public"
   force_delete    = true
+  acl             = "public-read"
+}
+
+resource "ibm_cos_bucket_policy" "public_read" {
+  bucket_crn      = ibm_cos_bucket.bucket.crn
+  bucket_location = ibm_cos_bucket.bucket.region_location
+  policy = jsonencode({
+    Version   = "2.0"
+    Statement = [{
+      Sid       = "PublicReadGetObject"
+      Effect    = "Allow"
+      Principal = { AWS = ["*"] }
+      Action    = ["s3:GetObject"]
+      Resource  = ["${ibm_cos_bucket.bucket.crn}/*"]
+    }]
+  })
+}
+
+data "ibm_iam_access_group" "public_access" {
+  access_group_name = "Public Access"
+}
+
+resource "ibm_iam_access_group_policy" "public_read_policy" {
+  access_group_id = data.ibm_iam_access_group.public_access.groups[0].id
+  roles           = ["Object Reader"]
+
+  resources {
+    service              = "cloud-object-storage"
+    resource_instance_id = ibm_resource_instance.cos_instance.guid
+    resource_type        = "bucket"
+    resource             = ibm_cos_bucket.bucket.bucket_name
+  }
 }
 
 data "ibm_iam_access_group" "public_access" {
