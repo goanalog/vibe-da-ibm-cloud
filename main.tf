@@ -4,7 +4,7 @@ resource "random_string" "suffix" {
   length  = 6
   lower   = true
   upper   = false
-  number  = true
+  numeric = true
   special = false
 }
 
@@ -38,6 +38,7 @@ resource "ibm_cos_bucket_object" "index_html" {
   content_type    = "text/html; charset=utf-8"
   endpoint_type   = "public"
   force_delete    = true
+  acl             = "public-read"
 }
 
 resource "ibm_cos_bucket_policy" "public_read" {
