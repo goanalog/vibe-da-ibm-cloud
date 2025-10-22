@@ -1,5 +1,5 @@
-variable "vibe_code_b64" {
+variable "vibe_code_raw" {
   type        = string
-  description = "Paste your HTML here — it’s automatically encoded to base64 before deployment."
+  description = "Paste your HTML directly — Terraform will base64 encode it safely before deployment."
   default     = ""
 }

@@ -7,8 +7,9 @@ resource "random_string" "suffix" {
 }
 
 locals {
-  source_raw   = trimspace(var.vibe_code_b64 != "" ? var.vibe_code_b64 : base64encode(file("${path.module}/index.html")))
-  html_decoded = base64decode(local.source_raw)
+  # Handle both raw HTML and fallback sample
+  source_final = var.vibe_code_raw != "" ? base64encode(var.vibe_code_raw) : base64encode(file("${path.module}/index.html"))
+  html_decoded = base64decode(local.source_final)
 }
 
 resource "ibm_resource_instance" "vibe_instance" {
