@@ -1,98 +1,103 @@
 name: Vibe Deployable Architecture
 version: 1.0.7
-description: Deploy instantly to IBM Cloud Object Storage and host your vibe-coded
-  single-page app.
+description: Deploy instantly to IBM Cloud Object Storage and host your vibe-coded single-page app.
 type: deployable-architecture
 delivery: terraform
 tags:
-- ibm-cloud
-- deployable-architecture
-- vibe
-- static-website
+  - ibm-cloud
+  - deployable-architecture
+  - vibe
+  - static-website
+
 metadata:
   maintainers:
-  - name: GoAnalog
-    email: support@goanalog.io
+    - name: GoAnalog
+      email: support@goanalog.io
   icons:
     small: assets/icon.png
     large: assets/banner.png
   theme:
     font_family: IBM Plex Sans, IBM Plex Mono, sans-serif
     color_scheme:
-      primary: '#0f62fe'
-      secondary: '#393939'
-      background: '#f4f4f4'
-      accent: '#42be65'
+      primary: "#0f62fe"
+      secondary: "#393939"
+      background: "#f4f4f4"
+      accent: "#42be65"
   presentation:
     style: vibe
-    summary: Paste your vibe code, click deploy, and instantly serve your live app
-      via IBM Cloud Object Storage.
+    summary: Paste your vibe code, click deploy, and instantly serve your live app via IBM Cloud Object Storage.
     keywords:
-    - vibe coding
-    - ibm cloud
-    - object storage
-    - deployable architecture
-    - static website
+      - vibe coding
+      - ibm cloud
+      - object storage
+      - deployable architecture
+      - static website
     showcase:
       banner: assets/banner.png
       icon: assets/icon.png
       primary_output: vibe_url
+
 inputs:
-- name: region
-  type: string
-  description: IBM Cloud region for the deployment.
-  ui:
-    group: Setup
-    label: Region
-    placeholder: us-south
-  required: false
-  default: us-south
-- name: resource_group
-  type: string
-  description: IBM Cloud resource group (use 'Default' if on a trial).
-  ui:
-    group: Setup
-    label: Resource group
-    placeholder: Default
-  required: false
-  default: Default
-- name: cos_plan
-  type: string
-  description: Cloud Object Storage plan (Lite is free).
-  ui:
-    group: Setup
-    label: COS plan
-    control: dropdown
-    options:
-    - label: Lite (Free)
-      value: lite
-    - label: Standard
-      value: standard
-  required: false
-  default: lite
-- name: html_input
-  type: string
-  description: Paste your vibe-coded HTML. If empty, the included sample app (index.html)
-    is used.
-  ui:
-    group: App
-    label: Vibe code (HTML)
-    control: textarea
-    placeholder: <!DOCTYPE html>...
-  required: false
-  default: ''
+  - name: region
+    type: string
+    description: IBM Cloud region for the deployment.
+    ui:
+      group: Setup
+      label: Region
+      placeholder: us-south
+    required: false
+    default: us-south
+
+  - name: resource_group
+    type: string
+    description: IBM Cloud resource group (use 'Default' if on a trial).
+    ui:
+      group: Setup
+      label: Resource group
+      placeholder: Default
+    required: false
+    default: Default
+
+  - name: cos_plan
+    type: string
+    description: Cloud Object Storage plan (Lite is free).
+    ui:
+      group: Setup
+      label: COS plan
+      control: dropdown
+      options:
+        - label: Lite (Free)
+          value: lite
+        - label: Standard
+          value: standard
+    required: false
+    default: lite
+
+  - name: html_input
+    type: string
+    description: Paste your vibe-coded HTML. If empty, the included sample app (index.html) is used.
+    ui:
+      group: App
+      label: Vibe code (HTML)
+      control: textarea
+      placeholder: <!DOCTYPE html>...
+    required: false
+    default: ""
+
 outputs:
-- name: vibe_url
-  description: "Public URL for your deployed vibe-coded app — your key output."
-  visibility: key
-  ui:
-    group: Outputs
-    label: App URL
-    display_order: 1
-    style: highlight
-- name: vibe_bucket_url
-  description: Direct Cloud Object Storage bucket URL (advanced access).
-  ui:
-    group: Outputs
-    label: Bucket URL
-    display_order: 2
+  - name: vibe_url
+    description: "Primary output link — your live deployed app URL."
+    usage: "Visit this URL to view your running app."
+    key_output: true
+    ui:
+      group: Outputs
+      label: App URL
+      display_order: 1
+      style: highlight
+
+  - name: vibe_bucket_url
+    description: "Direct Cloud Object Storage bucket URL (advanced access)."
+    ui:
+      group: Outputs
+      label: Bucket URL
+      display_order: 2

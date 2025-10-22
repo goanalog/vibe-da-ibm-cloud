@@ -21,7 +21,12 @@
   "outputs": [
     {
       "name": "vibe_url",
-      "description": "Public URL for your deployed vibe-coded app — your key output."
+      "description": "Primary output link — your live deployed app URL.",
+      "key_output": true,
+      "ui_hints": {
+        "label": "Primary Output (App URL)",
+        "style": "highlight"
+      }
     },
     {
       "name": "vibe_bucket_url",

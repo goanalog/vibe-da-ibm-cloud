@@ -1,9 +1,13 @@
+# 🌐 Primary Output Link — appears first in IBM Cloud Projects UI
+# Users can click this to access their live deployed app instantly.
 output "vibe_url" {
-  description = "Public URL for your deployed vibe-coded app — your key output."
-  value       = "https://s3.${ibm_cos_bucket.bucket.region_location}.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.bucket.bucket_name}/index.html"
+  description = "Primary output link. The public URL of your live deployed vibe-coded app."
+  value       = ibm_cos_bucket_object.website.endpoint
+  sensitive   = false
 }
 
+# Secondary output for advanced users or programmatic access.
 output "vibe_bucket_url" {
   description = "Direct Cloud Object Storage bucket URL (advanced access)."
-  value       = "https://s3.${ibm_cos_bucket.bucket.region_location}.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.bucket.bucket_name}/"
+  value       = ibm_cos_bucket.vibe_bucket.website_url
 }
