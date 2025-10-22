@@ -1,40 +1,65 @@
 {
-  "id": "vibe-da-ibm-cloud",
-  "version": "1.0.7",
-  "displayName": "Vibe Deployable Architecture",
-  "description": "Deploy instantly to IBM Cloud Object Storage and host your vibe-coded single-page app.",
-  "type": "deployable_architecture",
-  "deliveryMethod": "terraform",
-  "tags": [
-    "ibm-cloud",
-    "deployable-architecture",
-    "vibe",
-    "static-website"
-  ],
-  "repository": {
-    "url": "https://github.com/goanalog/vibe-da-ibm-cloud"
-  },
-  "support": {
-    "name": "GoAnalog",
-    "email": "support@goanalog.io"
-  },
-  "outputs": [
+  "name": "vibe-da-ibm-cloud",
+  "version": "0.1.0",
+  "description": "Deploy your HTML vibe instantly to a free IBM Cloud Object Storage bucket.",
+  "type": "terraform",
+  "tags": ["ibm", "object-storage", "terraform", "html", "vibe"],
+  "variables": [
     {
-      "name": "vibe_url",
-      "description": "Primary output link — your live deployed app URL.",
-      "key_output": true,
+      "name": "region",
+      "type": "string",
+      "description": "IBM Cloud region to deploy your vibe bucket.",
+      "default": "us-south",
       "ui_hints": {
-        "label": "Primary Output (App URL)",
-        "style": "highlight"
+        "group": "Setup",
+        "label": "Deployment region",
+        "control": "dropdown",
+        "options": [
+          { "label": "US South (Dallas)", "value": "us-south" },
+          { "label": "EU Germany", "value": "eu-de" },
+          { "label": "Tokyo", "value": "jp-tok" }
+        ]
       }
     },
     {
-      "name": "vibe_bucket_url",
-      "description": "Direct Cloud Object Storage bucket URL (advanced access)."
+      "name": "vibe_instance_name",
+      "type": "string",
+      "description": "Name of your Object Storage instance.",
+      "default": "vibe-instance"
+    },
+    {
+      "name": "vibe_bucket_name",
+      "type": "string",
+      "description": "Name of your vibe bucket.",
+      "default": "vibe-bucket"
+    },
+    {
+      "name": "html_input",
+      "type": "string",
+      "description": "Paste your HTML here — it’ll be auto-escaped and uploaded.",
+      "ui_hints": {
+        "group": "Vibe Code",
+        "label": "HTML input",
+        "placeholder": "<!DOCTYPE html>..."
+      },
+      "required": false
     }
   ],
-  "icons": {
-    "small": "assets/icon.png",
-    "large": "assets/banner.png"
-  }
+  "outputs": [
+    {
+      "name": "vibe_bucket_url",
+      "type": "string",
+      "description": "Public URL for your IBM Cloud Object Storage bucket."
+    },
+    {
+      "name": "vibe_url",
+      "type": "string",
+      "description": "Public link to your deployed HTML app.",
+      "ui_hints": {
+        "group": "Result",
+        "label": "Primary output link",
+        "primary_output": true
+      }
+    }
+  ]
 }
