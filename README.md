@@ -1,16 +1,16 @@
-# 🌀 Vibe Deployable Architecture — COS Edition
+# 🌀 Vibe Deployable Architecture — Flat COS + Optional Functions
 
 **Powered by IBM Cloud**
 
-This Deployable Architecture provisions a free-tier IBM Cloud Object Storage (Lite) instance and bucket, then exposes a public URL for your live Vibe app.
+- Provisions **Cloud Object Storage (Lite)** and a public bucket (cross-region `us-geo`).
+- Uploads a sample **index.html** so your URL works instantly.
+- Exposes a primary output: **`vibe_url`**.
+- (Optional) Deploys an **IBM Cloud Functions** web action for presigned uploads.
+  - Disabled by default via `enable_functions = false` to ensure smooth validation.
 
----
-
-### 🚀 Quick Start
-
-1. Deploy via IBM Cloud Catalog or Projects.
-2. Wait for provisioning (about 2–3 minutes).
-3. Copy your **Primary Output URL** from the Outputs tab.
-4. Upload your HTML file to the bucket to go live!
+## Deploy notes
+- Works via IBM Cloud **Catalog** or **Projects**.
+- To enable Functions:
+  - Set variable `enable_functions=true` at deploy time.
 
 Paste. Look. Share. **Vibe.**
