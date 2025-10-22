@@ -1,1 +1,1 @@
-# outputs are defined in main.tf
+# outputs defined in main.tf

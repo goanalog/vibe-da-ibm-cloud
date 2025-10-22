@@ -1,7 +1,7 @@
 variable "region" {
   type        = string
   default     = "us-south"
-  description = "IBM Cloud region (auto; us-south recommended)."
+  description = "IBM Cloud region (default us-south)."
 }
 
 variable "bucket_prefix" {

@@ -1,17 +1,17 @@
 {
   "schema_version": "1.0.0",
-  "name": "vibe-da-ibm-cloud-max-vibe-lite-autoseed-auto-vars",
-  "version": "0.1.0",
+  "name": "vibe-da-ibm-cloud-max-vibe-lite-autoseed-autovars-v1.84-fix2",
+  "version": "0.1.2",
   "type": "terraform",
   "provider": "ibm",
-  "display_name": "Vibe Landing Zone \u2014 Max Vibe (Lite, Secure, Auto-Seed, Auto-Vars)",
-  "description": "Lite-tier only. Provisions COS (public-read), auto-generates HMAC, embeds a Cloud Function web action for presigned PUT URLs, auto-uploads the vibey CodeMirror IDE as index.html during apply, and opens a primary output link to the live app. Manifest \u2728 pushes updates securely via signed URLs.",
+  "display_name": "Vibe Landing Zone \u2014 Max Vibe (Lite, Auto-Seed, Auto-Vars, v1.84 fix2)",
+  "description": "Schematics-ready (Terraform 1.12 + IBM provider v1.84). COS Lite + public bucket, auto-generated HMAC, Cloud Function web action, and a vibey CodeMirror 5 IDE that manifests to COS via signed PUT.",
   "variables": [
     {
       "name": "region",
       "type": "string",
       "default": "us-south",
-      "description": "IBM Cloud region (auto; us-south recommended)."
+      "description": "IBM Cloud region (default us-south)."
     },
     {
       "name": "bucket_prefix",
@@ -40,7 +40,7 @@
     {
       "name": "upload_endpoint",
       "type": "string",
-      "description": "Web action URL for get-presigned-url (pre-embedded guest/default)."
+      "description": "Web action URL for get-presigned-url (guest/default)."
     },
     {
       "name": "hmac_access_key_id",

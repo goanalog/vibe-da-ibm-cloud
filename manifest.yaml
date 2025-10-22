@@ -1,7 +1,7 @@
-name: vibe-da-ibm-cloud-max-vibe-lite-autoseed-auto-vars
-version: 0.1.0
+name: vibe-da-ibm-cloud-max-vibe-lite-autoseed-autovars-v1.84-fix2
+version: 0.1.2
 description: |
-  Lite-tier only. COS (public-read) + auto-generated HMAC + web action for presigned PUT URLs + auto-seeded index.html + vibey CodeMirror IDE that can publish itself.
+  Schematics-ready (Terraform 1.12 + IBM provider v1.84). COS Lite + public bucket, auto-generated HMAC, Cloud Function web action, and a vibey CodeMirror 5 IDE that manifests to COS via signed PUT.
 tags:
   - terraform
   - ibm-cloud
@@ -12,3 +12,4 @@ tags:
   - lite
   - autoseed
   - autovars
+  - v1.84

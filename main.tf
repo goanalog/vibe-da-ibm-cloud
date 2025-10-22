@@ -28,48 +28,11 @@ resource "ibm_resource_key" "cos_hmac" {
   role                 = "Writer"
 }
 
-# COS bucket (region is derived from the instance/location; provider v1.84 does not accept region/force_destroy here)
+# COS bucket
 resource "ibm_cos_bucket" "vibe" {
   bucket_name          = "${var.bucket_prefix}-${random_string.suffix.result}"
   resource_instance_id = ibm_resource_instance.cos.id
   storage_class        = "standard"
-}
-
-# Public READ via object ACL: ensure auto-seeded object has public-read
-# Upload pre-rendered index.html with ACL if supported; fall back to default if field not available
-resource "ibm_cos_bucket_object" "index" {
-  bucket_crn = ibm_resource_instance.cos.id
-  bucket     = ibm_cos_bucket.vibe.bucket_name
-  key        = "index.html"
-  content    = local.rendered_index
-  http_headers = {
-    "Content-Type" = "text/html"
-  }
-  # Some provider versions support 'canned_acl'; if present, this makes the object public
-  canned_acl = "public-read"
-}
-
-# Cloud Function web action (Node.js 18) for presigned URL (Lite-friendly)
-resource "ibm_function_action" "get_presigned_url" {
-  name    = "get-presigned-url"
-  publish = true
-  exec {
-    kind = "nodejs:18"
-    code = file("${path.module}/function/getPresignedUrl.js")
-  }
-
-  # Parse HMAC keys from resource_key credentials JSON
-  parameters = {
-    COS_ACCESS_KEY_ID     = jsondecode(ibm_resource_key.cos_hmac.credentials_json).cos_hmac_keys[0].access_key_id
-    COS_SECRET_ACCESS_KEY = jsondecode(ibm_resource_key.cos_hmac.credentials_json).cos_hmac_keys[0].secret_access_key
-    BUCKET                = ibm_cos_bucket.vibe.bucket_name
-    REGION                = var.region
-  }
-
-  annotations = {
-    "web-export" = true
-    "raw-http"   = true
-  }
 }
 
 # Embed the guest/default function URL into the HTML prior to upload
@@ -77,6 +40,40 @@ locals {
   embedded_function_url = "https://us-south.functions.appdomain.cloud/api/v1/web/guest/default/get-presigned-url"
   rendered_index        = replace(file("${path.module}/index.html"), "https://us-south.functions.appdomain.cloud/api/v1/web/guest/default/get-presigned-url", local.embedded_function_url)
   endpoint_base         = "https://${ibm_cos_bucket.vibe.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud"
+}
+
+# Auto-seed index.html object (v1.84-compatible args)
+resource "ibm_cos_bucket_object" "index" {
+  bucket_crn      = ibm_resource_instance.cos.id
+  bucket_name     = ibm_cos_bucket.vibe.bucket_name
+  bucket_location = var.region
+  key             = "index.html"
+  content         = local.rendered_index
+  content_type    = "text/html"
+}
+
+# Cloud Function web action (Node.js 18) for presigned URL (Lite-friendly)
+resource "ibm_function_action" "get_presigned_url" {
+  name      = "get-presigned-url"
+  namespace = "guest"
+  publish   = true
+
+  exec {
+    kind = "nodejs:18"
+    code = file("${path.module}/function/getPresignedUrl.js")
+  }
+
+  parameters = jsonencode({
+    COS_ACCESS_KEY_ID     = jsondecode(ibm_resource_key.cos_hmac.credentials_json).cos_hmac_keys[0].access_key_id
+    COS_SECRET_ACCESS_KEY = jsondecode(ibm_resource_key.cos_hmac.credentials_json).cos_hmac_keys[0].secret_access_key
+    BUCKET                = ibm_cos_bucket.vibe.bucket_name
+    REGION                = var.region
+  })
+
+  annotations = jsonencode({
+    "web-export" = "true"
+    "raw-http"   = "true"
+  })
 }
 
 output "bucket_name" {
@@ -96,7 +93,7 @@ output "vibe_url" {
 
 output "upload_endpoint" {
   value       = local.embedded_function_url
-  description = "Web action URL for get-presigned-url (guest/default pre-embedded)."
+  description = "Web action URL for get-presigned-url (guest/default)."
 }
 
 output "hmac_access_key_id" {
