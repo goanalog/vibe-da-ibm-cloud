@@ -1,9 +1,9 @@
-version: "0.2.7"
-name: "vibe-da-ibm-cloud"
-type: "terraform"
-variables:
-  - name: vibe_code
-    type: string
-    description: "Paste your HTML code here. This replaces the sample index.html when you deploy."
-    default: "Paste your HTML code here"
-version: "0.2.6"
+name: vibe-da-ibm-cloud
+version: 0.2.8
+description: |
+  Deploys a Vibe-driven IDE experience to IBM Cloud Object Storage. Paste code, hit deploy, manifest your vibe live on the web.
+tags:
+  - terraform
+  - ibm-cloud
+  - object-storage
+  - deployable-architecture

@@ -1,15 +1,9 @@
-output "vibe_url" {
-  description = "Your live Vibe app URL (public endpoint)."
-  value       = "https://s3.us-south.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.vibe_bucket.bucket_name}/index.html"
-}
-
-output "vibe_bucket_url" {
-  description = "Raw COS bucket name."
+output "vibe_bucket_name" {
   value       = ibm_cos_bucket.vibe_bucket.bucket_name
+  description = "The name of the created COS bucket."
 }
 
-# Primary link for IBM Cloud Projects UI
-output "primaryoutputlink" {
-  description = "Primary output link for IBM Cloud Projects."
+output "vibe_url" {
   value       = "https://s3.us-south.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.vibe_bucket.bucket_name}/index.html"
+  description = "Public URL of your deployed Vibe web app."
 }

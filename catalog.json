@@ -1,46 +1,26 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.0.0",
   "name": "vibe-da-ibm-cloud",
-  "display_name": "Vibe Deployable Architecture (IBM Cloud)",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "type": "terraform",
-  "description": "Paste HTML, deploy to IBM Cloud Object Storage (Lite) with public website hosting \u2014 instantly.",
-  "tags": [
-    "ibm-cloud",
-    "object-storage",
-    "static-website",
-    "vibe"
-  ],
+  "provider": "ibm",
+  "display_name": "Vibe IDE — Deployable Architecture",
+  "description": "A deployable architecture that turns raw HTML into a live Vibe app hosted on IBM Cloud Object Storage.",
   "variables": [
     {
-      "name": "vibe_code",
+      "name": "vibe_code_b64",
       "type": "string",
-      "description": "Paste your HTML code here. This replaces the sample index.html when you deploy.",
-      "default": "Paste your HTML code here"
-    }
-  ],
-  "variable_metadata": [
-    {
-      "name": "vibe_code",
-      "type": "string",
-      "ui_hints": {
-        "input_type": "textarea"
-      }
+      "description": "Paste your HTML here — it’s automatically encoded to base64 before deployment.",
+      "ui:widget": "textarea",
+      "ui:onChange": "value = btoa(unescape(encodeURIComponent(value)))"
     }
   ],
   "outputs": [
     {
       "name": "vibe_url",
-      "description": "Your live Vibe App URL (public endpoint)."
-    },
-    {
-      "name": "vibe_bucket_url",
-      "description": "Raw COS bucket URL."
-    },
-    {
-      "name": "primaryoutputlink",
-      "description": "Primary output link for IBM Cloud Projects.",
-      "primary_output": true
+      "type": "string",
+      "description": "Public URL for your deployed Vibe app",
+      "is_primary_output": true
     }
   ]
 }

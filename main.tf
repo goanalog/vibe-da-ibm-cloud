@@ -1,14 +1,52 @@
-# Auto-detect HTML vs base64 and handle safely, with fallback to bundled index.html
-locals {
-  source_raw       = trimspace(var.vibe_code_b64 != "" ? var.vibe_code_b64 : file("${path.module}/index.html"))
-  looks_like_html  = can(regex("(?i)<html|<!doctype", local.source_raw))
-  html_decoded     = local.looks_like_html ? local.source_raw : base64decode(local.source_raw)
+terraform {
+  required_providers {
+    ibm = {
+      source  = "IBM-Cloud/ibm"
+      version = ">= 1.84.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = ">= 3.0.0"
+    }
+  }
 }
 
-# Example target object (keep your existing bucket resource wiring)
+provider "ibm" {}
+
+resource "random_string" "suffix" {
+  length  = 6
+  upper   = false
+  special = false
+}
+
+locals {
+  source_raw   = trimspace(var.vibe_code_b64 != "" ? var.vibe_code_b64 : base64encode(file("${path.module}/index.html")))
+  html_decoded = base64decode(local.source_raw)
+}
+
+resource "ibm_resource_instance" "vibe_instance" {
+  name     = "vibe-instance-${random_string.suffix.result}"
+  service  = "cloud-object-storage"
+  plan     = "lite"
+  location = "global"
+}
+
+resource "ibm_cos_bucket" "vibe_bucket" {
+  bucket_name          = "vibe-bucket-${random_string.suffix.result}"
+  resource_instance_id = ibm_resource_instance.vibe_instance.id
+  storage_class        = "standard"
+  region_location      = "us-south"
+  force_delete         = true
+}
+
 resource "ibm_cos_bucket_object" "vibe_code" {
-  bucket   = ibm_cos_bucket.vibe_bucket.bucket_name
-  key      = "index.html"
-  content  = local.html_decoded
-  etag     = md5(local.html_decoded)
+  bucket  = ibm_cos_bucket.vibe_bucket.bucket_name
+  key     = "index.html"
+  content = local.html_decoded
+  etag    = md5(local.html_decoded)
+}
+
+output "vibe_url" {
+  value       = "https://s3.us-south.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.vibe_bucket.bucket_name}/index.html"
+  description = "Public URL for your deployed Vibe app"
 }

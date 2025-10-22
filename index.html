@@ -1,173 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Vibe Landing Zone — Orb Remix Edition</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-<link id="favicon" rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Vibe IDE — Subtle Banner Edition</title>
+<link rel="icon" href="vibe-orb.ico"/>
 <style>
-  :root { --hue: 220; --fg: #e5e7eb; --bg: #000; }
-  * { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; }
-  body { background: var(--bg); color: var(--fg); overflow: hidden; font-family: "IBM Plex Sans", system-ui; }
-
-  #bg, #particles { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
-  #bg { z-index: 0; }
-  #particles { z-index: 1; pointer-events: none; }
-
-  /* Editor */
-  #editor { position: fixed; inset: 7vh 6vw auto 6vw; min-height: 40vh; z-index: 4;
-    overflow: hidden; background: rgba(10,12,18,0.75);
-    border: 1px solid rgba(147,197,253,0.15);
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.45),
-                0 0 40px hsla(var(--hue),90%,60%,0.22) inset;
-    transition: opacity .35s ease, transform .35s ease; }
-  #editor.hidden { display: none !important; }
-  #editor-title { display: flex; align-items: center; gap: .6rem; padding: .8rem 1rem; font-weight: 600;
-    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0));
-    border-bottom: 1px solid rgba(147,197,253,0.15); }
-  .dot { width: .7rem; height: .7rem; border-radius: 50%; }
-  #code { width: 100%; min-height: 36vh; padding: 1rem 1.2rem; outline: none; border: 0; resize: vertical;
-    background: #0b0d14; color: #c7d2fe; font-family: "IBM Plex Mono", monospace;
-    font-size: .92rem; line-height: 1.4; }
-  #actions { display: flex; justify-content: flex-end; padding: .8rem 1rem 1rem; }
-  .btn { appearance: none; border: none; outline: none; cursor: pointer; border-radius: 9999px;
-    padding: .7rem 1.3rem; color: white; font-weight: 800; letter-spacing: .02em;
-    background: linear-gradient(135deg, hsl(var(--hue),90%,60%), hsl(calc(var(--hue)+60),80%,55%));
-    box-shadow: 0 0 20px hsla(var(--hue),90%,60%,.4),
-                0 0 40px hsla(var(--hue),90%,60%,.2);
-    transition: all .25s ease, transform .2s ease; }
-  .btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
-
-  #preview { position: fixed; inset: 0; width: 100%; height: 100%; border: 0;
-    background: transparent; z-index: 3; }
-
-  /* Orb + Dock */
-  #orb, #remix { position: fixed; right: 22px; bottom: 22px; transition: opacity .3s ease, transform .3s ease; }
-  #orb { z-index: 5; }
-  #orb.hidden { opacity: 0; pointer-events: none; transform: scale(0.98); }
-
-  /* NEW: Remix Orb */
-  #remix {
-    z-index: 10;
-    display: none;
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: white;
-    background: radial-gradient(circle at 50% 30%, hsl(var(--hue),90%,65%), hsl(calc(var(--hue)+40),80%,50%));
-    box-shadow: 0 0 60px hsla(var(--hue),90%,60%,.5), inset 0 0 30px hsla(var(--hue),90%,70%,.3);
-    border: 1px solid hsla(var(--hue),90%,70%,.5);
-    cursor: pointer;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  #remix:hover { transform: scale(1.05); filter: brightness(1.15); }
-
-  #dock { position: fixed; right: 22px; bottom: 164px; display: grid; gap: 10px; padding: 10px 12px; border-radius: 14px;
-    background: rgba(8,10,16,0.92); border: 1px solid rgba(147,197,253,0.18);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 28px hsla(var(--hue),90%,60%,.22) inset; z-index: 6; }
-  .row { display: flex; align-items: center; gap: 8px; }
-  .emo { width: 20px; text-align: center; }
-  .slider { appearance: none; height: 8px; width: 160px; background: rgba(147,197,253,0.18); border-radius: 9999px; }
-  .slider::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; border-radius: 50%;
-    background: hsl(var(--hue),90%,60%); border: 2px solid rgba(20,20,30,0.9);
-    box-shadow: 0 0 12px hsla(var(--hue),90%,60%,.6); }
-
-  #hint { position: fixed; bottom: 10vh; right: 3vw; z-index: 12; opacity: 0; pointer-events: none;
-    transition: opacity 1s ease; background: rgba(12,14,20,0.9); color: #c7d2fe;
-    padding: .7rem 1rem; border-radius: 10px; font-size: .9rem;
-    box-shadow: 0 0 15px rgba(15,98,254,.3); }
-
-  @media (prefers-reduced-motion: reduce) {
-    * { animation: none !important; transition: none !important; }
-  }
+:root{
+  --bg1:#0a0018;--bg2:#1a0036;
+  --glow:#ff2bd6;--glow2:#21f3ff;
+  --text:#f6f7fb;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;color:var(--text);
+  font-family:"IBM Plex Sans",system-ui;
+  background:linear-gradient(135deg,var(--bg1),var(--bg2));
+  background-size:300% 300%;
+  animation:shift 20s ease-in-out infinite alternate;
+  overflow:hidden;
+}
+@keyframes shift{from{background-position:0 0}to{background-position:100% 100%}}
+.wrap{display:grid;grid-template-rows:auto 1fr 1fr;gap:10px;padding:2rem;text-align:center}
+.banner{font-size:2rem;font-weight:bold;text-shadow:0 0 20px var(--glow)}
+textarea{
+  width:100%;height:40vh;background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.2);
+  color:var(--text);padding:1rem;font-family:"IBM Plex Mono",monospace;
+  border-radius:12px;resize:none;outline:none
+}
+button{
+  background:linear-gradient(90deg,var(--glow),var(--glow2));
+  color:var(--bg1);padding:1rem 2rem;border:none;
+  border-radius:12px;font-weight:bold;cursor:pointer;
+  transition:transform .2s ease
+}
+button:hover{transform:scale(1.05)}
 </style>
 </head>
 <body>
-
-<canvas id="bg"></canvas>
-<canvas id="particles"></canvas>
-<iframe id="preview" class="hidden" title="Vibe Preview"></iframe>
-
-<section id="editor">
-  <div id="editor-title">
-    <span class="dot" style="background:#ff5f56"></span>
-    <span class="dot" style="background:#ffbd2f"></span>
-    <span class="dot" style="background:#27c93f"></span>
-    <span>/vibe-code.html</span>
-  </div>
-  <textarea id="code" placeholder="Paste your vibe code here..."></textarea>
-  <div id="actions"><button id="manifest" class="btn">Manifest ✨</button></div>
-</section>
-
-<div id="orb"><div id="orbCore"><div id="orbLabel">Vibe</div><input id="hue" class="slider" type="range" min="0" max="360" value="220" /></div></div>
-
-<div id="dock">
-  <div class="row"><div class="emo">🌈</div><input id="hue2" class="slider" type="range" min="0" max="360" value="220" /></div>
-  <div class="row"><div class="emo">⚡</div><input id="spark" class="slider" type="range" min="1" max="12" value="6" /></div>
-  <div class="row"><div class="emo">💫</div><button id="pulse" class="toggle" aria-pressed="false"></button></div>
-  <div class="row"><div class="emo">🧘</div><button id="zen" class="toggle" aria-pressed="false"></button></div>
+<div class="wrap">
+  <div class="banner">🌌 Welcome to the Vibe IDE</div>
+  <textarea placeholder="Paste your vibe code here..."></textarea>
+  <button>Manifest</button>
 </div>
-
-<button id="remix">Remix 🎨</button>
-<div id="hint">💡 Press <b>Remix 🎨</b> to edit your vibe again</div>
-
-<script>
-  const preview=document.getElementById('preview');
-  const editor=document.getElementById('editor');
-  const manifest=document.getElementById('manifest');
-  const remix=document.getElementById('remix');
-  const orb=document.getElementById('orb');
-  const code=document.getElementById('code');
-  const hint=document.getElementById('hint');
-
-  let baseHue=220;
-  function sampleHTML(h){
-    return `<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
-    <title>Vibe Sample</title>
-    <style>:root{--hue:${h};}body{font-family:IBM Plex Sans,system-ui;background:#0b0d14;color:white;text-align:center;margin-top:20vh;}
-    h1{margin-bottom:8px;}p{opacity:.9}</style></head>
-    <body><h1>🚀 Your vibe just deployed</h1><p>Edit your code and Manifest again to remix live.</p></body></html>`;
-  }
-  code.value=sampleHTML(baseHue);
-
-  function doManifest(){
-    const doc=preview.contentWindow.document;
-    doc.open(); doc.write(code.value||sampleHTML(baseHue)); doc.close();
-
-    preview.classList.remove('hidden');
-    remix.style.display='flex';
-    editor.style.opacity=0;
-    editor.style.pointerEvents='none';
-    orb.classList.add('hidden');
-
-    hint.style.opacity=1;
-    setTimeout(()=>{hint.style.opacity=0;},4000);
-  }
-
-  function doRemix(){
-    preview.classList.add('hidden');
-    remix.style.display='none';
-    editor.style.opacity=1;
-    editor.style.pointerEvents='auto';
-    orb.classList.remove('hidden');
-    code.value=sampleHTML(baseHue);
-  }
-
-  manifest.addEventListener('click',doManifest);
-  remix.addEventListener('click',doRemix);
-  addEventListener('keydown',e=>{
-    if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){
-      if(preview.classList.contains('hidden')) doManifest(); else doRemix();
-    }
-  });
-</script>
 </body>
 </html>
