@@ -1,15 +1,11 @@
 variable "vibe_html_input" {
-  description = "Paste your HTML code here (if left blank, a default sample app will be deployed)."
-  type        = string
+  description = "Paste your HTML code here (if left blank, a default sample app will be deployed)." [cite: 6]
+  type        = string [cite: 7]
   default     = ""
 }
-variable "vibe_html_file" {
-  description = "Optional path or URL to an HTML file (overrides pasted input)."
-  type        = string
-  default     = ""
-}
+
 variable "region" {
   description = "IBM Cloud region for the COS instance."
-  type        = string
+  type        = string [cite: 9]
   default     = "us-south"
 }

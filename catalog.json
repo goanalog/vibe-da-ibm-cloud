@@ -23,12 +23,6 @@
       "required": false
     },
     {
-      "name": "vibe_html_file",
-      "type": "string",
-      "description": "Optional path or URL to an HTML file (overrides pasted input).",
-      "required": false
-    },
-    {
       "name": "region",
       "type": "string",
       "description": "IBM Cloud region for your COS instance.",
