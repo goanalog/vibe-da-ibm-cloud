@@ -1,14 +1,67 @@
 name: Vibe Deployable Architecture
-version: 1.0.7
-description: Deploy instantly to IBM Cloud Object Storage and host your vibe-coded single-page app.
-type: terraform
+version: 0.1.0
+description: Deploy instantly to IBM Cloud Object Storage and host your vibe-coded
+  single-page app.
+type: deployable-architecture
+delivery: terraform
 tags:
-  - ibm-cloud
-  - deployable-architecture
-  - vibe
-  - static-website
+- ibm-cloud
+- deployable-architecture
+- vibe
+- static-website
+metadata:
+  maintainers:
+  - name: GoAnalog
+    email: support@goanalog.io
+  icons:
+    small: assets/icon.png
+    large: assets/banner.png
+inputs:
+- name: region
+  type: string
+  description: IBM Cloud region for the deployment.
+  ui:
+    group: Setup
+    label: Region
+    placeholder: us-south
+  required: false
+  default: us-south
+- name: resource_group
+  type: string
+  description: IBM Cloud resource group (use 'Default' if on a trial).
+  ui:
+    group: Setup
+    label: Resource group
+    placeholder: Default
+  required: false
+  default: Default
+- name: cos_plan
+  type: string
+  description: Cloud Object Storage plan (Lite is free).
+  ui:
+    group: Setup
+    label: COS plan
+    control: dropdown
+    options:
+    - label: Lite (Free)
+      value: lite
+    - label: Standard
+      value: standard
+  required: false
+  default: lite
+- name: html_input
+  type: string
+  description: Paste your vibe-coded HTML. If empty, the included sample app (index.html)
+    is used.
+  ui:
+    group: App
+    label: Vibe code (HTML)
+    control: textarea
+    placeholder: <!DOCTYPE html>...
+  required: false
+  default: ''
 outputs:
-  - name: vibe_url
-    description: Public URL for your vibe app.
-  - name: vibe_bucket_url
-    description: Direct bucket URL.
+- name: vibe_url
+  description: Public URL for your vibe app.
+- name: vibe_bucket_url
+  description: Direct bucket URL.

@@ -1,11 +1,16 @@
 {
   "id": "vibe-da-ibm-cloud",
-  "version": "1.0.7",
-  "displayName": "Vibe — Deployable Architecture",
+  "version": "0.1.0",
+  "displayName": "Vibe \u2014 Deployable Architecture",
   "description": "Instantly deploy and host your vibe-coded HTML app on IBM Cloud Object Storage.",
   "type": "deployable_architecture",
   "deliveryMethod": "terraform",
-  "tags": ["ibm-cloud", "deployable-architecture", "vibe", "static-website"],
+  "tags": [
+    "ibm-cloud",
+    "deployable-architecture",
+    "vibe",
+    "static-website"
+  ],
   "repository": {
     "url": "https://github.com/goanalog/vibe-da-ibm-cloud"
   },
@@ -14,7 +19,17 @@
     "email": "support@goanalog.io"
   },
   "outputs": [
-    { "name": "vibe_url", "description": "Public URL for your vibe app." },
-    { "name": "vibe_bucket_url", "description": "Direct bucket URL." }
-  ]
+    {
+      "name": "vibe_url",
+      "description": "Public URL for your vibe app."
+    },
+    {
+      "name": "vibe_bucket_url",
+      "description": "Direct bucket URL."
+    }
+  ],
+  "icons": {
+    "small": "assets/icon.png",
+    "large": "assets/banner.png"
+  }
 }
