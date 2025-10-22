@@ -1,15 +1,9 @@
 name: vibe-da-ibm-cloud
-version: 0.1.9
-description: Flattened, vibe-driven Deployable Architecture with COS + Functions, powered by IBM Cloud.
-maintainer: IBM Cloud AI & Automation Lab
-license: Apache-2.0
+version: 1.0.0
+description: Deploys a Vibe IDE app to IBM Cloud Object Storage Lite with public bucket and primary output link.
 tags:
-  - vibe
-  - deployable-architecture
-  - lite
+  - terraform
   - ibm-cloud
-  - project-connected
-artifacts:
-  - main.tf
-  - index.html
-primary_output: primaryoutputlink
+  - object-storage
+  - lite
+primary_output: vibe_url

@@ -1,33 +1,16 @@
 {
-  "version": "0.1.9",
+  "version": "1.0.0",
   "name": "vibe-da-ibm-cloud",
-  "display_name": "Vibe Deployable Architecture — Flat Edition",
-  "description": "A single-folder, vibe-driven IBM Cloud Deployable Architecture that lets users paste HTML/CSS/JS directly into a live web IDE and manifest it instantly to a public IBM Cloud Object Storage Lite bucket. Includes optional auto-staging for IBM Cloud Project configuration updates when code changes.",
-  "tags": ["vibe", "deployable-architecture", "ibm-cloud", "lite", "project-connected", "cos", "serverless"],
-  "license": {"use": "Apache-2.0"},
+  "display_name": "Vibe Deployable Architecture — COS Edition",
+  "description": "Deploys a Vibe IDE app to IBM Cloud Object Storage Lite with a public bucket and app URL.",
   "type": "terraform",
-  "architectures": [{
-    "name": "vibe-da-ibm-cloud",
-    "type": "terraform",
-    "path": "./"
-  }],
-  "sample_app": {
-    "name": "Vibe IDE Sample App",
-    "path": "./index.html",
-    "description": "A live-editable IDE powered by IBM Cloud Object Storage and Functions. Built upon ideas inspired by Arn Hyndman and enhanced through AI collaboration.",
-    "runtime": "static"
-  },
-  "documentation": {
-    "readme": "./README.md",
-    "manifest": "./manifest.yaml"
-  },
-  "support": {
-    "level": "community",
-    "contact": "https://cloud.ibm.com/docs/deployable-architectures"
-  },
-  "metadata": {
-    "ibm_cloud_project": "supported",
-    "ibm_cloud_plan": "lite",
-    "powered_by": "IBM Cloud"
-  }
+  "tags": ["vibe", "ibm-cloud", "cos", "lite"],
+  "outputs": [
+    {
+      "name": "vibe_url",
+      "type": "string",
+      "description": "Public URL for your deployed Vibe app",
+      "is_primary_output": true
+    }
+  ]
 }
