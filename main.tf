@@ -1,51 +1,84 @@
-# Vibe Manifestation Engine v1.4 — JSON Schema Final Edition
-
+#############################
+# Providers / Data
+#############################
 provider "ibm" {}
 
-data "ibm_resource_group" "group" { name = "Default" }
+data "ibm_resource_group" "rg" {
+  name = var.resource_group
+}
 
+#############################
+# Random suffix for uniqueness
+#############################
 resource "random_string" "suffix" {
   length  = 6
   upper   = false
   special = false
 }
 
+#############################
+# COS Instance (Lite)
+#############################
 resource "ibm_resource_instance" "vibe_instance" {
-  name              = "vibe-instance-${random_string.suffix.result}"
+  name              = "${var.instance_name_prefix}${random_string.suffix.result}"
   service           = "cloud-object-storage"
   plan              = "lite"
-  location          = var.region
-  resource_group_id = data.ibm_resource_group.group.id
+  location          = "global"
+  resource_group_id = data.ibm_resource_group.rg.id
+  tags              = ["vibe", "deployable-architecture"]
 }
 
+#############################
+# COS Bucket
+#############################
 resource "ibm_cos_bucket" "vibe_bucket" {
-  bucket_name          = "vibe-bucket-${random_string.suffix.result}"
+  bucket_name          = "${var.bucket_name_prefix}${random_string.suffix.result}"
   resource_instance_id = ibm_resource_instance.vibe_instance.id
-  storage_class        = "standard"
   region_location      = var.region
+  storage_class        = "smart"
   force_delete         = true
 }
 
+#############################
+# Website hosting
+#############################
+resource "ibm_cos_bucket_website" "site" {
+  bucket          = ibm_cos_bucket.vibe_bucket.bucket_name
+  index_document  = var.website_key
+  error_document  = var.website_key
+}
+
+#############################
+# HTML content: take input or fall back to local file
+#############################
 locals {
-  html_source = (
-    length(trimspace(var.vibe_html_input)) > 0 ?
-      var.vibe_html_input :
-      file("${path.module}/index.html")
-  )
-  html_base64 = base64encode(local.html_source)
+  html_source  = trim(var.vibe_code) != "" ? var.vibe_code : file("${path.module}/index.html")
+  html_base64  = base64encode(local.html_source)
 }
 
 resource "ibm_cos_object" "vibe_app" {
   bucket         = ibm_cos_bucket.vibe_bucket.bucket_name
-  key            = "index.html"
+  key            = var.website_key
   content_base64 = local.html_base64
   content_type   = "text/html"
 }
 
-# Ensure all variables are visible to IBM Catalog
-resource "null_resource" "expose_vars" {
-  triggers = {
-    vibe_html_input = var.vibe_html_input
-    region          = var.region
-  }
+#############################
+# Optional: Public read policy for website
+#############################
+resource "ibm_cos_bucket_policy" "public_read" {
+  count  = var.public_read ? 1 : 0
+  bucket = ibm_cos_bucket.vibe_bucket.bucket_name
+  policy = jsonencode({
+    "Version"   : "2012-10-17",
+    "Statement" : [{
+      "Sid"       : "PublicReadGetObject",
+      "Effect"    : "Allow",
+      "Principal" : "*",
+      "Action"    : ["s3:GetObject"],
+      "Resource"  : [
+        "crn:v1:bluemix:public:cloud-object-storage:global::::bucket:${ibm_cos_bucket.vibe_bucket.bucket_name}/object/*"
+      ]
+    }]
+  })
 }

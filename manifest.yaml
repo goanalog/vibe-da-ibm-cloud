@@ -1,0 +1,99 @@
+# ---------------------------------------------------------------------
+# Vibe Deployable Architecture Manifest
+# ---------------------------------------------------------------------
+schema_version: "1.0.0"
+name: "vibe-da-ibm-cloud"
+display_name: "Vibe Deployable Architecture (IBM Cloud)"
+version: "0.1.0"
+type: "terraform"
+description: >
+  Paste code, hit deploy, manifest your vibe app into IBM Cloud Object Storage (Lite) with website hosting.
+  This Deployable Architecture creates a public bucket website backed by Object Storage and lets users replace
+  the sample HTML with their own via a simple Terraform input field.
+tags:
+  - ibm-cloud
+  - object-storage
+  - static-website
+  - vibe
+license: Apache-2.0
+authors:
+  - name: IBM Cloud Team
+    contact: realbrendan@us.ibm.com
+icons:
+  - url: "https://cloud.ibm.com/media/docs/images/architecture-icon.svg"
+    description: "IBM Cloud Deployable Architecture icon"
+
+# ---------------------------------------------------------------------
+# Variables (Inputs)
+# ---------------------------------------------------------------------
+variables:
+  - name: region
+    type: string
+    description: IBM Cloud region for the bucket (e.g., us-south).
+    default: us-south
+
+  - name: resource_group
+    type: string
+    description: IBM Cloud resource group where resources will be created.
+    default: Default
+
+  - name: bucket_name_prefix
+    type: string
+    description: Prefix for the Object Storage bucket (random suffix added).
+    default: vibe-bucket-
+
+  - name: instance_name_prefix
+    type: string
+    description: Prefix for the Object Storage instance (random suffix added).
+    default: vibe-instance-
+
+  - name: website_key
+    type: string
+    description: Name of the HTML file to serve as the bucket's index page.
+    default: index.html
+
+  - name: vibe_code
+    type: string
+    description: Paste your HTML here. Leave empty to use the included index.html sample.
+    default: ""
+
+  - name: public_read
+    type: bool
+    description: If true, configures the bucket website for public read access.
+    default: true
+
+# ---------------------------------------------------------------------
+# Outputs
+# ---------------------------------------------------------------------
+outputs:
+  - name: vibe_url
+    description: Your live Vibe App URL (public endpoint).
+  - name: vibe_bucket_url
+    description: Raw COS bucket URL.
+  - name: primaryoutputlink
+    description: Primary output link for IBM Cloud Projects.
+    primary_output: true
+
+# ---------------------------------------------------------------------
+# Dependencies
+# ---------------------------------------------------------------------
+dependencies:
+  - type: provider
+    name: ibm
+    source: IBM-Cloud/ibm
+    version: ">= 1.84.0"
+  - type: provider
+    name: random
+    source: hashicorp/random
+    version: ">= 3.0.0"
+
+# ---------------------------------------------------------------------
+# Related Content
+# ---------------------------------------------------------------------
+related:
+  - label: "Static Website Deployable Architecture"
+    url: "https://cloud.ibm.com/catalog/architecture/static-website-cffed3d6-f05c-408d-941d-f679ae4e2451-global"
+  - label: "IBM Cloud Deployable Architectures"
+    url: "https://www.ibm.com/architectures/deployable-architectures"
+  - label: "Project Bob"
+    url: "https://www.ibm.com/products/bob"
