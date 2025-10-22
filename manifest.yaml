@@ -1,9 +1,27 @@
-schema_version: "1.0.0"
-name: "vibe-da-ibm-cloud"
-type: "terraform"
-variables:
+version: 0.1.1
+name: vibe-da-ibm-cloud
+description: >
+  Paste. Manifest. Share. The Vibe Deployable Architecture automatically turns
+  raw HTML into a live website hosted on IBM Cloud Object Storage. No encoding
+  needed — Terraform handles it all.
+license: Apache-2.0
+tags:
+  - web
+  - static-site
+  - ibm-cloud
+  - fun
+inputs:
+  - name: region
+    type: string
+    description: Region for deployment (e.g. us-south)
+    default: us-south
   - name: vibe_code
     type: string
-    description: Paste your HTML here. Leave default text as placeholder or replace with your own code.
-    default: "<!-- Paste HTML here -->"
-    input_type: text
+    description: Raw HTML or code pasted by the user (auto-encoded internally)
+outputs:
+  - name: vibe_url
+    type: string
+    description: Public URL of your manifested vibe
+  - name: primaryoutputlink
+    type: string
+    description: Primary output link for IBM Cloud Projects
