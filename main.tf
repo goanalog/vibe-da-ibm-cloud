@@ -40,8 +40,8 @@ resource "ibm_cos_bucket" "bucket" {
   endpoint_type        = "public"
   
   # --- FIX ---
-  # Set the public-read ACL directly on the bucket
-  acl = "public-read"
+  # 'acl' argument removed as it is unsupported in this provider version.
+  # Public access will be handled by the IAM policy below.
 }
 
 # Upload the app HTML
@@ -54,17 +54,15 @@ resource "ibm_cos_bucket_object" "index_html" {
   endpoint_type   = "public"
   force_delete    = true
   
-  # --- FIX ---
-  # 'content_type' removed, as the provider will set it automatically.
+  # 'content_type' and 'acl' are not specified, as they are
+  # unsupported or handled automatically by this provider version.
 }
 
-# --- FIX ---
-# 'ibm_cos_bucket_public_access' resource removed as it was not recognized.
-# The 'acl' property on the 'ibm_cos_bucket' resource above replaces this.
 
-
-# OPTIONAL: IAM Access Group (only needed if you want explicit IAM-level public read)
-# You can comment this entire block out if 'acl' is sufficient.
+# --- REQUIRED: IAM Access Group ---
+# This is now the only method for enabling public access
+# in this provider version. It grants the "Public Access"
+# group the "Object Reader" role on your new bucket.
 data "ibm_iam_access_group" "public_access" {
   access_group_name = "Public Access"
 }
