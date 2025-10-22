@@ -1,56 +1,49 @@
-# Configure the IBM Cloud Provider
-terraform {
-  required_providers {
-    ibm = {
-      source  = "IBM-Cloud/ibm"
-      version = ">= 1.60.0" # Use a recent version
-    }
-  }
+# Locals to surface the catalog variable and encode HTML safely
+locals {
+  # Accept raw HTML pasted from Catalog
+  vibe_code_raw = var.vibe_code
+
+  # Encode safely before uploading to COS to avoid HCL parsing issues
+  vibe_code_encoded = base64encode(local.vibe_code_raw)
+
+  # Keeps var referenced so Catalog shows the input
+  _catalog_var_ref = var.vibe_code
 }
 
-# Create the COS (Cloud Object Storage) instance
-# This uses the "lite" plan, which is free, as described in the Readme.
-resource "ibm_resource_instance" "cos_instance" {
-  name              = var.cos_instance_name
+# Random suffix to keep names unique across accounts
+resource "random_string" "suffix" {
+  length  = 6
+  upper   = false
+  special = false
+}
+
+# Use the default resource group (adjust if you want to parameterize it)
+data "ibm_resource_group" "group" {
+  name = "default"
+}
+
+# IBM Cloud Object Storage Lite instance
+resource "ibm_resource_instance" "vibe_instance" {
+  name              = "vibe-instance-${random_string.suffix.result}"
   service           = "cloud-object-storage"
   plan              = "lite"
   location          = "global"
-  resource_group_id = var.resource_group_id
+  resource_group_id = data.ibm_resource_group.group.id
 }
 
-# Create the COS bucket
-# Note: Bucket names must be globally unique.
-resource "ibm_cos_bucket" "cos_bucket" {
-  bucket_name          = var.bucket_name
-  resource_instance_id = ibm_resource_instance.cos_instance.id
-  region_location      = var.region
+# COS bucket configured for website hosting
+resource "ibm_cos_bucket" "vibe_bucket" {
+  bucket_name          = "vibe-bucket-${random_string.suffix.result}"
+  resource_instance_id = ibm_resource_instance.vibe_instance.id
+  region_location      = "us-south"
   storage_class        = "standard"
-
-  # This is the magic that makes it a public website
-  website_configuration {
-    index_document = "index.html"
-  }
+  force_delete         = true
+  website_main_page    = "index.html"
 }
 
-# Set the public access policy for the bucket
-resource "ibm_cos_bucket_public_access" "public_access" {
-  bucket_name = ibm_cos_bucket.cos_bucket.bucket_name
-  public_access = "public-read"
-}
-
-# Determine which HTML content to use
-locals {
-  # If the user provides HTML, use it. Otherwise, use the sample app file.
-  html_to_deploy = var.vibe_html_content != "" ? var.vibe_html_content : file("${path.module}/index.html")
-}
-
-# Upload the index.html file to the bucket
-resource "ibm_cos_bucket_object" "index_object" {
-  bucket_name    = ibm_cos_bucket.cos_bucket.bucket_name
+# Upload user's HTML page using base64-safe content
+resource "ibm_cos_bucket_object" "index_html" {
+  bucket_crn     = ibm_cos_bucket.vibe_bucket.crn
   key            = "index.html"
-  content_type   = "text/html"
-  content        = local.html_to_deploy
-  
-  # Ensure public access is set before uploading
-  depends_on = [ibm_cos_bucket_public_access.public_access]
+  content_base64 = local.vibe_code_encoded
 }
