@@ -1,38 +1,40 @@
 # 🌀 Vibe Deployable Architecture — Project-Connected Edition
 
-Welcome to **vibe-driven development**, now blessed by **IBM Cloud Projects**.
-
-This **Deployable Architecture** lets you paste HTML, CSS, and JavaScript directly into a live browser-based IDE and manifest it instantly to a public **IBM Cloud Object Storage (Lite)** bucket.  
-
-When you edit and redeploy, IBM Cloud Functions can automatically stage a configuration update for your connected IBM Cloud Project.
-
----
-
-### ✨ Key Features
-
-* 🧱 **Instant Deployment** — Paste your code, manifest, and see it live instantly.
-* 💾 **COS Lite Storage** — Free tier hosting for small static apps.
-* ⚙️ **Serverless Update Hooks** — IBM Cloud Functions can stage configuration updates automatically.
-* 💬 **Project Awareness** — Integrates with IBM Cloud Projects to reflect new changes as “update available” notices.
-* ☁️ **Powered by IBM Cloud** — 100% runs on free-tier IBM Cloud services.
-
----
-
-### 🧩 Credits & Attribution
-
-Built upon conceptual inspiration from **Arn Hyndman**’s prior open-source work on deployable automation patterns, extended through AI-assisted design and IBM Cloud best practices.
-
----
-
-### 🚀 Usage
-
-1. Deploy this architecture in IBM Cloud Catalog.
-2. Open your project’s generated app URL (from **Outputs → primaryoutputlink**).
-3. Paste your code in the **Vibe IDE** and click **Manifest**.
-4. Watch your app redeploy in real time.
-
----
-
-Paste. Look. Share. Vibe.
-
 **Powered by IBM Cloud**
+
+This Deployable Architecture manifests a live web IDE where you can paste HTML, CSS, and JS into the browser and instantly deploy to a public IBM Cloud Object Storage Lite bucket.
+
+> Built upon conceptual inspiration from [Arn Hyndman](https://robjhyndman.com/)'s work on deployable automation patterns, extended through AI collaboration and IBM Cloud best practices.
+
+---
+
+### 🚀 Quick Start
+
+1. **Fork or clone this repo**
+   ```bash
+   git clone https://github.com/YOURNAME/vibe-da-ibm-cloud.git
+   cd vibe-da-ibm-cloud
+   ```
+2. Verify `catalog.json` and `manifest.yaml` are at the root.
+3. Push to a **public** GitHub repo.
+4. In IBM Cloud Catalog → *Add product → Deployable architecture → Terraform*, set the Source URL to your repo:
+   ```
+   https://github.com/YOURNAME/vibe-da-ibm-cloud
+   ```
+5. IBM Cloud will validate and import automatically.
+
+---
+
+### 🧱 Stack
+- IBM Cloud Object Storage (Lite)
+- IBM Cloud Functions (Lite)
+- IBM Cloud Projects integration
+
+---
+
+### 💡 Tip
+This DA can also stage updates back into IBM Cloud Projects when new code is pushed from the Vibe IDE front end.
+
+---
+
+Paste. Look. Share. **Vibe.**
