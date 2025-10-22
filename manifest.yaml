@@ -4,6 +4,6 @@ type: "terraform"
 variables:
   - name: vibe_code
     type: string
-    description: Paste your HTML here. Leave default text as placeholder or replace with your own code.
-    default: "<!-- Paste HTML here -->"
+    description: Paste your HTML code here. This replaces the sample index.html when you deploy.
+    default: "Paste your HTML code here"
     input_type: text
