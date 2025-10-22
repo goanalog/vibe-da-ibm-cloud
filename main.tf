@@ -3,10 +3,11 @@ provider "ibm" {
 }
 
 resource "ibm_resource_instance" "vibe_instance" {
-  name     = var.vibe_instance_name
-  service  = "cloud-object-storage"
-  plan     = "lite"
-  location = var.region
+  name             = var.vibe_instance_name
+  service          = "cloud-object-storage"
+  plan             = var.cos_plan # <-- Fixed (was hardcoded)
+  location         = var.region
+  resource_group   = var.resource_group # <-- Added
 }
 
 resource "random_string" "suffix" {
@@ -16,7 +17,7 @@ resource "random_string" "suffix" {
 }
 
 resource "ibm_cos_bucket" "vibe_bucket" {
-  [cite_start]bucket_name          = "${var.vibe_bucket_name}-${random_string.suffix.result}" [cite: 3]
+  bucket_name          = "${var.vibe_bucket_name}-${random_string.suffix.result}"
   resource_instance_id = ibm_resource_instance.vibe_instance.id
   region_location      = var.region
   storage_class        = "standard"
@@ -36,8 +37,8 @@ locals {
 }
 
 resource "local_file" "html_file" {
-  [cite_start]filename = "${path.module}/rendered_index.html" [cite: 4]
-  [cite_start]content  = var.html_input != "" ? local.escaped_html : file("${path.module}/index.html") [cite: 5]
+  filename = "${path.module}/rendered_index.html"
+  content  = var.html_input != "" ? local.escaped_html : file("${path.module}/index.html")
 }
 
 resource "ibm_cos_bucket_object" "html" {

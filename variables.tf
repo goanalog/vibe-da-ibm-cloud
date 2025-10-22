@@ -4,6 +4,18 @@ variable "region" {
   default     = "us-south"
 }
 
+variable "resource_group" {
+  type        = string
+  description = "IBM Cloud resource group (use 'Default' if on a trial)."
+  default     = "Default"
+}
+
+variable "cos_plan" {
+  type        = string
+  description = "Cloud Object Storage plan (Lite is free)."
+  default     = "lite"
+}
+
 variable "vibe_instance_name" {
   type        = string
   description = "Name of the IBM Cloud Object Storage instance."

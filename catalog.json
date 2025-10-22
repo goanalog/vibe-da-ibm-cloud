@@ -22,16 +22,49 @@
       }
     },
     {
+      "name": "resource_group",
+      "type": "string",
+      "description": "IBM Cloud resource group (use 'Default' if on a trial).",
+      "default": "Default",
+      "ui_hints": {
+        "group": "Setup",
+        "label": "Resource group"
+      }
+    },
+    {
+      "name": "cos_plan",
+      "type": "string",
+      "description": "Cloud Object Storage plan (Lite is free).",
+      "default": "lite",
+      "ui_hints": {
+        "group": "Setup",
+        "label": "COS plan",
+        "control": "dropdown",
+        "options": [
+          { "label": "Lite (Free)", "value": "lite" },
+          { "label": "Standard", "value": "standard" }
+        ]
+      }
+    },
+    {
       "name": "vibe_instance_name",
       "type": "string",
       "description": "Name of your Object Storage instance.",
-      "default": "vibe-instance"
+      "default": "vibe-instance",
+      "ui_hints": {
+        "group": "Setup",
+        "label": "Instance name"
+      }
     },
     {
       "name": "vibe_bucket_name",
       "type": "string",
       "description": "Name of your vibe bucket.",
-      "default": "vibe-bucket"
+      "default": "vibe-bucket",
+      "ui_hints": {
+        "group": "Setup",
+        "label": "Bucket name"
+      }
     },
     {
       "name": "html_input",

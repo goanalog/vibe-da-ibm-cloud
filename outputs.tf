@@ -9,5 +9,5 @@ output "vibe_url" {
 # Secondary output for advanced users or programmatic access.
 output "vibe_bucket_url" {
   description = "Direct Cloud Object Storage bucket URL (advanced access)."
-  value       = "https://${ibm_cos_bucket.vibe_bucket.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud"
+  value       = "https://{ibm_cos_bucket.vibe_bucket.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud"
 }
