@@ -1,5 +1,5 @@
 #############################
-# Variables (single visible input)
+# Variables
 #############################
 
 variable "vibe_code" {
