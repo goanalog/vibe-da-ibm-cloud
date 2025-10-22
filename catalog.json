@@ -1,5 +1,5 @@
 {
-  "version": "1.0.2",
+  "version": "1.0.1",
   "name": "vibe-da-ibm-cloud",
   "display_name": "Vibe Deployable Architecture — Flat COS + Optional Functions",
   "description": "Provisions COS Lite + bucket and serves a sample index.html. Optionally deploys an IBM Cloud Functions web action for presigned uploads (flag off by default for zero-friction validation).",

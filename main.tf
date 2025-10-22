@@ -1,9 +1,3 @@
-terraform {
-  required_providers {
-    ibm = {
-      source  = "IBM-Cloud/ibm"
-      version = ">= 1.84.2"
-    }
     random = {
       source  = "hashicorp/random"
       version = ">= 3.5.1"
@@ -22,17 +16,7 @@ resource "random_string" "suffix" {
 }
 
 # ----- Variables -----
-variable "region" {
-  description = "Region for COS instance"
-  type        = string
-  default     = "us-south"
-}
 
-variable "enable_functions" {
-  description = "Enable IBM Cloud Functions (OpenWhisk) presign endpoint (optional)"
-  type        = bool
-  default     = false
-}
 
 # ----- COS Lite Instance -----
 resource "ibm_resource_instance" "cos" {
@@ -87,17 +71,7 @@ resource "ibm_function_action" "presign" {
 }
 
 # ----- Outputs -----
-output "vibe_bucket_name" {
-  description = "COS bucket name hosting your app"
-  value       = ibm_cos_bucket.vibe.bucket_name
+
 }
 
-output "vibe_url" {
-  description = "Public URL for your deployed Vibe app"
-  value       = "https://${ibm_cos_bucket.vibe.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud/index.html"
-}
-
-output "vibe_presign_endpoint" {
-  description = "Optional Functions endpoint for presigned upload (only when enable_functions=true)"
-  value       = var.enable_functions ? "https://us-south.functions.cloud.ibm.com/api/v1/web/${ibm_function_action.presign[0].namespace}/default/${ibm_function_action.presign[0].name}.json" : null
 }

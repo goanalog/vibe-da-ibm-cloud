@@ -1,5 +1,5 @@
 name: vibe-da-ibm-cloud
-version: 1.0.2
+version: 1.0.1
 type: terraform
 description: COS Lite + bucket with sample index.html (optional Functions presign endpoint).
 primary_output: vibe_url
