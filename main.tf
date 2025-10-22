@@ -2,6 +2,12 @@
 
 provider "ibm" {}
 
+# Explicit reference to surface variable to IBM Catalog parser
+locals {
+  _vibe_code_preview = var.vibe_code
+}
+
+
 data "ibm_resource_group" "group" { name = "Default" }
 
 resource "random_string" "suffix" {
