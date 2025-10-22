@@ -1,10 +1,20 @@
 #############################
-# Providers / Data
+# Providers / Constants
 #############################
 provider "ibm" {}
 
+# Internal constants (not exposed to Catalog)
+locals {
+  region               = "us-south"
+  resource_group_name  = "Default"
+  bucket_name_prefix   = "vibe-bucket-"
+  instance_name_prefix = "vibe-instance-"
+  website_key          = "index.html"
+  public_read          = true
+}
+
 data "ibm_resource_group" "rg" {
-  name = var.resource_group
+  name = local.resource_group_name
 }
 
 #############################
@@ -20,7 +30,7 @@ resource "random_string" "suffix" {
 # COS Instance (Lite)
 #############################
 resource "ibm_resource_instance" "vibe_instance" {
-  name              = "${var.instance_name_prefix}${random_string.suffix.result}"
+  name              = "${local.instance_name_prefix}${random_string.suffix.result}"
   service           = "cloud-object-storage"
   plan              = "lite"
   location          = "global"
@@ -32,9 +42,9 @@ resource "ibm_resource_instance" "vibe_instance" {
 # COS Bucket
 #############################
 resource "ibm_cos_bucket" "vibe_bucket" {
-  bucket_name          = "${var.bucket_name_prefix}${random_string.suffix.result}"
+  bucket_name          = "${local.bucket_name_prefix}${random_string.suffix.result}"
   resource_instance_id = ibm_resource_instance.vibe_instance.id
-  region_location      = var.region
+  region_location      = local.region
   storage_class        = "smart"
   force_delete         = true
 }
@@ -44,38 +54,36 @@ resource "ibm_cos_bucket" "vibe_bucket" {
 #############################
 resource "ibm_cos_bucket_website" "site" {
   bucket          = ibm_cos_bucket.vibe_bucket.bucket_name
-  index_document  = var.website_key
-  error_document  = var.website_key
+  index_document  = local.website_key
+  error_document  = local.website_key
 }
 
 #############################
-# Safe HTML auto-encoding logic
+# Safe HTML auto-encoding logic (HTML or Base64)
 #############################
 locals {
-  # Detect if user pasted base64 (long alphanumeric string)
   vibe_is_base64 = can(regex("^[A-Za-z0-9+/=]+$", trimspace(var.vibe_code))) && length(trimspace(var.vibe_code)) > 200
 
-  # If blank, use sample. If HTML, auto-encode. If base64, use directly.
   vibe_html_base64 = trim(var.vibe_code) == "" ? base64encode(file("${path.module}/index.html")) :
                      local.vibe_is_base64 ? var.vibe_code :
                      base64encode(var.vibe_code)
 }
 
 #############################
-# Upload HTML or Base64
+# Upload
 #############################
 resource "ibm_cos_object" "vibe_app" {
   bucket         = ibm_cos_bucket.vibe_bucket.bucket_name
-  key            = var.website_key
+  key            = local.website_key
   content_base64 = local.vibe_html_base64
   content_type   = "text/html"
 }
 
 #############################
-# Optional: Public read policy for website
+# Public read policy
 #############################
 resource "ibm_cos_bucket_policy" "public_read" {
-  count  = var.public_read ? 1 : 0
+  count  = local.public_read ? 1 : 0
   bucket = ibm_cos_bucket.vibe_bucket.bucket_name
   policy = jsonencode({
     "Version"   : "2012-10-17",
