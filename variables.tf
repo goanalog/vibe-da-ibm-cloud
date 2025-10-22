@@ -3,7 +3,11 @@ variable "vibe_html_input" {
   type        = string
   default     = ""
 }
-
+variable "vibe_html_file" {
+  description = "Optional path or URL to an HTML file (overrides pasted input)."
+  type        = string
+  default     = ""
+}
 variable "region" {
   description = "IBM Cloud region for the COS instance."
   type        = string
