@@ -1,57 +1,33 @@
 {
-  "schema_version": "1.0.0",
-  "name": "vibe-da-ibm-cloud-max-vibe-lite-autoseed-autovars-v1.84-fix2",
-  "version": "0.1.2",
+  "version": "0.1.8",
+  "name": "vibe-da-ibm-cloud",
+  "display_name": "Vibe Deployable Architecture — Project-Connected Edition",
+  "description": "A vibe-driven IBM Cloud Deployable Architecture that lets users paste HTML/CSS/JS directly into a live web IDE and manifest their creation instantly to a public IBM Cloud Object Storage Lite bucket. Includes optional auto-staging for IBM Cloud Project configuration updates when code changes.",
+  "tags": ["vibe", "deployable-architecture", "ibm-cloud", "lite", "project-connected", "cos", "serverless"],
+  "license": {"use": "Apache-2.0"},
   "type": "terraform",
-  "provider": "ibm",
-  "display_name": "Vibe Landing Zone \u2014 Max Vibe (Lite, Auto-Seed, Auto-Vars, v1.84 fix2)",
-  "description": "Schematics-ready (Terraform 1.12 + IBM provider v1.84). COS Lite + public bucket, auto-generated HMAC, Cloud Function web action, and a vibey CodeMirror 5 IDE that manifests to COS via signed PUT.",
-  "variables": [
-    {
-      "name": "region",
-      "type": "string",
-      "default": "us-south",
-      "description": "IBM Cloud region (default us-south)."
-    },
-    {
-      "name": "bucket_prefix",
-      "type": "string",
-      "default": "vibe-bucket",
-      "description": "Prefix for the bucket name; a 6-char suffix is added."
-    }
-  ],
-  "outputs": [
-    {
-      "name": "bucket_name",
-      "type": "string",
-      "description": "Unique COS bucket name."
-    },
-    {
-      "name": "vibe_bucket_url",
-      "type": "string",
-      "description": "Base bucket endpoint."
-    },
-    {
-      "name": "vibe_url",
-      "type": "string",
-      "description": "Public URL to the IDE (index.html).",
-      "is_primary_output": true
-    },
-    {
-      "name": "upload_endpoint",
-      "type": "string",
-      "description": "Web action URL for get-presigned-url (guest/default)."
-    },
-    {
-      "name": "hmac_access_key_id",
-      "type": "string",
-      "description": "Generated COS HMAC access key id (for reference)."
-    },
-    {
-      "name": "hmac_secret_access_key",
-      "type": "string",
-      "description": "Generated COS HMAC secret access key (for reference).",
-      "sensitive": true
-    }
-  ]
+  "architectures": [{
+    "name": "vibe-da-ibm-cloud",
+    "type": "terraform",
+    "path": "./terraform"
+  }],
+  "sample_app": {
+    "name": "Vibe IDE Sample App",
+    "path": "./frontend/index.html",
+    "description": "A live-editable IDE powered by IBM Cloud Object Storage and Functions. Built upon ideas inspired by Arn Hyndman and enhanced through AI collaboration.",
+    "runtime": "static"
+  },
+  "documentation": {
+    "readme": "./README.md",
+    "manifest": "./manifest.yaml"
+  },
+  "support": {
+    "level": "community",
+    "contact": "https://cloud.ibm.com/docs/deployable-architectures"
+  },
+  "metadata": {
+    "ibm_cloud_project": "supported",
+    "ibm_cloud_plan": "lite",
+    "powered_by": "IBM Cloud"
+  }
 }

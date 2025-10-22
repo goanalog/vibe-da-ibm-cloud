@@ -1,31 +1,38 @@
-# 🌀 Vibe-Driven Development — Deploy Instantly
+# 🌀 Vibe Deployable Architecture — Project-Connected Edition
 
-Welcome to the **Vibe Manifestation Engine** — a sample app and deployable architecture that turns your HTML, CSS, and JS into a live web experience on IBM Cloud.
+Welcome to **vibe-driven development**, now blessed by **IBM Cloud Projects**.
 
-## ✨ What this does
-- Creates a **Cloud Object Storage (Lite)** instance and bucket
-- Uploads a sample **index.html** with a live CodeMirror editor built in
-- Installs an **IBM Cloud Function** that returns presigned URLs for uploads
-- Makes your public URL world-viewable
-- Auto-populates variables — no user input needed
+This **Deployable Architecture** lets you paste HTML, CSS, and JavaScript directly into a live browser-based IDE and manifest it instantly to a public **IBM Cloud Object Storage (Lite)** bucket.  
 
-## 💻 The Sample App
-The page you see after deployment *is* the Vibe IDE — a living, glowing code editor where you can:
-1. Edit the HTML directly in the browser
-2. Hit **Manifest ✨** to push updates live to your COS bucket
-3. Hit **Remix 🎛️** to reset and remix your vibe again
+When you edit and redeploy, IBM Cloud Functions can automatically stage a configuration update for your connected IBM Cloud Project.
 
-> All cloud access only happens after you click a button — no background requests.
+---
 
-## 🌐 Primary Output
-Your deployed web app appears at the **Primary Output Link**:
+### ✨ Key Features
 
-➡️ **${vibe_url}**
+* 🧱 **Instant Deployment** — Paste your code, manifest, and see it live instantly.
+* 💾 **COS Lite Storage** — Free tier hosting for small static apps.
+* ⚙️ **Serverless Update Hooks** — IBM Cloud Functions can stage configuration updates automatically.
+* 💬 **Project Awareness** — Integrates with IBM Cloud Projects to reflect new changes as “update available” notices.
+* ☁️ **Powered by IBM Cloud** — 100% runs on free-tier IBM Cloud services.
 
-This link is automatically promoted as the primary output in **IBM Cloud Projects**, so users can click straight to the live site after deployment.
+---
 
-## ☁️ Notes
-- Uses only Lite-tier resources (no cost)
-- Works with Terraform ≥ 1.12 and IBM provider v1.84
-- Public bucket hosting enabled for the app
-- To redeploy updates, edit your code in the IDE and hit Manifest again — no terminal required.
+### 🧩 Credits & Attribution
+
+Built upon conceptual inspiration from **Arn Hyndman**’s prior open-source work on deployable automation patterns, extended through AI-assisted design and IBM Cloud best practices.
+
+---
+
+### 🚀 Usage
+
+1. Deploy this architecture in IBM Cloud Catalog.
+2. Open your project’s generated app URL (from **Outputs → primaryoutputlink**).
+3. Paste your code in the **Vibe IDE** and click **Manifest**.
+4. Watch your app redeploy in real time.
+
+---
+
+Paste. Look. Share. Vibe.
+
+**Powered by IBM Cloud**

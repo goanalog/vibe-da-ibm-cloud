@@ -1,0 +1,1 @@
+variable "region" { default = "us-south" }

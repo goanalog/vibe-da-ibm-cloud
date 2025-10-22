@@ -1,15 +1,16 @@
-name: vibe-da-ibm-cloud-max-vibe-lite-autoseed-autovars-v1.84-fix2
-version: 0.1.2
-description: |
-  Schematics-ready (Terraform 1.12 + IBM provider v1.84). COS Lite + public bucket, auto-generated HMAC, Cloud Function web action, and a vibey CodeMirror 5 IDE that manifests to COS via signed PUT.
+name: vibe-da-ibm-cloud
+version: 0.1.8
+description: Vibe-driven Deployable Architecture with COS + Functions, powered by IBM Cloud.
+maintainer: IBM Cloud AI & Automation Lab
+license: Apache-2.0
 tags:
-  - terraform
-  - ibm-cloud
-  - object-storage
+  - vibe
   - deployable-architecture
-  - demo
-  - codemirror
   - lite
-  - autoseed
-  - autovars
-  - v1.84
+  - ibm-cloud
+  - project-connected
+artifacts:
+  - terraform
+  - frontend
+  - functions
+primary_output: primaryoutputlink
