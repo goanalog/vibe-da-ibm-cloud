@@ -16,6 +16,27 @@ metadata:
   icons:
     small: assets/icon.png
     large: assets/banner.png
+  theme:
+    font_family: IBM Plex Sans, IBM Plex Mono, sans-serif
+    color_scheme:
+      primary: '#0f62fe'
+      secondary: '#393939'
+      background: '#f4f4f4'
+      accent: '#42be65'
+  presentation:
+    style: vibe
+    summary: Paste your vibe code, click deploy, and instantly serve your live app
+      via IBM Cloud Object Storage.
+    keywords:
+    - vibe coding
+    - ibm cloud
+    - object storage
+    - deployable architecture
+    - static website
+    showcase:
+      banner: assets/banner.png
+      icon: assets/icon.png
+      primary_output: vibe_url
 inputs:
 - name: region
   type: string
@@ -62,6 +83,16 @@ inputs:
   default: ''
 outputs:
 - name: vibe_url
-  description: Public URL for your vibe app.
+  description: "Public URL for your deployed vibe-coded app \u2014 your key output."
+  visibility: key
+  ui:
+    group: Outputs
+    label: App URL
+    display_order: 1
+    style: highlight
 - name: vibe_bucket_url
-  description: Direct bucket URL.
+  description: Direct Cloud Object Storage bucket URL (advanced access).
+  ui:
+    group: Outputs
+    label: Bucket URL
+    display_order: 2
