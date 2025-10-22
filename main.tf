@@ -1,5 +1,6 @@
-# Vibe Manifestation Engine v1.2 — IBM Cloud–Safe Edition
+# Vibe Manifestation Engine v1.3 — Catalog-Visible Edition
 terraform {
+  required_version = ">= 1.0.0"
   required_providers {
     ibm = { source = "IBM-Cloud/ibm", version = ">= 1.62.0" }
     random = { source = "hashicorp/random", version = ">= 3.0" }
@@ -37,6 +38,13 @@ resource "ibm_cos_object" "vibe_app" {
   key = "index.html"
   content_base64 = local.html_base64
   content_type = "text/html"
+}
+resource "null_resource" "expose_vars" {
+  triggers = {
+    vibe_html_input = var.vibe_html_input
+    vibe_html_file  = var.vibe_html_file
+    region          = var.region
+  }
 }
 output "vibe_url" {
   description = "Your live Vibe App URL (public endpoint)"
