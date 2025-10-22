@@ -1,3 +1,142 @@
+Here are all the files you need for your deployable architecture, corrected and finalized.
+
+The core issue was a syntax error: you had a `terraform {}` block in both `main.tf` and `versions.tf`. The fix is to remove that block from `main.tf` and keep `versions.tf` as the single source of truth for your provider versions.
+
+With this fix, you can **delete `catalog.json` and `manifest.yaml`**. The platform will now correctly read your `.tf` files to build the UI.
+
+-----
+
+### `main.tf`
+
+This is the updated file with the duplicate `terraform {}` block removed.
+
+```terraform
+# Vibe Manifestation Engine v1.4 — JSON Schema Final Edition
+
+provider "ibm" {}
+
+data "ibm_resource_group" "group" { name = "Default" }
+
+resource "random_string" "suffix" {
+  length  = 6
+  upper   = false
+  special = false
+}
+
+resource "ibm_resource_instance" "vibe_instance" {
+  name              = "vibe-instance-${random_string.suffix.result}"
+  service           = "cloud-object-storage"
+  plan              = "lite"
+  location          = var.region
+  resource_group_id = data.ibm_resource_group.group.id
+}
+
+resource "ibm_cos_bucket" "vibe_bucket" {
+  bucket_name          = "vibe-bucket-${random_string.suffix.result}"
+  resource_instance_id = ibm_resource_instance.vibe_instance.id
+  storage_class        = "standard"
+  region_location      = var.region
+  force_delete         = true
+}
+
+locals {
+  html_source = (
+    length(trimspace(var.vibe_html_input)) > 0 ?
+      var.vibe_html_input :
+      file("${path.module}/index.html")
+  )
+  html_base64 = base64encode(local.html_source)
+}
+
+resource "ibm_cos_object" "vibe_app" {
+  bucket         = ibm_cos_bucket.vibe_bucket.bucket_name
+  key            = "index.html"
+  content_base64 = local.html_base64
+  content_type   = "text/html"
+}
+
+# Ensure all variables are visible to IBM Catalog
+resource "null_resource" "expose_vars" {
+  triggers = {
+    vibe_html_input = var.vibe_html_input
+    region          = var.region
+  }
+}
+```
+
+-----
+
+### `versions.tf`
+
+This file is correct and should be your **only** file that contains the `terraform {}` block.
+
+```terraform
+terraform {
+  required_version = ">= 1.4.6"
+
+  required_providers {
+    ibm = {
+      source  = "IBM-Cloud/ibm"
+      version = ">= 1.84.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = ">= 3.0.0"
+    }
+  }
+}
+```
+
+-----
+
+### `variables.tf`
+
+This file correctly defines your inputs for the "manifest-free" UI.
+
+```terraform
+variable "vibe_html_input" {
+  description = "Paste your HTML code here (if left blank, a default sample app will be deployed)."
+  type        = string
+  default     = ""
+}
+
+variable "region" {
+  description = "IBM Cloud region for the COS instance."
+  type        = string
+  default     = "us-south"
+}
+```
+
+-----
+
+### `outputs.tf`
+
+This file correctly defines your outputs for the "manifest-free" UI.
+
+```terraform
+output "vibe_url" {
+  description = "Your live Vibe App URL (public endpoint)"
+  value       = "https://${ibm_cos_bucket.vibe_bucket.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud/index.html"
+}
+
+output "vibe_bucket_url" {
+  description = "Raw COS bucket URL"
+  value       = "https://${ibm_cos_bucket.vibe_bucket.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud/"
+}
+
+output "primaryoutputlink" {
+  description = "Primary output link for IBM Cloud Projects"
+  value       = "https://${ibm_cos_bucket.vibe_bucket.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud/index.html"
+}
+```
+
+-----
+
+### `index.html`
+
+This is the default HTML file your `main.tf` logic loads if the user doesn't paste any code.
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -133,15 +272,12 @@
 
 <a id="projectLink" href="${project_url}" target="_blank" class="hidden" aria-label="Open IBM Cloud Project">☁️ View IBM Cloud Project</a>
 
-<!-- IBM Cloud CTA -->
 <section id="ibmCta" role="complementary" aria-label="Explore more Deployable Architectures from IBM Cloud">
   💡 See what other vibes IBM Cloud can manifest —
   <a href="https://www.ibm.com/architectures/deployable-architectures" target="_blank" rel="noopener noreferrer">
     Explore more Deployable Architectures →
   </a>
 </section>
-<!-- /IBM Cloud CTA -->
-
 <script>
   /* ===== Dynamic favicon (orb) ===== */
   const fav = document.getElementById('favicon');
@@ -326,3 +462,4 @@
 </script>
 </body>
 </html>
+```

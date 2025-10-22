@@ -1,11 +1,4 @@
 # Vibe Manifestation Engine v1.4 — JSON Schema Final Edition
-terraform {
-  required_version = ">= 1.0.0"
-  required_providers {
-    ibm = { source = "IBM-Cloud/ibm", version = ">= 1.62.0" }
-    random = { source = "hashicorp/random", version = ">= 3.0" }
-  }
-}
 
 provider "ibm" {}
 
@@ -26,7 +19,7 @@ resource "ibm_resource_instance" "vibe_instance" {
 }
 
 resource "ibm_cos_bucket" "vibe_bucket" {
-  bucket_name          = "vibe-bucket-${random_string.suffix.result}" [cite: 3]
+  bucket_name          = "vibe-bucket-${random_string.suffix.result}"
   resource_instance_id = ibm_resource_instance.vibe_instance.id
   storage_class        = "standard"
   region_location      = var.region
@@ -36,7 +29,7 @@ resource "ibm_cos_bucket" "vibe_bucket" {
 locals {
   html_source = (
     length(trimspace(var.vibe_html_input)) > 0 ?
-      var.vibe_html_input : [cite: 4]
+      var.vibe_html_input :
       file("${path.module}/index.html")
   )
   html_base64 = base64encode(local.html_source)

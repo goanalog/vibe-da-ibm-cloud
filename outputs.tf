@@ -1,6 +1,6 @@
 output "vibe_url" {
-  [cite_start]description = "Your live Vibe App URL (public endpoint)" [cite: 5]
-  [cite_start]value       = "https://${ibm_cos_bucket.vibe_bucket.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud/index.html" [cite: 5]
+  description = "Your live Vibe App URL (public endpoint)"
+  value       = "https://${ibm_cos_bucket.vibe_bucket.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud/index.html"
 }
 
 output "vibe_bucket_url" {
