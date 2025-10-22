@@ -1,3 +1,15 @@
+# Locals to surface the catalog variable and encode HTML safely
+locals {
+  # Accept raw HTML pasted from Catalog
+  vibe_code_raw = var.vibe_code
+
+  # Encode safely before uploading to COS to avoid HCL parsing issues
+  vibe_code_encoded = base64encode(local.vibe_code_raw)
+
+  # Keeps var referenced so Catalog shows the input
+  _catalog_var_ref = var.vibe_code
+}
+
 # Random suffix to keep names unique across accounts
 resource "random_string" "suffix" {
   length  = 6
@@ -23,7 +35,7 @@ resource "ibm_resource_instance" "vibe_instance" {
 resource "ibm_cos_bucket" "vibe_bucket" {
   bucket_name          = "vibe-bucket-${random_string.suffix.result}"
   resource_instance_id = ibm_resource_instance.vibe_instance.id
-  region_location      = var.region # <-- FIXED
+  region_location      = "us-south"
   storage_class        = "standard"
   force_delete         = true
   website_main_page    = "index.html"
