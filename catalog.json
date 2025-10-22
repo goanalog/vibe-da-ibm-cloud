@@ -11,6 +11,14 @@
     "static-website",
     "vibe"
   ],
+  "flavors": [
+    {
+      "name": "default",
+      "label": "Default",
+      "install_type": "terraform",
+      "working_directory": "."
+    }
+  ],
   "variable_metadata": [
     {
       "name": "vibe_code",
