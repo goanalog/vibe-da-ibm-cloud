@@ -1,3 +1,15 @@
+Here's the updated version of your `main.tf` file.
+
+I've made two key changes to fix the errors from your log:
+
+1.  **Removed `acl`:** I deleted the `acl = "public-read"` line from the `ibm_cos_bucket_object` resource, as it's no longer a supported argument.
+2.  **Replaced `ibm_cos_bucket_policy`:** I removed the entire `ibm_cos_bucket_policy` resource (which doesn't exist) and replaced it with the correct `ibm_cos_bucket_public_access` resource to make the bucket public.
+
+-----
+
+### Updated `main.tf`
+
+```terraform
 ###############################################################
 # Vibe Deployable Architecture — Main Terraform Configuration #
 # Deploys an IBM Cloud Object Storage bucket and hosts your
@@ -50,29 +62,20 @@ resource "ibm_cos_bucket_object" "index_html" {
   content_type    = "text/html; charset=utf-8"
   endpoint_type   = "public"
   force_delete    = true
-  acl             = "public-read"
+  # 'acl' argument removed as it is unsupported
 }
 
-# Enable public read access at the bucket level
-resource "ibm_cos_bucket_policy" "public_read" {
-  bucket_crn      = ibm_cos_bucket.bucket.crn
-  bucket_location = ibm_cos_bucket.bucket.region_location
-  policy = jsonencode({
-    Version   = "2.0"
-    Statement = [
-      {
-        Sid       = "PublicReadGetObject"
-        Effect    = "Allow"
-        Principal = { AWS = ["*"] }
-        Action    = ["s3:GetObject"]
-        Resource  = ["${ibm_cos_bucket.bucket.crn}/*"]
-      }
-    ]
-  })
+# --- FIX ---
+# Replaced 'ibm_cos_bucket_policy' with the correct resource
+# 'ibm_cos_bucket_public_access' to enable public reading.
+resource "ibm_cos_bucket_public_access" "public_access" {
+  bucket_crn    = ibm_cos_bucket.bucket.crn
+  bucket_region = ibm_cos_bucket.bucket.region_location
+  public_access = "public-read"
 }
 
 # OPTIONAL: IAM Access Group (only needed if you want explicit IAM-level public read)
-# You can comment this entire block out if ACL + bucket policy are sufficient.
+# You can comment this entire block out if 'ibm_cos_bucket_public_access' is sufficient.
 data "ibm_iam_access_group" "public_access" {
   access_group_name = "Public Access"
 }
@@ -82,13 +85,14 @@ resource "ibm_iam_access_group_policy" "public_read_policy" {
   roles           = ["Object Reader"]
 
   resources {
-    service              = "cloud-object-storage"
+    service            = "cloud-object-storage"
     resource_instance_id = ibm_resource_instance.cos_instance.guid
-    resource_type        = "bucket"
-    resource             = ibm_cos_bucket.bucket.bucket_name
+    resource_type      = "bucket"
+    resource           = ibm_cos_bucket.bucket.bucket_name
   }
 }
 
 ###############################################################
 # Outputs (see outputs.tf for values)
 ###############################################################
+```
