@@ -1,35 +1,19 @@
-variable "vibe_html_input_base64" {
-  description = "Your HTML, Base64 encoded. (If left blank, a default sample app will be deployed)."
-  type        = string
-  default     = ""
-}
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Inputs for Vibe Manifestation Engine
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 variable "region" {
-  description = "IBM Cloud region for the COS instance."
+  description = "IBM Cloud region for the bucket (e.g., us-south)"
   type        = string
   default     = "us-south"
 }
 
-variable "resource_group" {
-  description = "IBM Cloud resource group (use 'Default' if on a trial)."
+variable "resource_group_id" {
+  description = "Resource group ID for deploying the COS instance"
   type        = string
-  default     = "Default"
 }
 
-variable "cos_plan" {
-  description = "Cloud Object Storage plan (Lite is free)."
+variable "html_input_b64" {
+  description = "Base64-encoded HTML input (auto-encoded by catalog UI)"
   type        = string
-  default     = "lite"
-}
-
-variable "vibe_instance_name" {
-  description = "Name of your Object Storage instance."
-  type        = string
-  default     = "vibe-instance"
-}
-
-variable "vibe_bucket_name" {
-  description = "Name of your vibe bucket."
-  type        = string
-  default     = "vibe-bucket"
 }

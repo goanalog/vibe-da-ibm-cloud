@@ -1,98 +1,51 @@
 {
-  "name": "vibe-da-ibm-cloud",
   "version": "0.1.0",
-  "description": "Deploy your HTML vibe instantly to a free IBM Cloud Object Storage bucket.",
+  "name": "vibe-da-ibm-cloud",
+  "display_name": "Vibe Manifestation Engine",
+  "description": "Safely deploy arbitrary HTML as a public IBM Cloud Object Storage website. Paste, manifest, vibe.",
   "type": "terraform",
-  "tags": ["ibm", "object-storage", "terraform", "html", "vibe"],
-  "variables": [
+  "metadata": {
+    "architectures": ["x86_64"],
+    "categories": ["Developer Tools", "Web Hosting"],
+    "icon": "https://cloud.ibm.com/media/icon/object-storage.svg"
+  },
+  "inputs": [
     {
       "name": "region",
       "type": "string",
-      "description": "IBM Cloud region to deploy your vibe bucket.",
+      "ui:control": "select",
+      "ui:options": ["us-south", "eu-de", "jp-tok"],
       "default": "us-south",
-      "ui_hints": {
-        "group": "Setup",
-        "label": "Deployment region",
-        "control": "dropdown",
-        "options": [
-          { "label": "US South (Dallas)", "value": "us-south" },
-          { "label": "EU Germany", "value": "eu-de" },
-          { "label": "Tokyo", "value": "jp-tok" }
-        ]
-      }
+      "description": "Select IBM Cloud region for deployment."
     },
     {
-      "name": "resource_group",
+      "name": "resource_group_id",
       "type": "string",
-      "description": "IBM Cloud resource group (use 'Default' if on a trial).",
-      "default": "Default",
-      "ui_hints": {
-        "group": "Setup",
-        "label": "Resource group"
-      }
+      "ui:control": "text",
+      "description": "Resource group ID for your account."
     },
     {
-      "name": "cos_plan",
+      "name": "html_input",
       "type": "string",
-      "description": "Cloud Object Storage plan (Lite is free).",
-      "default": "lite",
-      "ui_hints": {
-        "group": "Setup",
-        "label": "COS plan",
-        "control": "dropdown",
-        "options": [
-          { "label": "Lite (Free)", "value": "lite" },
-          { "label": "Standard", "value": "standard" }
-        ]
-      }
-    },
-    {
-      "name": "vibe_instance_name",
-      "type": "string",
-      "description": "Name of your Object Storage instance.",
-      "default": "vibe-instance",
-      "ui_hints": {
-        "group": "Setup",
-        "label": "Instance name"
-      }
-    },
-    {
-      "name": "vibe_bucket_name",
-      "type": "string",
-      "description": "Name of your vibe bucket.",
-      "default": "vibe-bucket",
-      "ui_hints": {
-        "group": "Setup",
-        "label": "Bucket name"
-      }
-    },
-    {
-      "name": "vibe_html_input_base64",
-      "type": "string",
-      "description": "Your HTML, Base64 encoded. Use an online tool to encode your file first.",
-      "ui_hints": {
-        "group": "Vibe Code",
-        "label": "HTML (Base64 Encoded)",
-        "placeholder": "PCFET0NUWVBFIGh0bWw+PGh0bWw+..."
-      },
-      "required": false
+      "ui:control": "textarea",
+      "ui:help": "Paste your raw HTML here. It will be safely encoded before deployment.",
+      "transform": "base64encode",
+      "map_to": "html_input_b64"
     }
   ],
   "outputs": [
     {
-      "name": "vibe_bucket_url",
-      "type": "string",
-      "description": "Public URL for your IBM Cloud Object Storage bucket."
+      "name": "primary_output",
+      "description": "Your live app URL (primary output).",
+      "ui:promote": true
     },
     {
       "name": "vibe_url",
-      "type": "string",
-      "description": "Public link to your deployed HTML app.",
-      "ui_hints": {
-        "group": "Result",
-        "label": "Primary output link",
-        "primary_output": true
-      }
+      "description": "Public URL of the deployed HTML."
+    },
+    {
+      "name": "vibe_bucket_name",
+      "description": "The COS bucket name hosting your HTML."
     }
   ]
 }
