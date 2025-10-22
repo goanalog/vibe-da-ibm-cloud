@@ -1,14 +1,137 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vibe Coder — Sample App</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Vibe IDE — Subtle Banner Edition</title>
+<link rel="icon" href="vibe-orb.ico"/>
+<style>
+:root{
+  --bg1:#0a0018;--bg2:#1a0036;
+  --glow:#ff2bd6;--glow2:#21f3ff;
+  --text:#f6f7fb;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;color:var(--text);
+  font-family:"IBM Plex Sans",system-ui;
+  background:linear-gradient(135deg,var(--bg1),var(--bg2));
+  background-size:300% 300%;
+  animation:shift 20s ease-in-out infinite alternate;
+  overflow:hidden;
+}
+@keyframes shift{from{background-position:0 0}to{background-position:100% 100%}}
+.wrap{display:grid;grid-template-rows:auto 1fr 1fr;gap:10px;height:100vh;padding:10px}
+@media(min-width:880px){
+  .wrap{grid-template-rows:auto 1fr;grid-template-columns:1fr 1fr;grid-template-areas:"toolbar toolbar""editor preview"}
+  .editor{grid-area:editor}.preview{grid-area:preview}
+}
+.toolbar{
+  grid-area:toolbar;
+  display:flex;gap:10px;justify-content:center;align-items:center;
+  background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:14px;padding:10px 14px;
+  backdrop-filter:blur(10px) saturate(1.1);
+  box-shadow:0 6px 25px rgba(0,0,0,0.3),inset 0 0 25px rgba(255,255,255,0.05);
+  position:relative;
+}
+.btn{
+  border:1px solid rgba(255,255,255,0.2);
+  background:rgba(255,255,255,0.08);
+  color:#fff;font-weight:700;border-radius:12px;padding:10px 16px;
+  cursor:pointer;font-size:14px;transition:all .15s ease;
+}
+.btn:hover{transform:translateY(-1px)}
+.btn.fork{background:#333}
+.btn.theme{
+  background:linear-gradient(90deg,var(--glow),var(--glow2));
+  color:#0b0b12;border:none;
+}
+.btn.vibe{background:#222}
+.btn.vibe.active{
+  background:linear-gradient(90deg,var(--glow2),var(--glow));
+  color:#000;box-shadow:0 0 20px rgba(255,43,214,0.5);
+}
+.pane{background:rgba(8,10,22,0.42);border:1px solid rgba(255,255,255,0.12);border-radius:16px;backdrop-filter:blur(8px);overflow:hidden}
+.hdr{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12px;text-transform:uppercase;background:rgba(255,255,255,0.1)}
+.traffic{display:flex;gap:6px;margin-right:4px}
+.dot{width:10px;height:10px;border-radius:50%}
+.dot.r{background:#ff5f56}.dot.y{background:#ffbd2e}.dot.g{background:#27c93f}
+textarea,iframe{width:100%;height:calc(100% - 34px);border:0;outline:0;background:transparent;color:var(--text);font-family:"IBM Plex Mono",monospace;font-size:13.5px;line-height:1.5;padding:14px}
+iframe{background:#0b0f1c}
+.toast{position:fixed;right:16px;bottom:16px;background:rgba(10,14,26,0.8);border:1px solid rgba(255,255,255,0.18);border-radius:12px;padding:12px 14px;font-size:14px;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s}
+.toast.show{opacity:1;transform:translateY(0)}
+.promo{
+  position:fixed;left:12px;right:12px;bottom:-320px;z-index:50;
+  background:linear-gradient(135deg,#1a0036 0%,#2b004f 100%);
+  color:#fff;padding:22px 20px;text-align:center;
+  border:1px solid rgba(255,255,255,0.14);border-radius:16px;
+  box-shadow:0 -8px 24px rgba(0,0,0,0.45);
+  transition:bottom .8s cubic-bezier(.22,.61,.36,1);
+}
+.promo.visible{bottom:12px}
+.promo h2{margin:8px 0;font-size:20px;background:linear-gradient(90deg,var(--glow),var(--glow2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.promo a{color:var(--glow2);font-weight:700;text-decoration:none}
+.promo a:hover{text-decoration:underline}
+.promo small{opacity:.7}
+.promo-tab{
+  position:fixed;right:10px;bottom:0;z-index:51;
+  background:linear-gradient(90deg,var(--glow),var(--glow2));
+  color:#0b0b12;font-weight:700;padding:5px 10px;font-size:13px;
+  border-radius:10px 10px 0 0;box-shadow:0 0 10px rgba(255,43,214,0.4);
+  cursor:pointer;display:none;opacity:0.7;transition:opacity .2s;
+}
+.promo-tab:hover{opacity:1}
+.spark{
+  position:fixed;width:10px;height:10px;border-radius:50%;pointer-events:none;z-index:9999;
+  background:radial-gradient(circle at 30% 30%,#fff,var(--glow2),transparent 70%);
+  filter:drop-shadow(0 0 10px var(--glow2));
+  animation:sparkFade .9s ease-out forwards;
+}
+@keyframes sparkFade{0%{transform:translate(-50%,-50%) scale(1);opacity:.9}70%{transform:translate(-50%,-50%) scale(.5);opacity:.7}100%{transform:translate(-50%,-50%) scale(.15);opacity:0}}
+</style>
 </head>
-<body class="bg-gray-900 text-white font-sans flex items-center justify-center h-screen flex-col text-center">
-  <h1 class="text-4xl font-bold mb-4">✨ Welcome to Vibe Coder ✨</h1>
-  <p class="text-lg mb-6">Your single-page app is live on IBM Cloud Object Storage!</p>
-  <button onclick="alert('Keep vibing ✨')" class="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-full text-white font-semibold transition">Feel the Vibe</button>
+<body>
+<div class="wrap">
+  <div class="toolbar" id="toolbar">
+    <button class="btn fork" id="forkBtn">🌈 Fork</button>
+    <button class="btn theme" id="themeBtn">🌓 Theme</button>
+    <button class="btn vibe" id="ackBtn">💫 Acknowledge Vibe</button>
+  </div>
+  <section class="pane editor">
+    <div class="hdr"><div class="traffic"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div><span>vibe.html</span></div>
+    <textarea id="editor" placeholder="Paste your vibe-coded HTML here..."></textarea>
+  </section>
+  <section class="pane preview">
+    <div class="hdr"><div class="traffic"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div><span>preview</span></div>
+    <iframe id="preview"></iframe>
+  </section>
+</div>
+<div class="toast" id="toast">✨</div>
+<div class="promo" id="promo">
+  <h2 id="promoTitle">Explore Deployable Architectures & Meet Project Bob</h2>
+  <p id="promoText">
+    This looks like a banner ad because it is. But honestly,
+    <a href="https://www.ibm.com/architectures/deployable-architectures" target="_blank">IBM Cloud Deployable Architectures</a>
+    are excellent — paste, click, go live. And
+    <a href="https://www.ibm.com/products/bob" target="_blank">Project Bob</a>? Self-aware, useful, strangely lovable.
+  </p>
+  <small>*Self-aware marketing is still marketing, but at least it’s honest.</small>
+</div>
+<div class="promo-tab" id="promoTab">💼 Sponsored Vibes</div>
+<script>
+const editor=document.getElementById('editor'),preview=document.getElementById('preview'),toast=document.getElementById('toast'),forkBtn=document.getElementById('forkBtn'),themeBtn=document.getElementById('themeBtn'),ackBtn=document.getElementById('ackBtn'),promo=document.getElementById('promo'),promoTab=document.getElementById('promoTab'),promoTitle=document.getElementById('promoTitle'),promoText=document.getElementById('promoText');
+function showToast(msg){toast.textContent=msg;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2200);}
+function updatePreview(){preview.srcdoc=editor.value||"<style>body{margin:0;display:grid;place-items:center;height:100vh;color:#fff;font-family:sans-serif;background:#0b0f1c}</style><h2>✨Start typing your vibe…</h2>";}
+editor.addEventListener('input',updatePreview);updatePreview();
+forkBtn.onclick=()=>{showToast("🤝 Forking peacefully to GitHub…");window.open("https://github.com/goanalog/vibe-da-ibm-cloud/fork","_blank");};
+let dark=false;themeBtn.onclick=()=>{dark=!dark;document.body.style.filter=dark?"invert(1) hue-rotate(180deg)":"none";showToast(dark?"🌙 Night vibes engaged.":"🌞 Daylight vibes restored.");};
+let vibeActive=false;ackBtn.onclick=()=>{if(vibeActive)return;vibeActive=true;ackBtn.classList.add('active');ackBtn.textContent='🌈 Vibe Acknowledged!';showToast('💫 Vibe acknowledged. Balance restored.');setTimeout(()=>{ackBtn.classList.remove('active');ackBtn.textContent='💫 Acknowledge Vibe';vibeActive=false;},3500);}
+window.addEventListener('pointermove',e=>{const s=document.createElement('div');s.className='spark';s.style.left=e.clientX+'px';s.style.top=e.clientY+'px';document.body.appendChild(s);setTimeout(()=>s.remove(),950);});
+promoTab.onclick=()=>{promo.classList.add('visible');promoTab.style.display='none';setTimeout(()=>{promo.classList.remove('visible');promoTab.style.display='block';},6000);}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){promoTitle.textContent="👋 Welcome back!";promoText.innerHTML="While you were vibing elsewhere, IBM Cloud stayed online — probably auto-scaling something gorgeous.";promo.classList.add('visible');setTimeout(()=>{promo.classList.remove('visible');promoTab.style.display='block';promoTitle.textContent='Explore Deployable Architectures & Meet Project Bob';promoText.innerHTML=`This looks like a banner ad because it is. But honestly, <a href='https://www.ibm.com/architectures/deployable-architectures' target='_blank'>IBM Cloud Deployable Architectures</a> are excellent — paste, click, go live. And <a href='https://www.ibm.com/products/bob' target='_blank'>Project Bob</a>? Self-aware, useful, strangely lovable.`;},6000);}});
+</script>
 </body>
 </html>
