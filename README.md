@@ -1,4 +1,4 @@
-# 🌀 Vibe Deployable Architecture — Project-Connected Edition
+# 🌀 Vibe Deployable Architecture — Flat Edition
 
 **Powered by IBM Cloud**
 

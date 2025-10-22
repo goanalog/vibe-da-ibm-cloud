@@ -1,6 +1,6 @@
 name: vibe-da-ibm-cloud
-version: 0.1.8
-description: Vibe-driven Deployable Architecture with COS + Functions, powered by IBM Cloud.
+version: 0.1.9
+description: Flattened, vibe-driven Deployable Architecture with COS + Functions, powered by IBM Cloud.
 maintainer: IBM Cloud AI & Automation Lab
 license: Apache-2.0
 tags:
@@ -10,7 +10,6 @@ tags:
   - ibm-cloud
   - project-connected
 artifacts:
-  - terraform
-  - frontend
-  - functions
+  - main.tf
+  - index.html
 primary_output: primaryoutputlink
