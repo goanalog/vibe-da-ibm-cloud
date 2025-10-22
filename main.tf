@@ -71,3 +71,19 @@ resource "ibm_iam_access_group_policy" "public_read_policy" {
     resource             = ibm_cos_bucket.bucket.bucket_name
   }
 }
+
+data "ibm_iam_access_group" "public_access" {
+  access_group_name = "Public Access"
+}
+
+resource "ibm_iam_access_group_policy" "public_read_policy" {
+  access_group_id = data.ibm_iam_access_group.public_access.groups[0].id
+  roles           = ["Object Reader"]
+
+  resources {
+    service              = "cloud-object-storage"
+    resource_instance_id = ibm_resource_instance.cos_instance.guid
+    resource_type        = "bucket"
+    resource             = ibm_cos_bucket.bucket.bucket_name
+  }
+}
