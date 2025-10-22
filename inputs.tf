@@ -1,5 +1,5 @@
 variable "region" {
-  description = "Region to deploy your vibe (e.g., us-south)"
+  description = "Region for deployment (e.g., us-south)"
   type        = string
   default     = "us-south"
 }

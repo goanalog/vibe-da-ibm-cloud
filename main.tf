@@ -1,6 +1,5 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Vibe Manifestation Engine v1.1.1 — Auto-Encoding Edition (Catalog-Safe)
-# Transmutes raw HTML pasted by the user into a live, hosted web experience.
+# Vibe Manifestation Engine v1.1.2 — Auto-Encoding, Modular, Catalog-Safe Edition
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 terraform {
@@ -18,12 +17,14 @@ terraform {
 
 provider "ibm" {}
 
+# Random suffix for globally unique names
 resource "random_string" "suffix" {
   length  = 6
   upper   = false
   special = false
 }
 
+# IBM COS instance (Lite)
 resource "ibm_resource_instance" "vibe_instance" {
   name     = "vibe-instance-${random_string.suffix.result}"
   service  = "cloud-object-storage"
@@ -31,6 +32,7 @@ resource "ibm_resource_instance" "vibe_instance" {
   location = var.region
 }
 
+# COS bucket for hosting the site
 resource "ibm_cos_bucket" "vibe" {
   bucket_name          = "vibe-bucket-${random_string.suffix.result}"
   resource_instance_id = ibm_resource_instance.vibe_instance.id
@@ -38,6 +40,7 @@ resource "ibm_cos_bucket" "vibe" {
   storage_class        = "standard"
 }
 
+# Upload encoded HTML content
 resource "ibm_cos_object" "vibe_html" {
   bucket          = ibm_cos_bucket.vibe.bucket_name
   key             = "index.html"
@@ -45,6 +48,7 @@ resource "ibm_cos_object" "vibe_html" {
   content_type    = "text/html"
 }
 
+# Make the bucket publicly readable
 resource "ibm_cos_bucket_policy" "public_policy" {
   bucket = ibm_cos_bucket.vibe.bucket_name
   policy = <<POLICY
@@ -60,18 +64,4 @@ resource "ibm_cos_bucket_policy" "public_policy" {
   ]
 }
 POLICY
-}
-
-output "vibe_bucket_name" {
-  value = ibm_cos_bucket.vibe.bucket_name
-}
-
-output "vibe_url" {
-  description = "Public URL of your manifested vibe"
-  value       = "https://${ibm_cos_bucket.vibe.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud/index.html"
-}
-
-output "primaryoutputlink" {
-  description = "Primary output link for IBM Cloud Projects"
-  value       = "https://${ibm_cos_bucket.vibe.bucket_name}.s3.${var.region}.cloud-object-storage.appdomain.cloud/index.html"
 }
