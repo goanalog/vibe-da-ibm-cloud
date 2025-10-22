@@ -35,6 +35,7 @@ resource "ibm_cos_bucket_object" "index_html" {
   bucket_location = ibm_cos_bucket.bucket.region_location
   key             = "index.html"
   content         = var.html_input != "" ? var.html_input : file("index.html")
+  content_type    = "text/html; charset=utf-8"
   endpoint_type   = "public"
   force_delete    = true
 }
