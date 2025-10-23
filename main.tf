@@ -34,26 +34,26 @@ resource "ibm_cos_bucket_object" "vibe_code" {
   etag    = md5(local.html_content)
 }
 
-# --- IAM Public Access Policy Attempt ---
-# Applies an IAM policy allowing public GetObject access
-resource "ibm_cos_bucket_policy" "vibe_bucket_public_policy" {
-  endpoint_type        = "public"
-  bucket_crn           = ibm_cos_bucket.vibe_bucket.crn
-  bucket_location      = ibm_cos_bucket.vibe_bucket.region_location
+# --- IAM Public Access Group Policy Attempt ---
+# Grant the built-in "Public access" group the "Content Reader" role
+# on this specific COS bucket instance.
+resource "ibm_iam_access_group_policy" "bucket_public_read_policy" {
+  access_group_id = "AccessGroupId-PublicAccess" # Well-known ID for Public Access group
 
-  policy_document = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Sid       = "PublicReadGetObject",
-        Effect    = "Allow",
-        Principal = "*", 
-        Action    = "s3:GetObject",
-        Resource  = "${ibm_cos_bucket.vibe_bucket.crn}/*" 
-      }
-    ]
-  })
+  roles = ["Content Reader"] # COS Data Access Role for reading objects
+
+  resources {
+    service              = "cloud-object-storage"
+    resource_instance_id = ibm_resource_instance.vibe_instance.id
+    # Optionally narrow down further, but granting to the instance often covers buckets within
+    # resource_type = "bucket" 
+    # resource = ibm_cos_bucket.vibe_bucket.bucket_name
+  }
 }
 # --- END IAM Policy Attempt ---
 
-# REMOVED the duplicate output "vibe_url" block from here
+# REMOVED ibm_cos_bucket_policy resource
+
+output "vibe_url" {
+  # Output definition remains in outputs.tf
+}
