@@ -1,2518 +1,325 @@
 <!DOCTYPE html>
-<!-- 
-  lang="en" is crucial for accessibility, telling screen readers
-  which language and accent to use.
--->
-<html lang="en">
+<html lang="en" data-theme="auto">
 <head>
-<meta charset="utf-8" />
-<!--
-  METADATA AND VIEWPORT
-  - viewport: Ensures the page scales correctly on mobile devices.
-    "width=device-width" makes the page width match the device's screen.
-    "initial-scale=1" sets the default zoom level to 100%.
--->
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Vibe-Driven Web IDE · Powered by IBM Cloud</title>
-
-<!--
-  FONTS
-  - We're loading 'IBM Plex Sans' for the main UI (headings, buttons)
-    and 'IBM Plex Mono' for the code editor, which provides a clean
-    monospaced look for coding.
--->
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-
-<!--
-  FAVICON
-  - This link tag is a placeholder.
-  - The <canvas> element 'favCanvas' in our JavaScript will be used
-    to dynamically generate and update the favicon in real-time
-    with the current vibe's hue.
--->
-<link id="favicon" rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=" />
-
-<!--
-  TONE.JS
-  - This is the JavaScript library we use for generating the
-    "vibey" ambient background sound.
--->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-
-<!--
-  =============================================================
-  ==                     MAIN STYLESHEET                     ==
-  =============================================================
--->
-<style>
-  /*
-    :root VARIABLES
-    - CSS Custom Properties (variables) defined at the root (<html> tag)
-      so they are available globally.
-    - --hue: The base color (0-360) for all glow/vibe effects.
-    - --glow-intensity: A multiplier for how bright glows are.
-    - These are updated by JavaScript to make the UI interactive.
-  */
-  :root { 
-    --hue: 220; 
-    --fg: #e5e7eb; /* Foreground/text color */
-    --bg: #000;    /* Background color */
-    --glow-intensity: 1.0; 
-  }
-
-  /* Universal box-sizing reset */
-  * { box-sizing: border-box; }
-  
-  /* Basic document setup */
-  html, body { 
-    height: 100%; /* Make sure body fills the viewport */
-    margin: 0; 
-  }
-  
-  body { 
-    background: var(--bg); 
-    color: var(--fg); 
-    overflow: hidden; /* Prevents scrollbars from the full-screen canvases */
-    font-family: "IBM Plex Sans", system-ui; 
-  }
-  
-  /* Helper class added to <body> via JS while dragging.
-    - cursor: grabbing - Changes the cursor to a "closed hand".
-    - user-select: none - Prevents text highlighting while dragging,
-      which is a very common and annoying side-effect.
-  */
-  body.dragging-editor, body.dragging-dock { 
-    cursor: grabbing !important; 
-    user-select: none; 
-  }
-
-  /*
-    BACKGROUND & PARTICLE LAYERS
-    - These are the canvases that sit at the very back.
-    - position: fixed & inset: 0 - Stretches them to fill the entire viewport.
-    - filter: Applies the glow-intensity variable to the background.
-    - will-change: A performance hint for the browser, telling it
-      that we plan to animate the 'filter' property.
-    - transition: Allows them to fade in/out smoothly when hidden.
-  */
-  #bg, #particles { 
-    position: fixed; 
-    inset: 0; /* (top: 0, right: 0, bottom: 0, left: 0) */
-    width: 100%; 
-    height: 100%; 
-    display: block;
-    filter: brightness(calc(1 + (var(--glow-intensity) - 1) * 0.5)) saturate(calc(1 + (var(--glow-intensity) - 1) * 0.2));
-    will-change: filter; 
-    transition: opacity 0.5s ease; 
-    /* Accessibility: Hide decorative canvases from screen readers */
-    aria-hidden="true";
-  }
-  #bg     { z-index: 0; } /* Bottom layer */
-  #particles { 
-    z-index: 1; /* Middle layer */
-    pointer-events: none; /* Mouse clicks pass *through* this canvas */
-  }
-
-  /*
-    EDITOR WINDOW (#editor)
-    - The main draggable window for the code.
-    - z-index: 4 - Sits above the background but below overlays.
-    - transition: Allows for smooth show/hide and z-index changes.
-    - display: flex (column) - A modern way to structure the window
-      with a title bar, a flexible code area, and a footer bar.
-  */
-  #editor {
-    position: fixed; 
-    /* --- APPROXIMATE Initial Position (CSS) --- */
-    top: 7vh; 
-    left: 6vw;
-    width: calc(100vw - 12vw); /* Start wide */
-    /* Final pixel positions will be set/clamped by JS handleResize */
-    
-    min-height: 50vh; /* Taller by default */
-    z-index: 4; 
-    overflow: visible; /* Allow overflow menu to show */
-    background: rgba(10,12,18,0.75); /* Semi-transparent background */
-    border: 1px solid rgba(147,197,253,0.15);
-    border-radius: 16px; 
-    box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 40px hsla(var(--hue),90%,60%,0.22) inset;
-    transition: opacity .35s ease, transform .35s ease, z-index 0s .1s; 
-    cursor: default;
-    display: flex; 
-    flex-direction: column;
-  }
-  
-  /* 'is-active' class is added by JS on click to bring
-    the window to the front (highest z-index).
-  */
-  #editor.is-active { z-index: 6; }
-
-  /* Title bar for the editor window */
-  #editor-title {
-    display: flex; 
-    align-items: center; 
-    gap: .6rem; 
-    padding: .8rem 1rem; 
-    font-weight: 600;
-    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0));
-    border-bottom: 1px solid rgba(147,197,253,0.15); 
-    cursor: grab; /* Grab cursor indicates draggability */
-    flex-shrink: 0; /* Prevents title from shrinking if content overflows */
-  }
-  body.dragging-editor #editor-title { cursor: grabbing; }
-
-  /* Decorative window dots (like macOS) */
-  .dot { 
-    width: .7rem; 
-    height: .7rem; 
-    border-radius: 50%; 
-    /* Accessibility: Hide decorative dots */
-    aria-hidden="true";
-  }
-
-  /* Code Textarea */
-  #code { 
-    width: 100%; 
-    padding: 1rem 1.2rem; 
-    outline: none; 
-    border: 0; 
-    resize: vertical; /* Allow vertical resize only */
-    background: #0b0d14; 
-    color: #c7d2fe; 
-    font-family: "IBM Plex Mono", monospace; 
-    font-size: .92rem; 
-    line-height: 1.4;
-    flex-grow: 1; /* This is key: it makes the textarea fill all
-                     available vertical space in the flex container */
-    min-height: 200px; /* But don't let it get *too* small */
-  }
-  
-  /* Action Button Bar at the bottom of the editor */
-  #actions { 
-    position: relative; /* Needed for absolute positioning of overflow menu */
-    display: flex; 
-    /* CHANGED: Align buttons to the left */
-    justify-content: flex-start; 
-    align-items: center; 
-    padding: .8rem 1rem 1rem; 
-    gap: 0.5rem; 
-    flex-wrap: wrap; /* Allow buttons to wrap on small screens */
-    flex-shrink: 0; /* Prevents bar from shrinking */
-  }
-
-  /* Secondary Button Style (for non-primary actions)
-    - hsla() is used for color to easily control transparency (the 'a')
-      and tie it to the main CSS --hue variable.
-  */
-  .secondary-btn, label.secondary-btn {
-    background: hsla(var(--hue), 90%, 60%, 0.1); 
-    border: 1px solid hsla(var(--hue), 90%, 60%, 0.3);
-    color: hsl(var(--hue), 90%, 80%); 
-    padding: .5rem .9rem; 
-    border-radius: 9999px; /* "Pill" shape */
-    font-size: 0.8rem;
-    font-weight: 600; 
-    cursor: pointer; 
-    transition: all 0.2s ease;
-  }
-  .secondary-btn:hover, label.secondary-btn:hover { 
-    background: hsla(var(--hue), 90%, 60%, 0.2); 
-    border-color: hsla(var(--hue), 90%, 60%, 0.5); 
-  }
-  
-  /* Special state for "Copied" button feedback */
-  .secondary-btn.copied { 
-    background: hsla(120, 70%, 50%, 0.2); /* Green feedback */
-    border-color: hsla(120, 70%, 50%, 0.5); 
-    color: hsl(120, 70%, 80%); 
-  }
-
-  /* --- NEW: Primary Action Button Style ---
-     - Applies to Manifest and Remix
-     - Renamed from .btn to .primary-action-btn
-  */
-  .primary-action-btn { 
-    appearance: none; 
-    border: none; 
-    outline: none; 
-    cursor: pointer; 
-    border-radius: 9999px;
-    padding: .7rem 1.3rem; 
-    color: white; 
-    font-weight: 800; 
-    letter-spacing: .02em;
-    background: linear-gradient(135deg, hsl(var(--hue),90%,60%), hsl(calc(var(--hue)+60),80%,55%));
-    box-shadow: 0 0 20px hsla(var(--hue),90%,60%,.4), 0 0 40px hsla(var(--hue),90%,60%,.2);
-    transition: all .25s ease, transform .2s ease; 
-    /* Added text shadow for legibility */
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); 
-  }
-  .primary-action-btn:disabled { 
-    background: #555; 
-    cursor: not-allowed; 
-    opacity: 0.7; 
-    box-shadow: none; 
-  }
-  .primary-action-btn:hover:not(:disabled) { 
-    transform: translateY(-2px); 
-    filter: brightness(1.1); 
-    box-shadow: 0 0 40px hsla(var(--hue),90%,70%,.5); 
-  }
-  /* Style for the "vibing" manifest button (when code has changed) */
-  .primary-action-btn.vibing {
-    transform: scale(1.1); /* Make it bigger */
-    animation: pulseGlow 2.5s infinite ease-in-out;
-  }
-  
-  /* --- Overflow Menu Styles --- */
-  #more-actions-btn {
-    /* REMOVED: margin-left: auto; */
-    /* REMOVED: margin-right: 0.5rem; */
-  }
-
-  #overflow-menu {
-    position: absolute;
-    bottom: calc(100% + 10px); /* Position above the action bar */
-    /* CHANGED: Align with the 'More' button */
-    left: 1rem; 
-    /* REMOVED: right alignment */
-    width: 200px; /* Fixed width */
-    background: rgba(20, 22, 30, 0.85); /* Darker glass */
-    backdrop-filter: blur(10px);
-    border: 1px solid hsla(var(--hue), 70%, 50%, 0.3);
-    border-radius: 12px;
-    padding: 0.75rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    z-index: 10; /* Above editor content */
-    display: none; /* Hidden by default */
-    flex-direction: column; /* Stack items vertically */
-    gap: 0.6rem; /* Space between items */
-    opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 0.3s ease, transform 0.3s ease;
-  }
-
-  #overflow-menu.visible {
-    display: flex;
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  /* Style buttons inside the menu */
-  #overflow-menu .secondary-btn, 
-  #overflow-menu .toggle-container {
-    width: 100%; /* Make them full width */
-    text-align: left; /* Align text left */
-  }
-  #overflow-menu .toggle-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: var(--fg);
-    font-size: 0.8rem;
-    opacity: 0.8;
-  }
-  /* --- End Overflow Menu Styles --- */
-
-  /*
-    PREVIEW IFRAME
-    - This is where the user's manifested HTML is rendered.
-    - It's an <iframe> so the user's code is sandboxed
-      and its styles don't conflict with our IDE styles.
-    - z-index: 3 - Sits on top of the background.
-  */
-  #preview { 
-    position: fixed; 
-    inset: 0; 
-    width: 100%; 
-    height: 100%; 
-    border: 0; 
-    background: transparent; 
-    z-index: 3; 
-  }
-  
-  /* Helper class for hiding/showing elements */
-  .hidden { 
-    display: none !important; 
-    opacity: 0 !important; 
-    pointer-events: none !important; 
-    transform: scale(0.98) !important; 
-  }
-
-  /*
-    REMIX BUTTON
-    - Floats on top of the preview.
-    - NOW USES .primary-action-btn style
-  */
-  #remix {
-    position: fixed; 
-    bottom: 2rem;
-    right: 2rem;
-    z-index: 10; /* Sits on top of the preview */
-    display: none; /* Hidden by default */
-    
-    /* REMOVED: Old glassmorphism styles */
-    /* font-size, font-weight, padding, border-radius now come from .primary-action-btn */
-    /* text-shadow also comes from .primary-action-btn */
-  }
-  /* REMOVED: #remix:hover (now handled by .primary-action-btn:hover) */
-  
-
-  /* Keyframe animation for glowing/pulsing */
-  @keyframes pulseGlow {
-    0%, 100% { 
-      /* Adjusted shadow color slightly for primary buttons */
-      box-shadow: 0 0 calc(30px * var(--glow-intensity)) hsla(var(--hue), 90%, 65%, 0.6); 
-      transform: scale(1); 
-    }
-    50% { 
-      box-shadow: 0 0 calc(45px * var(--glow-intensity)) hsla(var(--hue), 90%, 70%, 0.8); 
-      transform: scale(1.02); 
-    }
-  }
-
-  /*
-    ORB (HUE CONTROL)
-    - The main circular hue slider.
-    - z-index: 5 (will be 7 when active)
-  */
-  #orb { 
-    position: fixed; 
-    /* --- APPROXIMATE Initial Position (CSS) --- */
-    bottom: 22px;
-    right: 22px;
-    /* Final pixel positions will be set/clamped by JS handleResize */
-    
-    z-index: 5; 
-    transition: opacity .3s ease, transform .3s ease, filter 0.3s ease, z-index 0s .1s; 
-  }
-  #orb.is-active { z-index: 7; } /* Higher z-index when active */
-
-  /* Dim the orb if we are dragging the editor */
-  body.dragging-editor #orb { 
-    filter: opacity(0.4); 
-    pointer-events: none; 
-  }
-  
-  /* The core of the orb */
-  #orbCore { 
-    width: 128px; 
-    height: 128px; 
-    border-radius: 50%; 
-    display: flex; 
-    flex-direction: column; 
-    gap: .35rem; 
-    align-items: center; 
-    justify-content: center; 
-    /* A complex background with a radial gradient and layered box shadows */
-    background: radial-gradient(120px 120px at 50% 30%, hsla(var(--hue),70%,60%,.28), rgba(15,18,26,.65)); 
-    border: 1px solid hsla(var(--hue),80%,60%,.4); 
-    box-shadow: 0 0 calc(40px * var(--glow-intensity)) hsla(var(--hue),80%,60%,.35), inset 0 0 40px hsla(var(--hue),80%,60%,.12); 
-    cursor: grab; /* Orb itself is now draggable */
-  }
-  #orbLabel { 
-    font-size: .68rem; 
-    opacity: .85; 
-    letter-spacing: .08em; 
-    text-transform: uppercase; 
-    /* Accessibility: Hide decorative label from screen readers */
-    aria-hidden="true";
-  }
-  #hue { width: 92px; } /* The slider inside the orb */
-
-  /*
-    VIBE CONTROLS DOCK
-    - Draggable window for all other controls.
-    - z-index: 6 (will be 8 when active)
-  */
-  #dock {
-    position: fixed; 
-    /* --- APPROXIMATE Initial Position (CSS) --- */
-    bottom: calc(22px + 128px + 14px); /* Position above orb */
-    right: 22px;
-    /* Final pixel positions will be set/clamped by JS handleResize */
-    
-    z-index: 6;
-    background: rgba(8,10,16,0.92); 
-    border: 1px solid rgba(147,197,253,0.18);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 calc(28px * var(--glow-intensity)) hsla(var(--hue),90%,60%,.22) inset; 
-    transition: all 0.3s ease; /* Animate everything, incl. height */
-    width: 184px; 
-    border-radius: 14px;
-    overflow: hidden; /* This is key: it hides the controls when we animate the height */
-  }
-  #dock.is-active { z-index: 8; } /* Higher z-index when active */
-  
-  /* Title bar for the dock */
-  #dock-title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between; /* Puts title left, buttons right */
-    padding: .6rem .8rem;
-    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0));
-    border-bottom: 1px solid rgba(147,197,253,0.15);
-    cursor: grab;
-    font-size: 0.8rem;
-    font-weight: 600;
-  }
-  
-  /* Minimize/Maximize buttons */
-  .window-controls { display: flex; gap: 0.3rem; }
-  .window-btn {
-    width: 1rem; height: 1rem; border-radius: 50%;
-    background: rgba(255,255,255,0.1);
-    color: var(--fg);
-    border: none;
-    cursor: pointer;
-    font-size: 0.7rem;
-    line-height: 1rem;
-    text-align: center;
-    opacity: 0.7;
-  }
-  .window-btn:hover { opacity: 1; background: rgba(255,255,255,0.2); }
-
-  /* Container for the actual controls */
-  #dock-controls {
-    display: grid; 
-    gap: 10px; 
-    padding: 10px 12px;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-  }
-  
-  /* Minimized state for the dock
-    - We just set the height to match the title bar.
-    - overflow: hidden on #dock does the rest.
-  */
-  #dock.minimized {
-    height: 33px; 
-  }
-  /* Hide the controls instantly so they don't peek out during anim */
-  #dock.minimized #dock-controls {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-  }
-
-  body.dragging-editor #dock { 
-    filter: opacity(0.4); 
-    pointer-events: none; 
-  }
-  body.dragging-dock #dock-title { cursor: grabbing; }
-
-  /* Control Row (Emoji + Slider/Toggle) */
-  .row { display: flex; align-items: center; gap: 8px; }
-  .emo { 
-    width: 20px; 
-    text-align: center; 
-    font-size: 1.1em; 
-  }
-  
-  /* Sliders
-    - appearance: none - Removes ugly default browser slider styles.
-    - We then re-style the track (.slider) and the thumb (::-webkit-slider-thumb)
-      from scratch.
-  */
-  .slider { 
-    appearance: none; 
-    height: 8px; 
-    width: 132px; /* Fixed width to fit inside dock */
-    background: rgba(147,197,253,0.18); 
-    border-radius: 9999px; 
-    cursor: pointer; 
-    transition: transform 0.1s ease;
-  }
-  /* "Vibey" interaction: grow slider on click */
-  .slider:active {
-    transform: scale(1.05); 
-  }
-  /* Styling the "thumb" (the draggable part) */
-  .slider::-webkit-slider-thumb { 
-    appearance: none; 
-    width: 18px; 
-    height: 18px; 
-    border-radius: 50%; 
-    background: hsl(var(--hue),90%,60%); 
-    border: 2px solid rgba(20,20,30,0.9); 
-    box-shadow: 0 0 calc(12px * var(--glow-intensity)) hsla(var(--hue),90%,60%,.6); 
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
-  }
-  /* "Vibey" interaction: grow thumb on click */
-  .slider:active::-webkit-slider-thumb {
-    transform: scale(1.1); 
-    box-shadow: 0 0 calc(18px * var(--glow-intensity)) hsla(var(--hue),90%,60%,.8);
-  }
-
-  /* Toggles
-    - appearance: none - Removes default checkbox styles.
-    - We style the empty track (.toggle) and then create a fake
-      thumb using the ::after pseudo-element.
-  */
-  .toggle { 
-    appearance: none; 
-    width: 42px; 
-    height: 26px; 
-    border-radius: 9999px; 
-    position: relative; /* So we can position ::after inside it */
-    background: rgba(147,197,253,0.18); 
-    border: 1px solid rgba(147,197,253,0.25); 
-    cursor: pointer; 
-    transition: transform 0.1s ease, box-shadow 0.2s ease;
-  }
-  .toggle:active {
-    transform: scale(1.05); /* "Vibey" interaction */
-  }
-  
-  /* The fake thumb */
-  .toggle::after { 
-    content: ""; 
-    position: absolute; 
-    top: 3px; 
-    left: 3px; 
-    width: 20px; 
-    height: 20px; 
-    border-radius: 50%; 
-    background: hsl(var(--hue),90%,60%); 
-    box-shadow: 0 0 calc(12px * var(--glow-intensity)) hsla(var(--hue),90%,60%,.6); 
-    transition: transform .2s ease, box-shadow 0.2s ease; 
-  }
-  
-  /* When the toggle has [aria-pressed="true"] (set by JS),
-    we move the ::after thumb to the right.
-  */
-  .toggle[aria-pressed="true"]::after { transform: translateX(16px); }
-  
-  .toggle:active::after {
-    box-shadow: 0 0 calc(18px * var(--glow-intensity)) hsla(var(--hue),90%,60%,.8);
-  }
-
-
-  /* Hints & Toasts
-    - Small, non-intrusive messages for the user.
-  */
-  #hint { 
-    position: fixed; 
-    bottom: 10vh; 
-    left: 50%; /* Centered */
-    transform: translateX(-50%);
-    z-index: 12; 
-    opacity: 0; /* Hidden by default */
-    pointer-events: none; 
-    transition: opacity 1s ease; /* For smooth fade in/out */
-    background: rgba(12,14,20,0.9); 
-    color: #c7d2fe; 
-    padding: .7rem 1rem; 
-    border-radius: 10px; 
-    font-size: .9rem; 
-    box-shadow: 0 0 calc(15px * var(--glow-intensity)) rgba(15,98,254,.3); 
-  }
-  
-  /* Remix Hint Arrow */
-  #remix-arrow {
-    position: fixed;
-    /* Position near the hint toast, pointing down-right */
-    bottom: calc(10vh + 40px); /* Below hint */
-    left: calc(50% + 150px); /* To the right of hint center */
-    width: 60px;
-    height: 60px;
-    z-index: 12;
-    opacity: 0;
-    pointer-events: none;
-    transform: rotate(-15deg); /* Angle towards bottom right */
-    transition: opacity 1s ease 0.5s; /* Delay fade out */
-    /* Add a subtle drop shadow */
-    filter: drop-shadow(0 2px 5px hsla(var(--hue), 90%, 50%, 0.4));
-  }
-  #remix-arrow path {
-    /* CHANGED: Use url(#arrowGradient) for stroke */
-    stroke: url(#arrowGradient); 
-    stroke-width: 4; /* Thicker */
-    stroke-linecap: round;
-    fill: none;
-    stroke-dasharray: 100; /* Approx length of path */
-    stroke-dashoffset: 100; /* Start fully hidden */
-    /* CHANGED: Faster animation, ease-in-out */
-    animation: drawArrow 0.6s ease-in-out forwards; 
-  }
-  /* Arrow Animation */
-  @keyframes drawArrow {
-    to { stroke-dashoffset: 0; }
-  }
-
-
-  /* Error/Info Toast (#status)
-    - Replaces #errorToast for integration.
-    - role="status" makes screen readers announce this politely.
-  */
-  #status { 
-    position: fixed; 
-    bottom: 2rem; 
-    left: 50%; 
-    transform: translateX(-50%); 
-    background-color: hsla(var(--hue), 80%, 55%, 0.8); /* Use vibe color */
-    color: white; 
-    padding: 0.8rem 1.2rem; 
-    border-radius: 8px; 
-    z-index: 100; /* Highest z-index */
-    opacity: 0; 
-    transition: opacity 0.5s ease; 
-    pointer-events: none; 
-    font-size: 0.9rem; 
-    box-shadow: 0 4px 15px hsla(var(--hue), 80%, 55%, 0.4);
-    max-width: 80%;
-    text-align: center;
-  }
-  #status.visible { opacity: 1; pointer-events: auto; }
-
-  /* Manifesting Overlay
-    - aria-live="polite" tells screen readers to announce changes
-      (like the <h1> text) when they are idle.
-  */
-  #overlay { 
-    position: fixed; 
-    inset: 0; 
-    display: none; /* Hidden by default */
-    align-items: center; 
-    justify-content: center; 
-    z-index: 10; 
-  }
-  #overlay.active { display: flex; }
-  
-  /* Dark backdrop for the overlay */
-  #overlay::before { 
-    content: ""; 
-    position: absolute; 
-    inset: 0; 
-    background: radial-gradient(circle at 50% 50%, rgba(20,30,50,0.55), rgba(0,0,0,0.92)); 
-  }
-  
-  /* Animated conic-gradient glow *behind* the text */
-  #overlay::after { 
-    content: ""; 
-    position: absolute; 
-    inset: -20% -20%; 
-    background: conic-gradient(from 0deg, hsla(var(--hue),90%,60%,0.18), hsla(calc(var(--hue)+60),90%,55%,0.12), hsla(var(--hue),90%,60%,0.18)); 
-    filter: blur(24px); 
-    opacity:.9; 
-    animation: shimmer 3s ease infinite, auraPulse 2.5s ease-in-out infinite; 
-  }
-  @keyframes shimmer { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-  @keyframes auraPulse { 0%,100% { opacity:.8; } 50% { opacity:1; } }
-  
-  /* Pulsing text */
-  #overlay h1 { 
-    position: relative; /* To sit on top of ::after */
-    color: white; 
-    font-size: 1.5rem; 
-    font-weight: 700; 
-    text-shadow: 0 0 20px hsla(var(--hue),90%,65%,.6); 
-    animation: textPulse 2.5s ease-in-out infinite; 
-  }
-  @keyframes textPulse { 0%,100%{transform:scale(1);opacity:.9;}50%{transform:scale(1.05);opacity:1;} }
-  
-  /* Canvas for overlay particles */
-  #manifestParticles { 
-    position: absolute; 
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: 100%; 
-    pointer-events:none; 
-    aria-hidden="true";
-  }
-
-  /* IBM DA CTA Link */
-  #ibm-cta {
-    position: fixed;
-    bottom: 1rem;
-    left: 1rem;
-    z-index: 11; /* Above background, below active windows */
-    font-size: 0.75rem;
-    color: hsla(var(--hue), 80%, 85%, 0.8);
-    text-decoration: none;
-    background: rgba(10, 12, 18, 0.5); /* Subtle bg */
-    border: 1px solid hsla(var(--hue), 80%, 60%, 0.2);
-    padding: 0.4rem 0.8rem;
-    border-radius: 99px;
-    backdrop-filter: blur(5px);
-    transition: all 0.2s ease;
-  }
-  #ibm-cta:hover {
-    color: hsl(var(--hue), 90%, 90%);
-    background: rgba(10, 12, 18, 0.7);
-    border-color: hsla(var(--hue), 80%, 60%, 0.4);
-    box-shadow: 0 0 15px hsla(var(--hue), 80%, 60%, 0.3);
-  }
-
-
-  /* Reduced Motion Accessibility
-    - This media query detects if the user has requested
-      reduced motion in their OS settings.
-    - If so, we disable all animations and transitions.
-  */
-  @media (prefers-reduced-motion: reduce) {
-    * { animation: none !important; transition: none !important; }
-  }
-  
-  /*
-    MOBILE OPTIMIZATION (max-width: 768px)
-    - This @media query applies styles only on screens
-      768px wide or smaller.
-    - It changes the layout from "floating windows" to a
-      stacked, full-width layout.
-  */
-  @media (max-width: 768px) {
-    /* Make editor and dock full width */
-    #editor, #dock {
-      left: 2vw !important; /* Use !important to override JS inline styles */
-      width: 96vw !important;
-      top: 2vh !important;
-      /* Remove fixed right/bottom positioning */
-      right: auto !important;
-      bottom: auto !important;
-    }
-    
-    /* Stack dock at the bottom of the screen */
-    #dock {
-      top: auto !important; /* Unset top */
-      bottom: 2vh !important; 
-    }
-    
-    /* Make orb smaller and move it to bottom-right corner */
-    #orb {
-      bottom: 10px !important;
-      right: 10px !important;
-      left: auto !important;
-      top: auto !important;
-    }
-    #orbCore {
-      width: 96px;
-      height: 96px;
-    }
-    
-    /* Make remix button smaller and move it */
-    #remix {
-      bottom: 1rem;
-      right: 1rem;
-      padding: 0.8rem 1.2rem;
-      font-size: 0.9rem;
-    }
-    
-    /* Ensure action buttons wrap correctly */
-    #actions {
-      justify-content: center; /* Center buttons when they wrap */
-      gap: 0.4rem;
-      padding: 0.5rem;
-    }
-    .secondary-btn, label.secondary-btn, .primary-action-btn { /* Apply mobile sizing to primary */
-      padding: 0.5rem 0.8rem;
-      font-size: 0.75rem;
-    }
-
-    /* Adjust overflow menu position */
-    #overflow-menu {
-        left: 0.5rem; /* Align with mobile padding */
-        right: auto; /* Remove right alignment */
-    }
-    
-    /* Adjust IBM CTA for mobile */
-    #ibm-cta {
-      font-size: 0.65rem;
-      padding: 0.3rem 0.6rem;
-      bottom: 0.5rem;
-      left: 0.5rem;
-    }
-    
-    /* Adjust hint arrow for mobile */
-    #remix-arrow {
-      bottom: calc(10vh + 30px);
-      left: calc(50% + 80px); /* Adjust horizontal */
-      width: 40px;
-      height: 40px;
-    }
-  }
-
-</style>
-<style>
-
-/* AI label popover */
-#aiBadge { position: fixed; right: 18px; bottom: 18px; z-index: 20; cursor: pointer; opacity: .9; }
-#aiBadge:hover { opacity: 1; }
-#aiPopover {
-  position: fixed; right: 18px; bottom: 60px; z-index: 21;
-  background: rgba(10,12,18,0.95); color: #e5e7eb; border: 1px solid rgba(147,197,253,0.2);
-  border-radius: 12px; padding: .75rem .9rem; width: min(360px, calc(100vw - 36px));
-  box-shadow: 0 12px 40px rgba(0,0,0,0.45);
-  display: none;
-}
-#aiPopover.show { display: block; }
-#aiPopover a { color: #93c5fd; text-decoration: underline; }
-#aiPopover a:hover { text-decoration: none; }
-@media (prefers-color-scheme: light) {
-  #aiPopover { background: rgba(255,255,255,0.98); color: #0b0d14; border-color: rgba(15,98,254,0.25); }
-}
-
-</style>
-</head>
-<body>
-
-<!-- 
-  HTML STRUCTURE
-  - Canvases for background.
-  - <iframe> for preview.
-  - <section> for the editor.
-  - <div> for overlay, orb, dock, and toasts.
-  - Each major interactive element has ARIA roles and labels.
--->
-
-<!-- Idle Background & Particle Canvases -->
-<canvas id="bg" aria-hidden="true"></canvas>
-<canvas id="particles" aria-hidden="true"></canvas>
-
-<!-- Preview Frame (for manifested code) -->
-<iframe id="preview" class="hidden" title="Vibe Preview"></iframe>
-
-<!--
-  EDITOR WINDOW
-  - role="region" tells screen readers this is a major, labeled
-    section of the application.
--->
-<section id="editor" role="region" aria-label="Vibe code editor">
-  
-  <!-- 
-    Title Bar
-    - role="button" + aria-grabbed="false" tells assistive tech
-      that this is a draggable handle.
-  -->
-  <div id="editor-title" role="button" aria-grabbed="false" aria-label="Drag editor window">
-    <span class="dot" style="background:#ff5f56" aria-hidden="true"></span>
-    <span class="dot" style="background:#ffbd2f" aria-hidden="true"></span>
-    <span class="dot" style="background:#27c93f" aria-hidden="true"></span>
-    <!-- Added id="intro" for integration -->
-    <span id="intro" style="margin-left: 0.5rem; opacity: 0.8;">🌌 Welcome to the Vibe IDE</span>
-  </div>
-  
-  <!-- Code Textarea -->
-  <textarea id="code" spellcheck="false" aria-label="Edit vibe HTML code" placeholder="Paste your vibe code here..."></textarea>
-  
-  <!-- 
-    Action Button Bar
-    - role="toolbar" tells screen readers this is a group
-      of action buttons.
-  -->
-  <div id="actions" role="toolbar" aria-label="Editor actions">
-
-    <!-- Primary Action Button - MOVED TO LEFT -->
-    <button id="manifestBtn" class="primary-action-btn" type="button" aria-label="Manifest your vibe">Manifest ✨</button>
-    
-    <!-- File Upload - MOVED TO LEFT -->
-    <input type="file" id="fileUpload" accept=".html,.txt,.css,.js" style="display: none;" aria-hidden="true">
-    <label for="fileUpload" id="uploadButton" class="secondary-btn" role="button" aria-label="Upload a file">
-      Upload ⤒
-    </label>
-    
-    <!-- "More" button - MOVED TO LEFT -->
-    <button id="more-actions-btn" class="secondary-btn" type="button" aria-label="More actions" aria-haspopup="true" aria-expanded="false">
-      More ⋮
-    </button>
-
-    <!-- Overflow Menu (initially hidden) -->
-    <div id="overflow-menu" role="menu" aria-labelledby="more-actions-btn">
-      <!-- Cloud Placeholders -->
-      <button id="pullVibe" class="secondary-btn" type="button" role="menuitem" aria-label="Pull vibe from cloud bucket">Pull Vibe 📥</button>
-      <button id="pushVibe" class="secondary-btn" type="button" role="menuitem" aria-label="Push vibe to cloud bucket">Push Vibe 📤</button>
-      
-      <!-- Commented out placeholder for future use, added id="updateProjectBtn" -->
-      <!--
-      <button id="updateProjectBtn" class="secondary-btn" type="button" role="menuitem" aria-label="Update IBM Cloud Project">
-        Update Project ☁️
-      </button> 
-      -->
-
-      <!-- RENAMED: Inspire Me -> Random IBM Factoid Please -->
-      <button id="inspireMe" class="secondary-btn" type="button" role="menuitem" aria-label="Get a random IBM factoid">Random IBM Factoid Please</button>
-      
-      <button id="saveLocal" class="secondary-btn" type="button" role="menuitem" aria-label="Save vibe to local file">Save ⤓</button>
-      <button id="copyCode" class="secondary-btn" type="button" role="menuitem" aria-label="Copy vibe code to clipboard">Copy ❐</button>
-      
-      <!-- Auto-Deploy Toggle moved here -->
-      <div class="toggle-container">
-        <label for="autoDeploy" style="cursor: pointer;">Auto-Deploy</label>
-        <button id="autoDeploy" class="toggle" role="switch" aria-pressed="true" aria-label="Toggle auto-deploy"></button>
-      </div>
-    </div>
-    <!-- End Overflow Menu -->
-
-  </div>
-</section>
-
-<!--
-  MANIFEST OVERLAY
-  - aria-live="polite": Announces changes to its content (the <h1>)
-    when the user is idle.
--->
-<div id="overlay" aria-live="polite" aria-label="Manifesting overlay">
-  <canvas id="manifestParticles" aria-hidden="true"></canvas>
-  <h1 id="overlay-status">✨ Manifesting your vibe...</h1>
-</div>
-
-<!--
-  ORB (HUE CONTROL)
-  - role="group" frames this as a set of related controls.
--->
-<div id="orb" role="group" aria-label="Vibe controls">
-  <div id="orbCore" role="button" aria-grabbed="false" aria-label="Drag vibe orb">
-    <div id="orbLabel" aria-hidden="true">Vibe</div>
-    <!-- Hue slider inside the orb -->
-    <input id="hue" class="slider" type="range" min="0" max="360" value="220" aria-label="Hue slider" />
-  </div>
-</div>
-
-<!--
-  VIBE CONTROLS DOCK
--->
-<div id="dock" role="group" aria-label="Mini control dock">
-  <!-- Dock Title Bar (for dragging and minimizing) -->
-  <div id="dock-title" role="button" aria-grabbed="false" aria-label="Drag vibe controls dock">
-    <span>Vibe Controls</span>
-    <div class="window-controls" aria-hidden="true">
-      <button id="minimizeDock" class="window-btn" aria-label="Minimize dock">_</button>
-      <button id="maximizeDock" class="window-btn" aria-label="Maximize dock" style="display: none;">□</button>
-    </div>
-  </div>
-  
-  <!-- 
-    Dock Controls Container (hidden when minimized)
-    - We will add/remove aria-hidden via JS.
-  -->
-  <div id="dock-controls">
-    <div class="row"><div class="emo" title="Hue" aria-hidden="true">🌈</div><input id="hue2" class="slider" type="range" min="0" max="360" value="220" aria-label="Hue slider duplicate" /></div>
-    <!-- UPDATED: Increased max spark amount -->
-    <div class="row"><div class="emo" title="Spark" aria-hidden="true">⚡</div><input id="spark" class="slider" type="range" min="1" max="20" value="6" aria-label="Particle intensity" /></div>
-    <div class="row"><div class="emo" title="Pulse" aria-hidden="true">💫</div><button id="pulse" class="toggle" role="switch" aria-pressed="false" aria-label="Toggle pulsing"></button></div>
-    <div class="row"><div class="emo" title="Zen" aria-hidden="true">🧘</div><button id="zen" class="toggle" role="switch" aria-pressed="false" aria-label="Toggle zen mode"></button></div>
-    <!-- UPDATED: Increased max flow speed -->
-    <div class="row"><div class="emo" title="Flow Speed" aria-hidden="true">🌌</div><input id="flow" class="slider" type="range" min="0.1" max="5.0" value="1.0" step="0.1" aria-label="Background flow speed" /></div>
-    <div class="row"><div class="emo" title="Particle Trail" aria-hidden="true">✨</div><button id="trail" class="toggle" role="switch" aria-pressed="false" aria-label="Toggle particle trail"></button></div>
-    <!-- UPDATED: Increased max glow intensity -->
-    <div class="row"><div class="emo" title="Glow Intensity" aria-hidden="true">🔆</div><input id="glow" class="slider" type="range" min="0.5" max="3.5" value="1.0" step="0.1" aria-label="Glow intensity" /></div>
-    <div class="row"><div class="emo" title="Ambient Sound" aria-hidden="true">🔉</div><button id="sound" class="toggle" role="switch" aria-pressed="false" aria-label="Toggle ambient sound"></button></div>
-  </div>
-</div>
-
-<!-- "Remix" button (floats over preview), added .primary-action-btn class -->
-<button id="remix" class="primary-action-btn" aria-label="Remix your vibe (return to editor)">Remix 🎨</button>
-
-<!-- 
-  Hint toast (shown over preview)
-  - role="status" and aria-live="polite" make this a
-    polite announcement for screen readers.
--->
-<div id="hint" role="status" aria-live="polite">💡 Press <b>Remix 🎨</b> to edit your vibe again</div>
-
-<!-- Animated SVG Arrow for Remix Hint -->
-<svg id="remix-arrow" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- NEW: Gradient Definition -->
-  <defs>
-    <linearGradient id="arrowGradient" gradientTransform="rotate(90)">
-      <stop offset="0%" stop-color="hsl(var(--hue), 90%, 70%)" />
-      <stop offset="100%" stop-color="hsl(calc(var(--hue) + 60), 80%, 60%)" />
-    </linearGradient>
-  </defs>
-  <path d="M 10 10 Q 50 10, 50 50 T 90 90"/>
-</svg>
-
-<!-- 
-  Error/Info toast (for user feedback) - RENAMED to #status
-  - role="status" makes this a polite announcement.
--->
-<div id="status" role="status" aria-live="polite"></div>
-
-<!-- IBM DA CTA Link -->
-<a id="ibm-cta" href="https://www.ibm.com/architectures/deployable-architectures?utm_source=vibe-ide&utm_medium=app&utm_campaign=mad-vibes" target="_blank" rel="noopener noreferrer">
-  Enabled by IBMer Product Teams & IBM Deployable Architectures ✨
-</a>
-
-
-<!--
-  =============================================================
-  ==                   JAVASCRIPT SECTION                    ==
-  =============================================================
--->
-<script>
-  // --- IBM Anecdote Data ---
-  // This is a local data store, inlined here for simplicity.
-  // It's used by the "Inspire Me" feature.
-  const ibmData = [
-    { "language": "Czech", "welcome": "Vítejte", "anecdote_source_country": "Czech Republic", "ibm_anecdote": "IBM re-established its presence in 1992, playing a key role in modernizing the nation's banking and telecommunications infrastructure after the Velvet Revolution.", "anecdote_date": "1992", "ibm_modern_link": "https://www.ibm.com/financial-services", "call_to_action": "Modernize your institution with a trusted industry partner." },
-    { "language": "Danish", "welcome": "Velkommen", "anecdote_source_country": "Denmark", "ibm_anecdote": "In 1953, Denmark's national statistics office used IBM punched-card equipment to process its census data, one of the earliest large-scale government data processing projects in Scandinavia.", "anecdote_date": "1953", "ibm_modern_link": "https://www.ibm.com/products/db2/data-warehouse", "call_to_action": "Tackle your largest data challenges with a modern data warehouse." },
-    { "language": "Dutch", "welcome": "Welkom", "anecdote_source_country": "Netherlands", "ibm_anecdote": "In 1979, IBM opened its European Distribution Center in Amsterdam, a highly automated facility that pioneered advanced logistics and supply chain management techniques for the industry.", "anecdote_date": "1979", "ibm_modern_link": "https://www.ibm.com/supply-chain", "call_to_action": "Explore how to build a smarter, more resilient supply chain." },
-    { "language": "Estonian", "welcome": "Tere tulemast", "anecdote_source_country": "Estonia", "ibm_anecdote": "In 1994, IBM was a key partner in Estonia's 'Tiger Leap' project, a national initiative to computerize schools that propelled the country into a leading digital society.", "anecdote_date": "1994", "ibm_modern_link": "https://www.ibm.com/industries/education", "call_to_action": "Empower the next generation of digital leaders with IBM's solutions." },
-    { "language": "Finnish", "welcome": "Tervetuloa", "anecdote_source_country": "Finland", "ibm_anecdote": "In 1958, a Finnish bank became one of the first in Europe to automate its operations by installing an IBM 650 computer, revolutionizing the nation's financial sector.", "anecdote_date": "1958", "ibm_modern_link": "https://www.ibm.com/financial-services", "call_to_action": "See how IBM is helping today's financial leaders automate and innovate." },
-    { "language": "French", "welcome": "Bienvenue", "anecdote_source_country": "France", "ibm_anecdote": "In 1962, IBM opened its La Gaude research laboratory, which became a key center for telecommunications innovation, including the first computerized private branch exchange (PBX).", "anecdote_date": "1962", "ibm_modern_link": "https://www.ibm.com/industries/telecommunications-media-entertainment", "call_to_action": "Innovate with a trusted partner for modern telecommunications." },
-    { "language": "German", "welcome": "Willkommen", "anecdote_source_country": "Switzerland", "ibm_anecdote": "In 1981, Gerd Binnig and Heinrich Rohrer at the IBM Zurich Research Laboratory in Switzerland invented the scanning tunneling microscope, a breakthrough that earned them the Nobel Prize in Physics.", "anecdote_date": "1981", "ibm_modern_link": "https://research.ibm.com/", "call_to_action": "See what the future holds and explore the latest from IBM Research." },
-    { "language": "Hungarian", "welcome": "Üdvözöljük", "anecdote_source_country": "Hungary", "ibm_anecdote": "IBM re-established its subsidiary in Hungary in 1990 after a 40-year absence, becoming a key partner in modernizing the country's banking and public administration sectors.", "anecdote_date": "1990", "ibm_modern_link": "https://www.ibm.com/industries/government-public-sector", "call_to_action": "Write your organization's next chapter of modernization with IBM." },
-    { "language": "Icelandic", "welcome": "Velkomin", "anecdote_source_country": "Iceland", "ibm_anecdote": "In 1964, the University of Iceland acquired an IBM 1620, the first computer in the country, which was instrumental in founding the field of computer science in Iceland.", "anecdote_date": "1964", "ibm_modern_link": "https://www.ibm.com/academic", "call_to_action": "Give your students and researchers the tools to build the future." },
-    { "language": "Irish", "welcome": "Fáilte", "anecdote_source_country": "Ireland", "ibm_anecdote": "In 1996, IBM established its European operations centre in Dublin, which grew into a major hub for software and services, significantly contributing to the 'Celtic Tiger' economic boom.", "anecdote_date": "1996", "ibm_modern_link": "https://www.ibm.com/consulting", "call_to_action": "See what IBM Consulting can do to accelerate your business." },
-    { "language": "Italian", "welcome": "Benvenuto", "anecdote_source_country": "Vatican City", "ibm_anecdote": "Beginning in the 1990s, IBM partnered with the Vatican Library to digitize its vast collection of priceless historical manuscripts, preserving them for humanity.", "anecdote_date": "1990s", "ibm_modern_link": "https://www.ibm.com/storage", "call_to_action": "Explore resilient storage solutions for your most critical data." },
-    { "language": "Kurdish (Kurmanji)", "welcome": "Bi xêr hatî", "anecdote_source_country": "Turkey", "ibm_anecdote": "IBM established its Turkish subsidiary in 1938, playing a foundational role in the computerization of the nation's public and private sectors for decades.", "anecdote_date": "1938", "ibm_modern_link": "https://www.ibm.com/hybrid-cloud", "call_to_action": "Build a modern, resilient foundation for your business." },
-    { "language": "Latvian", "welcome": "Laipni lūdzam", "anecdote_source_country": "Latvia", "ibm_anecdote": "In 1992, IBM was among the first major tech companies to establish a presence in newly independent Latvia, contributing to the modernization of its IT infrastructure.", "anecdote_date": "1992", "ibm_modern_link": "https://www.ibm.com/hybrid-cloud", "call_to_action": "Accelerate your modernization journey with hybrid cloud." },
-    { "language": "Lithuanian", "welcome": "Sveiki atvykę", "anecdote_source_country": "Lithuania", "ibm_anecdote": "IBM re-established its Lithuanian office in Vilnius in 1992, partnering with the government and businesses to modernize the country's technology base after independence.", "anecdote_date": "1992", "ibm_modern_link": "https://www.ibm.com/hybrid-cloud", "call_to_action": "Accelerate your modernization journey with hybrid cloud." },
-    { "language": "Malay", "welcome": "Selamat datang", "anecdote_source_country": "Malaysia", "ibm_anecdote": "In 1992, IBM helped establish the National High Performance Computing Centre in Malaysia, providing supercomputing resources that advanced national research in science and engineering.", "anecdote_date": "1992", "ibm_modern_link": "https://www.ibm.com/it-infrastructure/hpc", "call_to_action": "Solve your most complex challenges with High Performance Computing." },
-    { "language": "Norwegian", "welcome": "Velkommen", "anecdote_source_country": "Norway", "ibm_anecdote": "In 1963, the Norwegian Meteorological Institute installed an IBM 1620 computer nicknamed 'Goliath', which dramatically improved weather forecasting for the North Sea.", "anecdote_date": "1963", "ibm_modern_link": "https://www.ibm.com/sustainability", "call_to_action": "Turn environmental data into powerful insight and action." },
-    { "language": "Polish", "welcome": "Witamy", "anecdote_source_country": "Poland", "ibm_anecdote": "Following the fall of the Iron Curtain, IBM re-established its presence in Poland in 1991, with its software lab in Krakow later becoming a key European center for cloud technology.", "anecdote_date": "1991", "ibm_modern_link": "https://www.ibm.com/cloud", "call_to_action": "Explore the cloud platform designed for innovation at enterprise scale." },
-    { "language": "Portuguese", "welcome": "Bem-vindo", "anecdote_source_country": "Brazil", "ibm_anecdote": "In June 2010, IBM opened its ninth global research laboratory in Brazil, the first in South America, focusing on natural resource management, big data, and smarter cities.", "anecdote_date": "2010-06", "ibm_modern_link": "https://www.ibm.com/sustainability", "call_to_action": "Tackle the world's biggest challenges, from smarter cities to sustainability." },
-    { "language": "Romanian", "welcome": "Bun venit", "anecdote_source_country": "Romania", "ibm_anecdote": "After a long absence, IBM returned to Romania in 1990, becoming an essential partner in developing modern IT systems for the country's government and emerging private sector.", "anecdote_date": "1990", "ibm_modern_link": "https://www.ibm.com/consulting", "call_to_action": "Partner with experts to build a modern IT strategy for your future." },
-    { "language": "Scottish Gaelic", "welcome": "Fàilte", "anecdote_source_country": "United Kingdom", "ibm_anecdote": "In 1979, the IBM Hursley laboratory in the UK developed the IBM 3279 Color Display Station, a key innovation that introduced color to mainframe computer terminals.", "anecdote_date": "1979", "ibm_modern_link": "https://www.ibm.com/z", "call_to_action": "Deliver the security and performance your critical applications demand." },
-    { "language": "Slovak", "welcome": "Vitajte", "anecdote_source_country": "Slovakia", "ibm_anecdote": "IBM opened its Bratislava-based International Services Centre in 1999, which grew to become one of the largest and most diverse IBM service centers in the world.", "anecdote_date": "1999", "ibm_modern_link": "https://www.ibm.com/consulting", "call_to_action": "Leverage global expertise to solve your local business challenges." },
-    { "language": "Slovenian", "welcome": "Dobrodošli", "anecdote_source_country": "Slovenia", "ibm_anecdote": "IBM established its presence in Slovenia in 1992 after the country's independence, helping to build the new nation's core IT systems in banking and government.", "anecdote_date": "1992", "ibm_modern_link": "https://www.ibm.com/hybrid-cloud", "call_to_action": "Accelerate your modernization journey with hybrid cloud." },
-    { "language": "Swedish", "welcome": "Välkommen", "anecdote_source_country": "Sweden", "ibm_anecdote": "In 1956, Swedish aircraft manufacturer Saab installed an IBM 704, the first of the powerful 700-series scientific computers in Europe, using it to design the Draken fighter jet.", "anecdote_date": "1956", "ibm_modern_link": "https://www.ibm.com/it-infrastructure/hpc", "call_to_action": "Power your research with High Performance Computing." },
-    { "language": "Swahili", "welcome": "Karibu", "anecdote_source_country": "Kenya", "ibm_anecdote": "In November 2013, IBM opened its 12th global Research Lab in Nairobi, Kenya, the first of its kind on the African continent, focusing on solving regional challenges like water management.", "anecdote_date": "2013-11", "ibm_modern_link": "https://www.ibm.com/sustainability", "call_to_action": "Use technology to solve critical challenges in sustainability." },
-    { "language": "Turkish", "welcome": "Hoş geldiniz", "anecdote_source_country": "Turkey", "ibm_anecdote": "IBM established its Turkish subsidiary in 1938, playing a foundational role in the computerization of the nation's public and private sectors for decades.", "anecdote_date": "1938", "ibm_modern_link": "https://www.ibm.com/hybrid-cloud", "call_to_action": "Build a modern, resilient foundation for your business." },
-    { "language": "Vietnamese", "welcome": "Chào mừng", "anecdote_source_country": "Vietnam", "ibm_anecdote": "In 1996, IBM officially re-established its presence in Vietnam, playing a vital role in modernizing the nation's banking and telecom infrastructure as the country opened its economy.", "anecdote_date": "1996", "ibm_modern_link": "https://www.ibm.com/industries/telecommunications-media-entertainment", "call_to_action": "Explore IBM's solutions for modernizing core industries." },
-    { "language": "Welsh", "welcome": "Croeso", "anecdote_source_country": "United Kingdom", "ibm_anecdote": "In 1979, the IBM Hursley laboratory in the UK developed the IBM 3279 Color Display Station, a key innovation that introduced color to mainframe computer terminals.", "anecdote_date": "1979", "ibm_modern_link": "https://www.ibm.com/z", "call_to_action": "Deliver the security and performance your critical applications demand." },
-    { "language": "Yoruba", "welcome": "E kaabo", "anecdote_source_country": "Nigeria", "ibm_anecdote": "In 2013, IBM opened its first Innovation Center in Lagos, Nigeria, providing businesses and developers with access to cloud computing and big data technology to foster local innovation.", "anecdote_date": "2013", "ibm_modern_link": "https://www.ibm.com/cloud", "call_to_action": "Give your developers the power of the IBM Cloud platform." }
-  ];
-
-  /* ===== Global Application State =====
-  */
-  
-  // --- Core Vibe State ---
-  let baseHue = 220;      // The central color (0-360)
-  let pulseOn = false;    // Is the background pulse animation on?
-  let zenOn = false;      // Is zen mode (reduced effects) on?
-  let sparkAmt = 6;     // Number of particles on mouse move
-  let flowSpeed = 1.0;    // Speed of the background gradient animation
-  let trailOn = false;    // Are mouse trails on?
-  let glowIntensity = 1.0;// Multiplier for all glow/shadow effects
-  let soundOn = false;    // Is ambient sound on?
-  
-  // --- Animation Loop State ---
-  let idleTime = 0;       // A counter that increments every frame
-  let lastT = 0;          // Timestamp of the last animation frame
-  let fadeUntil = 0;      // Timestamp for when the overlay fade-out ends
-  let overlayActive = false; // Is the "Manifesting" overlay visible?
-  
-  // --- Dragging & Stacking State ---
-  let activeDragTarget = null;  // The <html> element being dragged (e.g., #editor)
-  let activeDragHandle = null;  // The <html> element that was clicked (e.g., #editor-title)
-  let dragOffsetX = 0;      // Mouse's X position inside the dragged element
-  let dragOffsetY = 0;      // Mouse's Y position inside the dragged element
-  let highestZ = 8;       // The highest z-index on the page (for stacking)
-  
-  // --- Audio State ---
-  let audioStarted = false; // Has the user clicked to enable audio?
-  
-  /* ===== DOM Element & Canvas Context References =====
-     We declare all element variables here in the global
-     scope so they can be accessed by any function.
-  */
-  
-  // Canvases and their 2D rendering contexts
-  let fav, favCanvas, fctx;  // Favicon
-  let bg, btx;              // Background gradient
-  let particles, ptx;       // Mouse particles
-  let overlay, overlayStatus, manifestCanvas, mCtx; // Manifest overlay
-  
-  // Vibe Controls
-  let hue, hue2;            // Hue sliders
-  let spark, pulse, zen, flow, trail, glow, sound; // Other controls
-  let dockControls; 
-  
-  // Toasts and Hints
-  let statusToast, hint; // Renamed errorToast to statusToast
-  let remixArrow; // Arrow element
-  
-  // Windows
-  let editor, code, manifestBtn, preview, remix, orb, dock; // Renamed manifest to manifestBtn
-  
-  // Window Titles (Drag Handles)
-  let editorTitle, dockTitle, orbCore, minimizeDock, maximizeDock;
-  
-  // Action Buttons & Menu
-  let saveLocalButton, copyCodeButton, inspireMeButton, fileUploadInput;
-  let pullVibeButton, pushVibeButton;
-  let moreActionsButton, overflowMenu, autoDeployToggle; // Added menu elements
-
-  /**
-   * @function initializeElements
-   * @description Gets references to all critical DOM elements
-   * after the page loads. Caches them in global variables.
-   * This is more efficient than calling getElementById every time.
-   */
-  function initializeElements() {
-      // Canvases
-      fav = document.getElementById('favicon');
-      // Create a canvas in memory for the favicon
-      favCanvas = document.createElement('canvas'); 
-      favCanvas.width = favCanvas.height = 64;
-      if (favCanvas) fctx = favCanvas.getContext('2d');
-      
-      bg = document.getElementById('bg'); 
-      if (bg) btx = bg.getContext('2d');
-      
-      particles = document.getElementById('particles'); 
-      if (particles) ptx = particles.getContext('2d');
-      
-      overlay = document.getElementById('overlay');
-      overlayStatus = document.getElementById('overlay-status');
-      manifestCanvas = document.getElementById('manifestParticles'); 
-      if (manifestCanvas) mCtx = manifestCanvas.getContext('2d');
-      
-      // Vibe Controls
-      hue = document.getElementById('hue');
-      hue2 = document.getElementById('hue2');
-      spark = document.getElementById('spark'); 
-      pulse = document.getElementById('pulse');
-      zen = document.getElementById('zen');
-      flow = document.getElementById('flow');
-      trail = document.getElementById('trail');
-      glow = document.getElementById('glow');
-      sound = document.getElementById('sound');
-      dockControls = document.getElementById('dock-controls'); 
-      
-      // Toasts / Status / Hints
-      statusToast = document.getElementById('status'); // Renamed
-      hint = document.getElementById('hint');
-      remixArrow = document.getElementById('remix-arrow'); // New
-
-      // Windows
-      editor = document.getElementById('editor');
-      code = document.getElementById('code');
-      manifestBtn = document.getElementById('manifestBtn'); // Renamed
-      preview = document.getElementById('preview');
-      remix = document.getElementById('remix');
-      orb = document.getElementById('orb');
-      dock = document.getElementById('dock');
-      
-      // Window Handles
-      editorTitle = document.getElementById('editor-title');
-      dockTitle = document.getElementById('dock-title');
-      orbCore = document.getElementById('orbCore');
-      minimizeDock = document.getElementById('minimizeDock');
-      maximizeDock = document.getElementById('maximizeDock');
-      
-      // Action Buttons & Menu
-      saveLocalButton = document.getElementById('saveLocal');
-      copyCodeButton = document.getElementById('copyCode');
-      inspireMeButton = document.getElementById('inspireMe');
-      fileUploadInput = document.getElementById('fileUpload'); 
-      pullVibeButton = document.getElementById('pullVibe');
-      pushVibeButton = document.getElementById('pushVibe');
-      moreActionsButton = document.getElementById('more-actions-btn'); // New
-      overflowMenu = document.getElementById('overflow-menu'); // New
-      autoDeployToggle = document.getElementById('autoDeploy'); // Moved
-  }
-
-
-  /* ===== Dynamic Favicon =====
-  */
-  
-  /**
-   * @function updateFavicon
-   * @description Draws a pulsing gradient on the in-memory
-   * 'favCanvas' and updates the document's favicon <link> tag.
-   * @param {number} now - The current time (from performance.now()).
-   * @param {number} h - The current base hue.
-   */
-  function updateFavicon(now, h) {
-       if (!fctx || !fav) return;
-       
-       // Calculate a pulsing brightness
-       const pulseEffectFav = (Math.sin(now / 700) + 1) / 2; // 0..1
-       const l1 = 70 + pulseEffectFav * 10; // 70..80
-       const l2 = 55 + pulseEffectFav * 10; // 55..65
-       
-       // Draw the gradient on the canvas
-       fctx.clearRect(0, 0, 64, 64);
-       const r = fctx.createRadialGradient(32, 32, 6, 32, 32, 30);
-       r.addColorStop(0, `hsl(${h}, 95%, ${l1}%)`);
-       r.addColorStop(1, `hsl(${(h + 40) % 360}, 85%, ${l2}%)`);
-       fctx.fillStyle = r; 
-       fctx.beginPath(); 
-       fctx.arc(32, 32, 26, 0, Math.PI * 2); 
-       fctx.fill();
-       
-       // Update the <link> tag's href with the canvas data
-       try { 
-         fav.href = favCanvas.toDataURL('image/png'); 
-       } catch(e) { 
-         console.warn("Could not update favicon:", e); 
-       }
-  }
-
-  /* ===== Idle Background + Particles =====
-  */
-  
-  // Canvas dimensions
-  let iW, iH; 
-  // Array to store all active particles
-  const idleParticles = []; 
-  // Last known mouse position
-  let lastMousePos = { x: 0, y: 0 };
-
-  /**
-   * @function initializeIdleCanvas
-   * @description Sets the background/particle canvas
-   * dimensions to fill the screen.
-   */
-  function initializeIdleCanvas() {
-      if (!bg || !particles) return;
-      iW = bg.width = particles.width = window.innerWidth;
-      iH = bg.height = particles.height = window.innerHeight;
-      lastMousePos = { x: iW / 2, y: iH / 2 };
-  }
-
-  /**
-   * @function handleResize
-   * @description Called on 'resize' event. Updates all canvas
-   * dimensions and recalculates window positions in pixels
-   * to prevent them from breaking layout. Crucially, it
-   * ensures elements stay on screen.
-   */
-  function handleResize() {
-    if (!bg || !particles || !manifestCanvas) return;
-    
-    // Update canvas sizes
-    const currentWidth = window.innerWidth;
-    const currentHeight = window.innerHeight;
-    iW = bg.width = particles.width = currentWidth;
-    iH = bg.height = particles.height = currentHeight;
-
-    // --- Window Positioning (Pixel Clamping) ---
-    [editor, dock, orb].forEach(el => {
-      if (el) {
-        // Prevent clamping if element is currently hidden (e.g., during manifest)
-        if (el.classList.contains('hidden')) return; 
-
-        // Get current dimensions AFTER potential resize
-        const rect = el.getBoundingClientRect();
-        
-        // Use existing pixel values from style as the base,
-        // OR if undefined (like on first load after CSS applies), use the rect's values.
-        let currentLeft = parseFloat(el.style.left) || rect.left;
-        let currentTop = parseFloat(el.style.top) || rect.top;
-        
-        // --- Clamp to NEW Viewport ---
-        // Ensure Left edge isn't negative
-        let clampedLeft = Math.max(0, currentLeft); 
-        // Ensure Top edge isn't negative
-        let clampedTop = Math.max(0, currentTop);
-        // Ensure Right edge doesn't go off screen
-        clampedLeft = Math.min(currentWidth - rect.width, clampedLeft);
-        // Ensure Bottom edge doesn't go off screen
-        clampedTop = Math.min(currentHeight - rect.height, clampedTop);
-
-        // --- Apply Pixel Positions ---
-        el.style.left = `${clampedLeft}px`;
-        el.style.top = `${clampedTop}px`;
-        el.style.right = 'auto'; // Must remove old positioning
-        el.style.bottom = 'auto';
-        
-        // Special case for editor width - always keep it relative
-        if (el === editor) {
-          const editorMarginVW = 6;
-          el.style.width = `${currentWidth * (1 - (editorMarginVW / 100) * 2)}px`;
-        }
-      }
-    });
-
-    resizeManifestCanvas(); // Resize overlay canvas too
-  }
-  // Add resize listener to the window
-  window.addEventListener('resize', handleResize);
-
-  /**
-   * @function drawIdle
-   * @description The main animation loop for the background
-   * and particle effects. Runs every frame.
-   */
-  function drawIdle() {
-    if (!btx || !ptx) { 
-        // If context isn't ready, try again next frame
-        requestAnimationFrame(drawIdle); 
-        return;
-    }
-
-    // 1. Increment time (faster if 'pulseOn' is true)
-    // UPDATED: More drastic pulse speed
-    idleTime += 0.0025 * (pulseOn ? 2.8 : 1) * flowSpeed; 
-    
-    // 2. Calculate hues for the gradient
-    const h1 = (baseHue + Math.sin(idleTime) * (pulseOn ? 55 : 40) + 360) % 360;
-    const h2 = (h1 + 120) % 360;
-    
-    // 3. Draw background gradient
-    // UPDATED: More drastic zen dimming
-    const bgL1 = zenOn ? 35 : 55;
-    const bgL2 = zenOn ? 25 : 40;
-    const g = btx.createLinearGradient(0,0,iW,iH);
-    g.addColorStop(0, `hsl(${h1},75%,${bgL1}%)`);
-    g.addColorStop(1, `hsl(${h2},70%,${bgL2}%)`);
-    btx.fillStyle = g; 
-    btx.fillRect(0,0,iW,iH);
-
-    // 4. Create new mouse trail particles (if trailOn)
-    if (trailOn && !activeDragTarget && !overlayActive) {
-        for(let i = 0; i < 2; i++) {
-             // Limit array size for performance
-             if(idleParticles.length > 360) idleParticles.shift();
-             const ang = Math.random()*Math.PI*2, spd = .2 + Math.random()*0.8;
-             idleParticles.push({ 
-               x:lastMousePos.x, y:lastMousePos.y, // Start at mouse
-               vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd, // Random velocity
-               life: 0.7, decay: .015+Math.random()*.025, // Lifespan
-               size:1+Math.random()*1.5, hue:(baseHue+Math.random()*40)%360 
-             });
-        }
-    }
-
-    // 5. Clear particle canvas and draw all particles
-    ptx.clearRect(0,0,iW,iH);
-    for(let i=idleParticles.length-1;i>=0;i--){
-      const p = idleParticles[i];
-      // Update position and life
-      p.x += p.vx; p.y += p.vy; p.life -= p.decay;
-      
-      // Remove particle if dead
-      if(p.life <= 0){ idleParticles.splice(i,1); continue; }
-      
-      // Draw particle (glowing radial gradient)
-      // UPDATED: More drastic zen dimming
-      ptx.globalAlpha = Math.max(p.life * (zenOn ? 0.4 : 0.85), 0); 
-      const baseSize = p.size * (0.8 + glowIntensity * 0.4);
-      const rd = ptx.createRadialGradient(p.x,p.y,0, p.x,p.y, baseSize*6);
-      rd.addColorStop(0, `hsla(${p.hue},90%,${60 + glowIntensity * 10}%,${0.9*p.life})`);
-      rd.addColorStop(1, `hsla(${p.hue},90%,${60 + glowIntensity * 10}%,0)`);
-      ptx.fillStyle = rd; 
-      ptx.beginPath(); 
-      ptx.arc(p.x,p.y, baseSize * (3 + glowIntensity),0,Math.PI*2);
-      ptx.fill();
-    }
-    ptx.globalAlpha = 1.0; // Reset alpha
-
-    // 6. Update favicon (if not in overlay mode)
-    if (!overlayActive) {
-      updateFavicon(performance.now(), baseHue);
-    }
-    
-    // 7. Request the next animation frame
-    requestAnimationFrame(drawIdle);
-  }
-
-  /**
-   * @function handleMouseMoveIdle
-   * @description Creates a "spark" of particles on mouse move.
-   * @param {MouseEvent} e - The mousemove event.
-   */
-  function handleMouseMoveIdle(e) {
-      lastMousePos.x = e.clientX;
-      lastMousePos.y = e.clientY;
-      // Don't make sparks if dragging, in overlay, or trail is on
-      if (overlayActive || activeDragTarget || trailOn) return;
-      
-      for(let i=0; i < sparkAmt; i++){ // Use the 'sparkAmt' variable
-        if(idleParticles.length > 360) idleParticles.shift();
-        const ang = Math.random()*Math.PI*2, spd = .4 + Math.random()*1.6 * (zenOn ? .7 : 1);
-        idleParticles.push({ 
-          x:e.clientX, y:e.clientY, 
-          vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd,
-          life:1, decay:.012+Math.random()*.02, 
-          size:1+Math.random()*2, hue:(baseHue+Math.random()*40)%360 
-        });
-      }
-  }
-  // Use 'passive:true' for performance
-  window.addEventListener('mousemove', handleMouseMoveIdle, {passive:true});
-
-
-  /* ===== Manifest Overlay Particles =====
-  */
-  let manifestOrbs = []; let mW, mH; let manifestAnimFrame;
-  let manifestMouse = { x: 0, y: 0 };
-
-  /**
-   * @function initializeManifestCanvas
-   * @description Sets the overlay canvas dimensions.
-   */
-   function initializeManifestCanvas() {
-        if (!manifestCanvas) return;
-        mW = manifestCanvas.width = window.innerWidth;
-        mH = manifestCanvas.height = window.innerHeight;
-        manifestMouse = { x: mW / 2, y: mH / 2 };
-    }
-  
-  /**
-   * @function resizeManifestCanvas
-   * @description Updates overlay canvas on window resize.
-   */
-  function resizeManifestCanvas() {
-      if (!manifestCanvas) return;
-      mW = manifestCanvas.width = window.innerWidth; 
-      mH = manifestCanvas.height = window.innerHeight;
-  }
-
-  /**
-   * @function createManifestOrbs
-   * @description Creates the array of particles for the overlay.
-   */
-  function createManifestOrbs() {
-        manifestOrbs = Array.from({ length: 46 }, () => ({
-          x: Math.random() * mW, y: Math.random() * mH, r: Math.random() * 2.2 + 1,
-          dx: (Math.random() - .5) * 0.25, dy: (Math.random() - .5) * 0.25,
-          a: Math.random() * 0.8 + 0.2, depth: Math.random(),
-        }));
-    }
-    
-  /**
-   * @function drawManifestOrbs
-   * @description Animation loop for the "Manifesting" overlay particles.
-   * @param {number} time - The current timestamp.
-   */
-  function drawManifestOrbs(time) {
-       if (!mCtx) return requestAnimationFrame(drawManifestOrbs);
-        const now = time || performance.now();
-        const dt = (now - lastT) || 16; lastT = now;
-
-        // Animate hue while overlay is active
-        if (overlayActive) {
-          baseHue = (baseHue + dt * 0.02) % 360;
-          document.documentElement.style.setProperty('--hue', Math.round(baseHue));
-          if (hue && hue2) {
-              hue.value = hue2.value = baseHue;
-          }
-          updateFavicon(now, baseHue);
-        }
-
-        mCtx.clearRect(0, 0, mW, mH);
-        const pulseEffect = (Math.sin(now / 1250) + 1) / 2;
-
-        manifestOrbs.forEach(p => {
-          // Particles follow the mouse
-          const follow = overlayActive ? 0.012 : 0.004;
-          p.dx += (manifestMouse.x - p.x) * follow * (0.15 + 0.85 * p.depth);
-          p.dy += (manifestMouse.y - p.y) * follow * (0.15 + 0.85 * p.depth);
-          p.x += p.dx; p.y += p.dy; p.dx *= 0.96; p.dy *= 0.96;
-          
-          // Wrap particles around screen
-          if (p.x < -20) p.x = mW + 20; if (p.x > mW + 20) p.x = -20;
-          if (p.y < -20) p.y = mH + 20; if (p.y > mH + 20) p.y = -20;
-
-          let sat = 70; let alpha = p.a * (0.55 + 0.45 * pulseEffect);
-          
-          // If 'fadeUntil' is set, fade particles out
-          if (fadeUntil && now < fadeUntil) {
-              const k = (fadeUntil - now) / 1800; // 1..0
-              sat = 5 + 65 * k;
-              alpha *= k;
-          }
-          
-          // Draw the particle
-          const baseSize = p.r * (1 + p.depth * 1.6) * (0.8 + glowIntensity * 0.4);
-          const grad = mCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, baseSize * 3);
-          grad.addColorStop(0, `hsla(${Math.round(baseHue)}, ${sat}%, ${82 + 8 * pulseEffect + glowIntensity * 5}%, ${0.7 * alpha * glowIntensity})`);
-          grad.addColorStop(1, 'transparent');
-          mCtx.beginPath(); mCtx.fillStyle = grad; mCtx.arc(p.x, p.y, baseSize * (3 + glowIntensity), 0, Math.PI * 2); mCtx.fill();
-        });
-        mCtx.globalAlpha = 1.0;
-
-        // Check if fade-out is complete
-        if (fadeUntil && now >= fadeUntil) {
-          fadeUntil = 0;
-          overlayActive = false;
-          cancelAnimationFrame(manifestAnimFrame);
-          manifestAnimFrame = null;
-          // Also hide the overlay element itself
-          if (overlay) {
-            overlay.classList.remove('active');
-          }
-          return; // Stop the loop
-        }
-        
-        // Continue the loop
-        manifestAnimFrame = requestAnimationFrame(drawManifestOrbs);
-    }
-    
-   /**
-    * @function handleMouseMoveManifest
-    * @description Updates the mouse position for the overlay anim.
-    * @param {MouseEvent} e - The mousemove event.
-    */
-   function handleMouseMoveManifest(e) {
-       manifestMouse.x = e.clientX;
-       manifestMouse.y = e.clientY;
-   }
-   window.addEventListener('mousemove', handleMouseMoveManifest, {passive:true});
-
-  /* ===== Vibe Controls Logic =====
-  */
-  
-  /**
-   * @function setHue
-   * @description Updates the baseHue and the CSS variable.
-   * @param {number} h - The new hue value (0-360).
-   */
-  function setHue(h){ 
-    baseHue = h % 360; 
-    document.documentElement.style.setProperty('--hue', baseHue); 
-  }
-  
-  /**
-   * @function toggle
-   * @description Helper function to set ARIA state on a toggle button.
-   * @param {Element} btn - The button element.
-   * @param {boolean} flag - The new state (true=on, false=off).
-   */
-  function toggle(btn, flag){ 
-    btn.setAttribute('aria-pressed', flag ? 'true':'false'); 
-  }
-
-  /**
-   * @function setupControlListeners
-   * @description Adds all the 'input' and 'click' event
-   * listeners for the vibe controls in the dock and orb.
-   */
-  function setupControlListeners() {
-       if (!hue || !hue2 || !spark || !pulse || !zen || !flow || !trail || !glow || !sound || !dock || !dockControls) return; 
-       
-        // --- Hue Sliders (they sync each other) ---
-        hue.addEventListener('input', ()=>{ 
-          setHue(parseInt(hue.value,10)); 
-          hue2.value = hue.value; 
-        });
-        hue2.addEventListener('input', ()=>{ 
-          setHue(parseInt(hue2.value,10)); 
-          hue.value = hue2.value; 
-        });
-        
-        // --- Other Controls ---
-        spark.addEventListener('input', ()=>{
-            sparkAmt = parseInt(spark.value,10);
-        });
-        pulse.addEventListener('click', ()=>{ 
-          pulseOn = !pulseOn; 
-          toggle(pulse, pulseOn); 
-        });
-        zen.addEventListener('click', ()=>{ 
-          zenOn = !zenOn; 
-          toggle(zen, zenOn); 
-        });
-        flow.addEventListener('input', () => { 
-          flowSpeed = parseFloat(flow.value); 
-        });
-        trail.addEventListener('click', () => { 
-          trailOn = !trailOn; 
-          toggle(trail, trailOn); 
-        });
-        glow.addEventListener('input', () => {
-            glowIntensity = parseFloat(glow.value);
-            // Update CSS variable for glow
-            document.documentElement.style.setProperty('--glow-intensity', glowIntensity);
-        });
-        sound.addEventListener('click', toggleSound);
-        
-        // --- Dock Minimize/Maximize ---
-        if (minimizeDock) {
-          minimizeDock.addEventListener('click', (e) => {
-            e.stopPropagation(); // Stop event from triggering drag
-            dock.classList.add('minimized');
-            minimizeDock.style.display = 'none';
-            if (maximizeDock) maximizeDock.style.display = 'block';
-            if (dockControls) dockControls.setAttribute('aria-hidden', 'true'); 
-          });
-        }
-        if (maximizeDock) {
-          maximizeDock.addEventListener('click', (e) => {
-            e.stopPropagation(); // Stop event from triggering drag
-            dock.classList.remove('minimized');
-            maximizeDock.style.display = 'none';
-            if (minimizeDock) minimizeDock.style.display = 'block';
-            if (dockControls) dockControls.setAttribute('aria-hidden', 'false'); 
-          });
-        }
-  }
-
-  /* ===== Ambient Sound (Tone.js) =====
-  */
-  
-  // Tone.js objects
-  let synth, noise, filter, lfo, reverb, volume;
-  let audioLoop; // The loop for the chords
-  
-  /**
-   * @function setupSound
-   * @description Initializes all Tone.js components and
-   * connects them into an audio graph.
-   * This is called from initializeElements().
-   */
-  function setupSound() {
-      // Check if Tone.js is loaded
-      if (typeof Tone === 'undefined') { // Tone.js not loaded
-        console.warn("Tone.js not loaded, skipping sound setup.");
-        return; 
-      }
-      
-      try {
-        // Use a polyphonic synth for richer chords
-        synth = new Tone.PolySynth(Tone.FMSynth, {
-            volume: -12, // Increased volume
-            envelope: { attack: 1.5, decay: 0.1, sustain: 1, release: 2.5 },
-            oscillator: { type: "sine" },
-            modulation: { type: "square" },
-            modulationEnvelope: { attack: 0.5, decay: 0, sustain: 1, release: 0.5 }
-        });
-        
-        // Filtered noise for "wind" or "static"
-        noise = new Tone.Noise("pink").set({ volume: -25, fadeIn: 2 }); // Increased volume
-        
-        // An LFO-controlled filter for a "sweeping" sound
-        filter = new Tone.AutoFilter("4n").set({
-            baseFrequency: 100,
-            octaves: 4,
-            filter: { type: "lowpass" }
-        });
-        
-        // The LFO (Low Frequency Oscillator) that controls the filter
-        lfo = new Tone.LFO("8n", 100, 1000);
-        
-        // Reverb and Master Volume
-        reverb = new Tone.Reverb(4); // Long reverb
-        volume = new Tone.Volume(-12).toDestination(); // Master volume
-        
-        // Connect audio graph
-        // synth -> reverb -\
-        // noise -> filter -> reverb -> volume -> speakers
-        synth.connect(reverb);
-        noise.connect(filter);
-        filter.connect(reverb);
-        reverb.connect(volume);
-
-        // Create a looping chord progression
-        // This loop will play two chords every 4 measures.
-        audioLoop = new Tone.Loop(time => {
-          // Play chords softly
-          synth.triggerAttackRelease(["C3", "G3", "Eb4"], "8m", time);
-          synth.triggerAttackRelease(["F3", "C4", "Ab4"], "8m", time + Tone.Time("4m").toSeconds());
-        }, "4m"); // Loop every 4 measures (faster)
-        
-      } catch (e) {
-        console.error("Tone.js setup failed:", e);
-        // Disable sound button if setup fails
-        if(sound) {
-          sound.disabled = true;
-          sound.setAttribute('aria-label', 'Ambient sound disabled (error)');
-        }
-      }
-  }
-
-  /**
-   * @function toggleSound
-   * @description Starts or stops the ambient sound.
-   * Also handles the "start audio" gesture required by browsers.
-   */
-  async function toggleSound() {
-      if (!sound || !synth || typeof Tone === 'undefined') return;
-      
-      // 1. Handle browser audio gesture requirement
-      // Browsers block audio until a user clicks.
-      if (!audioStarted) {
-          try {
-            await Tone.start();
-            audioStarted = true;
-            console.log('AudioContext started.');
-          } catch (e) {
-            console.error("Tone.start() failed:", e);
-            showStatusMessage("Error: Could not start audio."); // Use status message
-            return; // Don't proceed if audio failed to start
-          }
-      }
-
-      // 2. Toggle the sound state
-      soundOn = !soundOn;
-      toggle(sound, soundOn); // Update button ARIA state
-
-      // 3. Start or stop the audio components
-      if (soundOn) {
-          // Start sound components
-          if(lfo) lfo.start();
-          if(noise) noise.start();
-          if(audioLoop) audioLoop.start(0);
-
-          if(Tone.Transport.state !== 'started') {
-            Tone.Transport.start();
-          }
-      } else {
-          // Stop sound components
-          if(lfo) lfo.stop();
-          if(noise) noise.stop();
-          if(audioLoop) audioLoop.stop(0);
-          if(synth) synth.releaseAll();
-      }
-  }
-
-  /* ===== Simple Status/Info Toast ===== */
-  
-  // Timer for hiding the toast
-  let statusTimeout; 
-
-  /**
-   * @function showStatusMessage
-   * @description Displays a short message in the status toast element.
-   * Replaces showErrorToast and uses the #status div.
-   * @param {string} message - The text to display.
-   * @param {number} [duration=3000] - How long to show the message (ms).
-   */
-  function showStatusMessage(message, duration = 3000) {
-      if (!statusToast) return;
-      
-      // Set the message
-      statusToast.textContent = message;
-      // Make it visible
-      statusToast.classList.add('visible');
-      
-      // Clear any previous timeout
-      clearTimeout(statusTimeout);
-      
-      // Set a new timeout to hide it
-      statusTimeout = setTimeout(() => {
-          statusToast.classList.remove('visible');
-      }, duration);
-  }
-
-  /* ===== Default Vibe Template =====
-  */
-  
-  /**
-   * @function sampleHTML
-   * @description Generates a default HTML string for the editor.
-   * @param {number} h - The current base hue.
-   * @returns {string} A string of HTML.
-   */
-  function sampleHTML(h){
-    // This is a template literal (using backticks ``)
-return `<!-- This is your Vibe. Edit it! -->
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;700&display=swap');
-  
-  body {
-    background: linear-gradient(135deg, 
-      /* We inject the current hue directly into the CSS */
-      hsl(${h}, 50%, 15%), 
-      hsl(${(h + 60) % 360}, 50%, 10%)
-    );
-    color: hsl(${h}, 80%, 90%);
-    font-family: 'IBM Plex Sans', sans-serif;
-    display: grid;
-    place-items: center;
-    min-height: 100vh;
-    text-align: center;
-    padding: 2rem;
-    font-weight: 300;
-  }
-  h1 {
-    font-size: clamp(2rem, 5vw + 1rem, 4.5rem);
-    font-weight: 700;
-    text-shadow: 0 0 30px hsla(${h}, 90%, 70%, 0.7);
-  }
-  p {
-    font-size: clamp(1rem, 2vw + 0.5rem, 1.5rem);
-    line-height: 1.6;
-  }
-</style>
-
-<h1>This is Your Vibe.</h1>
-<p>
-  You manifested this page. 
-  Click the <b>Remix 🎨</b> button to return<br>
-  to the code editor and keep creating.
-</p>
-`;
-  }
-
-  /**
-   * @function doManifest
-   * @description Handles the "Manifest" button click.
-   * Shows the overlay, sanitizes code, loads it into the
-   * preview iframe, and then fades to the preview.
-   */
-  async function doManifest(){
-      // Use the updated button ID
-      if (!overlay || !manifestBtn || !preview || !remix || !hint || !editor || !remixArrow) return; 
-
-      // 1. Start the overlay
-      overlay.classList.add('active');
-      overlayStatus.textContent = "✨ Manifesting your vibe...";
-      overlayActive = true;
-      manifestBtn.disabled = true; // Prevent double-clicks
-      createManifestOrbs(); // Create particles
-      manifestAnimFrame = requestAnimationFrame(drawManifestOrbs); // Start anim
-
-      // --- 2. Security Scrubbing ---
-      // This is a *basic* sanitizer. It's not foolproof but stops
-      // simple <script> tags and "on..." event attacks that
-      // could break the IDE.
-      let cleanCode = code.value.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "<!-- Script removed for security -->");
-      cleanCode = cleanCode.replace(/ on\w+="[^"]*"/g, ' data-sanitized-event'); // Remove on...=""
-      cleanCode = cleanCode.replace(/ on\w+='[^']*'/g, ' data-sanitized-event'); // Remove on...=''
-      
-      // 3. Load the scrubbed code into the iframe
-      try {
-        // 'srcdoc' loads a string as a full HTML document
-        // inside the iframe.
-        preview.srcdoc = cleanCode;
-      } catch (e) {
-        console.error("Error setting srcdoc:", e);
-        showStatusMessage("Error: Could not render vibe."); // Use status message
-      }
-
-      // --- 4. Transition to Preview ---
-      // Wait for the overlay animation to run a bit for effect
-      setTimeout(() => {
-          // Show the preview and remix button
-          preview.classList.remove('hidden');
-          remix.style.display = 'block';
-          
-          // --- Show Hint and Arrow ---
-          hint.style.opacity = '1';
-          remixArrow.style.opacity = '1'; 
-          // Reset arrow animation
-          const arrowPath = remixArrow.querySelector('path');
-          if (arrowPath) {
-             // Force reflow to restart animation reliably
-             arrowPath.style.animation = 'none'; 
-             void arrowPath.offsetWidth; // Trigger reflow
-             arrowPath.style.animation = ''; 
-          }
-
-          // --- Auto-fade Hint and Arrow ---
-          setTimeout(() => {
-            hint.style.opacity = '0';
-            remixArrow.style.opacity = '0'; 
-          }, 4000); // Hide hint after 4 seconds
-          
-          // Hide the editor
-          editor.classList.add('hidden'); 
-          
-          // Hide Orb and Dock
-          if (orb) orb.classList.add('hidden');
-          if (dock) dock.classList.add('hidden');
-
-          // 5. Start the overlay fade-out
-          fadeUntil = performance.now() + 1800;
-          manifestBtn.disabled = false; // Re-enable button
-          
-          // 6. Reset manifest button state
-          manifestBtn.classList.remove('vibing');
-      }, 1200); // Wait 1.2 seconds
-  }
-
-  /**
-   * @function doRemix
-   * @description Handles the "Remix" button click.
-   * Hides the preview and shows the editor and controls.
-   */
-  function doRemix(){
-      if (!preview || !remix || !hint || !editor || !remixArrow) return;
-      
-      // Hide preview elements
-      preview.classList.add('hidden');
-      remix.style.display = 'none';
-      hint.style.opacity = '0';
-      remixArrow.style.opacity = '0'; // Hide arrow too
-      
-      // Show editor and controls
-      editor.classList.remove('hidden');
-      if (orb) orb.classList.remove('hidden');
-      if (dock) dock.classList.remove('hidden');
-      
-      // Clear the preview content when remixing to save memory
-      // and stop any running scripts.
-      preview.srcdoc = '';
-  }
-
-
-  /* ===== Utility Functions (Save, Copy, Upload, Placeholders) =====
-  */
-
-  /**
-   * @function saveCodeLocally
-   * @description Downloads the content of the code editor as an "index.html" file.
-   * This works by creating a 'Blob' (a file-like object in memory),
-   * creating a temporary <a> link pointing to it, and
-   * programmatically "clicking" the link.
-   */
-  function saveCodeLocally() {
-      if (!code) return;
-      try {
-        // 1. Create the file in memory
-        const blob = new Blob([code.value], { type: 'text/html' });
-        // 2. Create a temporary URL for it
-        const a = document.createElement('a');
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vibe Landing Zone — Max Vibe Edition</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- CodeMirror 6 (via esm.run bundles) -->
+  <script type="module">
+    import { EditorView, basicSetup } from "https://esm.run/codemirror@6.0.1";
+    import { javascript } from "https://esm.run/@codemirror/lang-javascript@6.2.1";
+    import { html } from "https://esm.run/@codemirror/lang-html@6.4.8";
+    import { oneDark } from "https://esm.run/@codemirror/theme-one-dark@6.2.0";
+
+    window._vibeBoot = () => {
+      const codeEl = document.getElementById("code");
+      const initial = sampleHTML(220);
+      const updatePreview = () => {
+        const iframe = document.getElementById("preview");
+        iframe.srcdoc = view.state.doc.toString();
+      };
+
+      const view = new EditorView({
+        doc: initial,
+        extensions: [
+          basicSetup,
+          html(),
+          oneDark,
+          EditorView.lineWrapping
+        ],
+        parent: codeEl
+      });
+
+      // Buttons
+      document.getElementById("copyCode").onclick = async () => {
+        await navigator.clipboard.writeText(view.state.doc.toString());
+        toast("Copied ✨");
+      };
+      document.getElementById("saveLocal").onclick = () => {
+        const blob = new Blob([view.state.doc.toString()], {type:"text/html"});
+        const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = 'index.html'; // Set the filename
-        // 3. Click the link
-        document.body.appendChild(a);
+        a.download = "vibe-code.html";
         a.click();
-        // 4. Clean up
-        document.body.removeChild(a);
-        URL.revokeObjectURL(a.href);
-      } catch (e) {
-        console.error("Save failed:", e);
-        showStatusMessage("Error: Could not save file."); // Use status message
-      }
-  }
+        setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+      };
+      document.getElementById("manifest").onclick = () => {
+        document.getElementById("preview").classList.remove("hidden");
+        updatePreview();
+        showBannerOnce();
+      };
+      document.getElementById("remix").onclick = () => {
+        document.getElementById("preview").classList.add("hidden");
+      };
 
-  /**
-   * @function copyCodeToClipboard
-   * @description Copies the content of the code editor to the clipboard.
-   * Shows feedback on the "Copy" button.
-   */
-  function copyCodeToClipboard() {
-      if (!code || !copyCodeButton) return;
-      
-      // We use document.execCommand('copy') because it's the most
-      // reliable method inside sandboxed iframes.
-      try {
-        code.select(); // Select the text
-        document.execCommand('copy'); // Copy it
-        
-        // Show "Copied" feedback
-        copyCodeButton.textContent = 'Copied! ✓';
-        copyCodeButton.classList.add('copied');
-        
-        // Reset button after 2 seconds
-        setTimeout(() => {
-          copyCodeButton.textContent = 'Copy ❐';
-          copyCodeButton.classList.remove('copied');
-        }, 2000);
-      } catch (e) {
-        console.error("Copy failed:", e);
-        showStatusMessage("Error: Could not copy to clipboard."); // Use status message
-      }
-  }
-  
-  /**
-   * @function handleFileUpload
-   * @description Reads an uploaded file as text and
-   * loads its content into the code editor.
-   * @param {Event} event - The file input change event.
-   */
-  function handleFileUpload(event) {
-    if (!code) return;
-    const file = event.target.files[0];
-    if (file) {
-      // FileReader is a browser API for reading files.
-      const reader = new FileReader();
-      // .onload is an event handler that fires when
-      // the file is done reading.
-      reader.onload = (e) => {
+      // Flow Buttons (no-op placeholders wired to Functions)
+      const cfg = window.vibeConfig;
+      const confirmOnce = (msg) => window.confirm(msg);
+
+      const callFn = async (url, payload) => {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "content-type":"application/json" },
+          body: JSON.stringify(payload || {})
+        });
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+      };
+
+      // Direct push (will drift the Project) — only runs if user clicks the explicit button
+      document.getElementById("pushDirect").onclick = async () => {
+        if (!cfg.functions.directPushUrl) return toastError("Function URL missing");
+        if (!confirmOnce("This will push your code straight to the bucket (and your Project will later detect drift). Proceed?")) return;
         try {
-          // e.target.result contains the file's text content
-          code.value = e.target.result;
-          showStatusMessage(`Loaded ${file.name} successfully!`); // Use status message
-          // Set manifest button to "vibing"
-          if (manifestBtn) manifestBtn.classList.add('vibing'); // Use updated ID
-        } catch (err) {
-          console.error("File load error:", err);
-          showStatusMessage("Error: Could not read file."); // Use status message
+          const code = view.state.doc.toString();
+          const result = await callFn(cfg.functions.directPushUrl, { key: "index.html", content: code });
+          toast("Shipped to COS 🚀");
+          markUpdateAvailable(result?.etag || new Date().toISOString());
+        } catch (e) {
+          toastError("Push failed: " + (e?.message || e));
         }
       };
-      // Handle potential read errors
-      reader.onerror = () => {
-        showStatusMessage("Error: Failed to read file."); // Use status message
+
+      // Right way: request a Project config update (no drift)
+      document.getElementById("requestUpdate").onclick = async () => {
+        if (!cfg.functions.requestUpdateUrl) return toastError("Function URL missing");
+        try {
+          const code = view.state.doc.toString();
+          const result = await callFn(cfg.functions.requestUpdateUrl, { key: "index.html", content: code });
+          toast("Project update requested ✅");
+          markUpdateAvailable(result?.change_id || new Date().toISOString());
+        } catch (e) {
+          toastError("Request failed: " + (e?.message || e));
+        }
       };
-      // Start reading the file as plain text
-      reader.readAsText(file);
-    }
-    // Reset file input to allow uploading the same file again
-    event.target.value = null;
-  }
 
-  /**
-   * @function pushToVibeBucket
-   * @description Placeholder function for pushing code to cloud storage.
-   * In a real app, this would make a 'fetch' call to a serverless
-   * function (e.g., IBM Cloud Functions) with the code.
-   */
-  function pushToVibeBucket() {
-    console.log("Placeholder: 'Push Vibe' clicked.");
-    showStatusMessage("Push feature not yet implemented. 📤"); // Use status message
-  }
+      // Tooltip popover content (AI note + attribution)
+      const tip = document.getElementById("aiTip");
+      const tipBtn = document.getElementById("aiBadge");
+      let tipOpen = false;
+      const toggleTip = () => {
+        tipOpen = !tipOpen;
+        tip.classList.toggle("open", tipOpen);
+      };
+      tipBtn.addEventListener("click", toggleTip);
+      tipBtn.addEventListener("mouseenter", () => tip.classList.add("open"));
+      tip.addEventListener("mouseleave", () => tip.classList.remove("open"));
 
-  /**
-   * @function pullFromVibeBucket
-   * @description Placeholder function for pulling code from cloud storage.
-   * In a real app, this would 'fetch' the latest code from
-   * a serverless function.
-   */
-  function pullFromVibeBucket() {
-    console.log("Placeholder: 'Pull Vibe' clicked.");
-    showStatusMessage("Pull feature not yet implemented. 📥"); // Use status message
-  }
-
-  /**
-   * @function generateInspiration
-   * @description Grabs a random fact from 'ibmData' and generates
-   * a themed HTML page, loading it into the editor.
-   */
-  function generateInspiration() {
-    if (!code || !ibmData || ibmData.length === 0) return;
-    
-    // Pick a random fact
-    const fact = ibmData[Math.floor(Math.random() * ibmData.length)];
-    // Get a related hue
-    const h = (baseHue + 30 + Math.random() * 60) % 360; 
-    
-    // Generate themed HTML using a template literal
-    const newCode = `
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;700&display=swap');
-  
-  body {
-    background: linear-gradient(-120deg, 
-      hsl(${h}, 60%, 12%), 
-      hsl(${(h + 45) % 360}, 40%, 8%)
-    );
-    color: #e0e7ff;
-    font-family: 'IBM Plex Sans', sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 3rem;
-    text-align: center;
-  }
-  
-  .container {
-    max-width: 750px;
-    background: hsla(${h}, 50%, 20%, 0.2);
-    border: 1px solid hsla(${h}, 50%, 30%, 0.5);
-    border-radius: 16px;
-    padding: 2.5rem;
-    box-shadow: 0 10px 40px hsla(0, 0%, 0%, 0.4);
-    backdrop-filter: blur(10px);
-  }
-  
-  .badge {
-    display: inline-block;
-    background: hsl(${h}, 90%, 60%);
-    color: #000;
-    font-weight: 700;
-    padding: 0.5rem 1rem;
-    border-radius: 99px;
-    font-size: 0.9rem;
-    margin-bottom: 1.5rem;
-    text-shadow: none;
-  }
-  
-  p {
-    font-size: 1.25rem;
-    line-height: 1.7;
-    font-weight: 300;
-    margin: 0 0 2rem 0;
-  }
-  
-  a.cta-button {
-    background: linear-gradient(135deg, 
-      hsl(${h}, 90%, 60%), 
-      hsl(${(h + 30) % 360}, 80%, 55%)
-    );
-    color: white;
-    font-weight: 700;
-    padding: 1rem 2rem;
-    border-radius: 99px;
-    text-decoration: none;
-    font-size: 1rem;
-    transition: all 0.25s ease;
-    box-shadow: 0 0 30px hsla(${h}, 90%, 60%, 0.5);
-  }
-  
-  a.cta-button:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 40px hsla(${h}, 90%, 60%, 0.7);
-  }
-</style>
-
-<div class="container">
-  <span class="badge">${fact.anecdote_source_country} // ${fact.anecdote_date}</span>
-  <p>${fact.ibm_anecdote}</p>
-  <a href="${fact.ibm_modern_link}" target="_blank" class="cta-button">
-    ${fact.call_to_action}
-  </a>
-</div>
-`;
-    // Load into editor
-    code.value = newCode;
-    showStatusMessage("🔮 Vibe Inspired!"); // Use status message
-    
-    // Animate the manifest button to "vibing"
-    if(manifestBtn) { // Use updated ID
-      manifestBtn.classList.add('vibing');
-    }
-  }
-
-
-  /* ===== Dragging & Stacking Logic =====
-  */
-
-  /**
-   * @function startDrag
-   * @description Initiates dragging for a window.
-   * @param {MouseEvent} e - The mousedown event.
-   * @param {Element} targetEl - The *window* element to move.
-   * @param {Element} handleEl - The *handle* element that was clicked.
-   */
-  function startDrag(e, targetEl, handleEl) {
-      if (!targetEl || !handleEl) return;
-      
-      // Prevent drag from starting on a button inside the handle
-      if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') {
-        return;
+      // Sticky “update available” banner
+      function markUpdateAvailable(ref) {
+        const bar = document.getElementById("updateBar");
+        const link = document.getElementById("updateLink");
+        bar.classList.remove("hidden");
+        link.onclick = () => {
+          // This could call another Function that triggers a Project run.
+          toast("Opening Project…");
+          if (cfg.project.url) window.open(cfg.project.url, "_blank");
+        };
       }
-
-      // --- 1. Z-Index Stacking ---
-      // Bring this element to the front
-      highestZ++;
-      targetEl.style.zIndex = highestZ;
-      targetEl.classList.add('is-active');
-      handleEl.setAttribute('aria-grabbed', 'true');
-      
-      // Remove 'is-active' from other windows
-      [editor, dock, orb].forEach(el => {
-        if (el && el !== targetEl) {
-          el.classList.remove('is-active');
+      function showBannerOnce(){
+        if(!localStorage.getItem("vibe_banner_shown")){
+          document.getElementById("banner").classList.remove("hidden");
+          localStorage.setItem("vibe_banner_shown","1");
         }
-      });
-      // Reset aria-grabbed on other handles
-      [editorTitle, dockTitle, orbCore].forEach(h => {
-        if (h && h !== handleEl) {
-          h.setAttribute('aria-grabbed', 'false');
-        }
-      });
-      
-      // --- 2. Drag Setup ---
-      activeDragTarget = targetEl; // Set active drag target
-      activeDragHandle = handleEl; // Store handle for 'endDrag'
-      
-      // Calculate mouse offset within the element
-      const rect = targetEl.getBoundingClientRect();
-      dragOffsetX = e.clientX - rect.left;
-      dragOffsetY = e.clientY - rect.top;
-      
-      // 3. Add global listeners (on the whole document)
-      // These are removed on mouseup.
-      document.addEventListener('mousemove', dragMove);
-      document.addEventListener('mouseup', endDrag);
-      
-      // 4. Add class to body to set cursor
-      if (targetEl === editor) document.body.classList.add('dragging-editor');
-      if (targetEl === dock || targetEl === orb) document.body.classList.add('dragging-dock');
-  }
-
-  /**
-   * @function dragMove
-   * @description Updates the position of the element being dragged.
-   * @param {MouseEvent} e - The mousemove event.
-   */
-  function dragMove(e) {
-      if (!activeDragTarget) return;
-
-      // Calculate new top/left based on mouse pos and initial offset
-      let newTop = e.clientY - dragOffsetY;
-      let newLeft = e.clientX - dragOffsetX;
-      
-      // Clamp position to viewport to prevent dragging off-screen
-      const rect = activeDragTarget.getBoundingClientRect();
-      
-      // --- FIX: Ensure left edge doesn't go negative ---
-      newLeft = Math.max(0, newLeft); // Explicitly ensure left >= 0
-      
-      // Clamp right edge
-      newLeft = Math.min(window.innerWidth - rect.width, newLeft); 
-      
-      // Clamp top and bottom edges
-      newTop = Math.max(0, Math.min(window.innerHeight - rect.height, newTop));
-
-      // Apply new position
-      activeDragTarget.style.top = `${newTop}px`;
-      activeDragTarget.style.left = `${newLeft}px`;
-      // We set L/T, so we must remove R/B 'auto' positioning
-      activeDragTarget.style.right = 'auto';
-      activeDragTarget.style.bottom = 'auto';
-  }
-
-  /**
-   * @function endDrag
-   * @description Stops the dragging action and cleans up listeners.
-   */
-  function endDrag() {
-      if (activeDragHandle) {
-        // Accessibility: Set grabbed state to false
-        activeDragHandle.setAttribute('aria-grabbed', 'false');
-      }
-      
-      // Clean up global state
-      activeDragTarget = null;
-      activeDragHandle = null;
-      
-      // Remove global listeners
-      document.removeEventListener('mousemove', dragMove);
-      document.removeEventListener('mouseup', endDrag);
-      
-      // Remove body classes
-      document.body.classList.remove('dragging-editor');
-      document.body.classList.remove('dragging-dock');
-  }
-
-
-  /* ===== Initializations =====
-  */
-  
-  /**
-   * DOMContentLoaded Entry Point
-   * This is where the application starts.
-   * This event fires once the HTML document has been completely
-   * loaded and parsed, without waiting for stylesheets or images.
-   */
-  document.addEventListener('DOMContentLoaded', (event) => {
-      
-      // 1. Get references to all DOM elements
-      initializeElements();
-
-      // 2. Setup Tone.js (before anything uses sound)
-      setupSound();
-
-      // 3. Set initial states and sizes
-      initializeIdleCanvas();
-      initializeManifestCanvas();
-      
-      // 4. Populate editor with sample code
-      if(code) {
-        code.value = sampleHTML(baseHue);
-        // Start in "vibing" state
-        if (manifestBtn) manifestBtn.classList.add('vibing'); // Use updated ID
-      }
-      
-      // 5. Set initial CSS variable for glow
-      document.documentElement.style.setProperty('--glow-intensity', glowIntensity);
-
-      // --- 6. Set Approximate Positions Via CSS Initially ---
-      // CSS now handles the initial rough placement using vh/vw/px.
-      
-      // --- 7. Make Editor Active on Load ---
-      if(editor && editorTitle) {
-          highestZ++;
-          editor.style.zIndex = highestZ;
-          editor.classList.add('is-active');
-          editorTitle.setAttribute('aria-grabbed', 'false'); // Still not grabbed
       }
 
-      // --- 8. Call handleResize ONCE to Finalize Positions ---
-      // This is crucial. It converts the CSS %/vh/vw units into
-      // exact pixel values and clamps them to the screen *after*
-      // the browser knows the real element sizes.
-      // Using setTimeout ensures it runs *after* initial layout.
-      setTimeout(handleResize, 0); 
-
-      // 9. Setup Event Listeners
-      setupControlListeners(); // For all vibe controls
-      
-      // Editor buttons
-      if(manifestBtn) manifestBtn.addEventListener('click', doManifest); // Use updated ID
-      if(saveLocalButton) saveLocalButton.addEventListener('click', saveCodeLocally);
-      if(copyCodeButton) copyCodeButton.addEventListener('click', copyCodeToClipboard);
-      if(inspireMeButton) inspireMeButton.addEventListener('click', generateInspiration);
-      if(fileUploadInput) fileUploadInput.addEventListener('change', handleFileUpload);
-      if(pullVibeButton) pullVibeButton.addEventListener('click', pullFromVibeBucket);
-      if(pushVibeButton) pushVibeButton.addEventListener('click', pushToVibeBucket);
-      
-      // --- Overflow Menu Logic ---
-      if (moreActionsButton && overflowMenu) {
-        moreActionsButton.addEventListener('click', (e) => {
-          e.stopPropagation(); // Prevent click closing it immediately
-          const isVisible = overflowMenu.classList.toggle('visible');
-          moreActionsButton.setAttribute('aria-expanded', isVisible);
-        });
-
-        // Close menu if clicking outside
-        document.addEventListener('click', (e) => {
-          if (overflowMenu.classList.contains('visible') && !overflowMenu.contains(e.target) && e.target !== moreActionsButton) {
-            overflowMenu.classList.remove('visible');
-            moreActionsButton.setAttribute('aria-expanded', 'false');
-          }
-        });
-      }
-
-      // --- "Vibing" Button State Logic ---
-      // Any of these actions mean the code has changes.
-      if(code) {
-        code.addEventListener('paste', () => {
-          if(manifestBtn) manifestBtn.classList.add('vibing'); // Use updated ID
-        });
-        code.addEventListener('input', () => {
-          if(manifestBtn) manifestBtn.classList.add('vibing'); // Use updated ID
-        });
-      }
-      
-      // Preview button
-      if(remix) remix.addEventListener('click', doRemix);
-      
-      // Draggable window titles
-      // Note: We pass the event, the window, and the handle.
-      if(editorTitle) editorTitle.addEventListener('mousedown', (e) => startDrag(e, editor, editorTitle));
-      if(dockTitle) dockTitle.addEventListener('mousedown', (e) => startDrag(e, dock, dockTitle));
-      if(orbCore) orbCore.addEventListener('mousedown', (e) => startDrag(e, orb, orbCore));
-       
-      // Hotkey (Cmd/Ctrl + Enter) for Manifest/Remix
-      addEventListener('keydown', (e)=>{
-          // Don't trigger if typing in editor
-          if (document.activeElement === code) return; 
-          
-          if((e.metaKey || e.ctrlKey) && e.key === 'Enter'){
-              // If preview is hidden, manifest
-              if(preview && (window.getComputedStyle(preview).display === 'none' || preview.classList.contains('hidden'))) {
-                  if (manifestBtn && !manifestBtn.disabled) doManifest(); // Use updated ID
-              // If preview is visible, remix
-              } else {
-                  if(remix) doRemix();
-              }
-          }
-       });
-
-      // 10. Start Animation Loop
-      drawIdle(); 
-  });
-
-</script>
-
-  <!-- === VIBE: Cloud Endpoints Auto-Wiring (Terraform injects these) === -->
-  <script>
-    // Terraform will replace these with actual web action URLs during deploy:
-    const VIBE_ENDPOINTS = {
-      MANIFEST: "${vibe_manifest_url}",          // direct push to COS
-      UPDATE_PROJECT: "${vibe_update_url}",      // staged config update
-      STATUS: "${vibe_status_url}",              // simple ping
-      ANALYTICS: "${vibe_analytics_url}"         // optional
+      // Public controls that other scripts need:
+      window.__vibe = { view, updatePreview, toast };
     };
-    // Helper: safe fetch wrapper
-    async function vibeCall(url, payload) {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify(payload || {})
-      });
-      if (!res.ok) throw new Error("Request failed: " + res.status);
-      return await res.json().catch(()=>({ok:true}));
-    }
-    // Attach to existing buttons if present; otherwise create them.
-    document.addEventListener("DOMContentLoaded", () => {
-      const codeEl = document.getElementById("code") || document.querySelector("textarea");
-      const manifestBtn = document.getElementById("manifest") || null;
-      const stageBtnId = "stageUpdateBtn";
-      let stageBtn = document.getElementById(stageBtnId);
-
-      // Create "Stage Update 🌈" next to existing actions if missing
-      if (!stageBtn) {
-        const actions = document.getElementById("actions") || document.body;
-        stageBtn = document.createElement("button");
-        stageBtn.id = stageBtnId;
-        stageBtn.className = "secondary-btn";
-        stageBtn.type = "button";
-        stageBtn.textContent = "Stage Update 🌈";
-        actions.appendChild(stageBtn);
-      }
-
-      // Toast helper (reuses existing #errorToast if available)
-      const toast = document.getElementById("errorToast") || ( () => {
-        const t = document.createElement("div");
-        t.id = "errorToast"; document.body.appendChild(t); return t;
-      })();
-
-      function showToast(msg, ok=false, sticky=false){
-        toast.textContent = msg;
-        toast.style.backgroundColor = ok ? "rgba(30,160,90,0.9)" : "rgba(255,60,60,0.9)";
-        toast.classList.add("visible");
-        if (!sticky) setTimeout(()=>toast.classList.remove("visible"), 6000);
-      }
-
-      async function onManifest(){
-        if (!VIBE_ENDPOINTS.MANIFEST || VIBE_ENDPOINTS.MANIFEST.includes("${")) {
-          showToast("Manifest endpoint not configured yet. Deploy this via IBM Cloud Catalog to auto-wire.", false, true);
-          return;
-        }
-        const htmlBody = codeEl ? codeEl.value : "<!doctype html><title>Empty</title>";
-        try {
-          showToast("Manifesting your vibe… ✨");
-          const out = await vibeCall(VIBE_ENDPOINTS.MANIFEST, { html: htmlBody });
-          if (out && (out.url || out.app_url)) {
-            const url = out.url || out.app_url;
-            showToast("Deployed! Opening your site… 🚀", true);
-            window.open(url, "_blank", "noopener");
-          } else {
-            showToast("Pushed, but no URL returned. Check bucket.", true, true);
-          }
-        } catch(e){
-          showToast("Manifest failed: " + e.message, false, true);
-        }
-      }
-
-      async function onStage(){
-        if (!VIBE_ENDPOINTS.UPDATE_PROJECT || VIBE_ENDPOINTS.UPDATE_PROJECT.includes("${")) {
-          showToast("Update endpoint not configured yet. Deploy through IBM Cloud Catalog.", false, true);
-          return;
-        }
-        const htmlBody = codeEl ? codeEl.value : "<!doctype html><title>Empty</title>";
-        try {
-          showToast("Staging a config update for your Project… 🧱");
-          const out = await vibeCall(VIBE_ENDPOINTS.UPDATE_PROJECT, { html: htmlBody });
-          if (out && out.update_request_url) {
-            showToast("Update staged! Review & apply in your Project.", true, true);
-            // keep visible until dismissed per your preference
-          } else {
-            showToast("Update staged (no URL returned). Check your Project.", true, true);
-          }
-        } catch(e){
-          showToast("Stage failed: " + e.message, false, true);
-        }
-      }
-
-      if (manifestBtn) {
-        // Request any permission only on click (explicit intent)
-        manifestBtn.addEventListener("click", onManifest);
-      }
-      if (stageBtn) stageBtn.addEventListener("click", onStage);
-    });
   </script>
 
+  <!-- Tone.js for ambience (optional, off by default) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js" defer></script>
 
-<!-- AI label + Popover -->
-<div id="aiBadge" aria-label="Show AI note"><img src="ai-label.svg" alt="AI-assisted"/></div>
-<aside id="aiPopover" role="dialog" aria-modal="false" aria-label="AI Assistance Note">
-  <div style="font-weight:700;margin-bottom:.35rem;">About this page’s assist</div>
-  <div style="font-size:.92rem;line-height:1.35">
-    Parts of this page were created with help from AI. Content was reviewed for accuracy and vibes. ✨
-    <br/><br/>
-    Inspiration credit: work by <a href="https://www.linkedin.com/in/arnehyndman/" target="_blank" rel="noopener">Arn Hyndman</a> on static site deployable architectures.
-    <br/><br/>
-    <span style="opacity:.8">Powered by IBM Cloud.</span>
-  </div>
-</aside>
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const badge = document.getElementById("aiBadge");
-    const pop = document.getElementById("aiPopover");
-    let pinned = false;
-    function toggle(force) {
-      const on = (typeof force === "boolean") ? force : !pop.classList.contains("show");
-      pop.classList.toggle("show", on);
+  <style>
+    :root { --hue: 220; --fg: #e5e7eb; --bg: #000; --glow-intensity: 1.0; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body { background: var(--bg); color: var(--fg); overflow: hidden; font-family: "IBM Plex Sans", system-ui; }
+
+    #particles, #bg { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
+    #particles { pointer-events: none; }
+
+    .hidden { display: none !important; }
+
+    /* Editor chrome */
+    #editor {
+      position: fixed; top: 7vh; left: 6vw; right: 6vw; min-height: 42vh;
+      z-index: 4; background: rgba(10,12,18,0.75); border: 1px solid rgba(147,197,253,0.15);
+      border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 40px hsla(var(--hue),90%,60%,0.22) inset;
     }
-    badge.addEventListener("mouseenter", () => { if (!pinned) toggle(true); });
-    badge.addEventListener("mouseleave", () => { if (!pinned) toggle(false); });
-    badge.addEventListener("click", () => { pinned = !pinned; toggle(pinned); });
-    document.addEventListener("keydown", (e)=>{ if(e.key==="Escape"){ pinned=false; toggle(false);} });
-  });
-</script>
+    #editor-title {
+      display: flex; align-items: center; gap: .6rem; padding: .8rem 1rem; font-weight: 600;
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0));
+      border-bottom: 1px solid rgba(147,197,253,0.15);
+    }
 
+    #code { height: 40vh; }
+    .cm-editor { height: 100%; border-top: 1px solid rgba(147,197,253,0.1); background:#0b0d14; }
+
+    #actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; padding: .8rem 1rem 1rem; }
+    .secondary-btn {
+      background: rgba(120, 180, 255, 0.1); border: 1px solid rgba(120, 180, 255, 0.35);
+      color: #dbeafe; padding: .5rem .9rem; border-radius: 9999px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    }
+    .btn {
+      border: none; cursor: pointer; border-radius: 9999px; padding: .7rem 1.1rem;
+      color: white; font-weight: 800; letter-spacing: .02em;
+      background: linear-gradient(135deg, hsl(var(--hue),90%,60%), hsl(calc(var(--hue)+60),80%,55%));
+      box-shadow: 0 0 18px hsla(var(--hue),90%,60%,.4), 0 0 28px hsla(var(--hue),90%,60%,.2);
+    }
+    .btn:disabled { background: #444; opacity: .7; cursor: not-allowed; }
+
+    /* Preview */
+    #preview { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; z-index: 3; }
+
+    /* Update banner */
+    #updateBar {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(10,12,18,0.9); border:1px solid rgba(147,197,253,.35);
+      color:#e0e7ff; padding:.7rem 1rem; border-radius: 9999px; z-index: 8;
+      box-shadow: 0 10px 40px rgba(0,0,0,.4);
+    }
+    #updateBar a { color:#93c5fd; text-decoration: underline; cursor: pointer; }
+
+    /* AI badge + tooltip */
+    #aiBadge {
+      position: fixed; right: 18px; bottom: 18px; z-index: 9;
+      background: rgba(12,14,20,.85); border:1px solid rgba(147,197,253,.25);
+      border-radius: 9999px; padding:.45rem .7rem; font-size:.82rem; display:flex; align-items:center; gap:.4rem;
+      cursor: pointer;
+    }
+    #aiTip {
+      position: fixed; right: 18px; bottom: 58px; z-index: 9; width: 320px;
+      padding:.8rem; background: rgba(0,0,0,.85); border:1px solid rgba(147,197,253,.3);
+      border-radius: 12px; color:#dbeafe; display:none;
+    }
+    #aiTip.open { display:block; }
+    #aiTip small a { color:#93c5fd; }
+
+    /* Toast */
+    #toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.85);
+      color:#fff; padding:.6rem .9rem; border-radius: 8px; z-index: 20; display:none; }
+  </style>
+</head>
+<body>
+  <!-- Background canvases (lightweight, non-blocking) -->
+  <canvas id="bg" aria-hidden="true"></canvas>
+  <canvas id="particles" aria-hidden="true"></canvas>
+
+  <!-- Preview -->
+  <iframe id="preview" class="hidden" title="Vibe Preview"></iframe>
+
+  <!-- Editor -->
+  <section id="editor" aria-label="Vibe code editor">
+    <div id="editor-title">
+      <span style="width:.7rem;height:.7rem;border-radius:50%;background:#ff5f56"></span>
+      <span style="width:.7rem;height:.7rem;border-radius:50%;background:#ffbd2f"></span>
+      <span style="width:.7rem;height:.7rem;border-radius:50%;background:#27c93f"></span>
+      <span class="ml-2 opacity-80 text-sm select-none">/vibe-code.html</span>
+    </div>
+    <div id="code" aria-label="Edit vibe HTML code"></div>
+    <div id="actions">
+      <button id="saveLocal" class="secondary-btn" type="button" aria-label="Save vibe to local file">Save File ⤓</button>
+      <button id="copyCode" class="secondary-btn" type="button" aria-label="Copy vibe code">Copy Code ❐</button>
+      <button id="manifest" class="btn" type="button" aria-label="Manifest your vibe">Manifest ✨</button>
+      <button id="pushDirect" class="btn" type="button" aria-label="Direct push to COS (drift)">Ship to COS 🚀</button>
+      <button id="requestUpdate" class="btn" type="button" aria-label="Request Project config update">Request Project Update ✅</button>
+      <button id="remix" class="secondary-btn" type="button" aria-label="Remix your vibe">Remix 🎨</button>
+    </div>
+  </section>
+
+  <!-- Update-available bar (sticky until dismissed) -->
+  <div id="updateBar" class="hidden" role="status" aria-live="polite">
+    New vibe is ready to apply in your IBM Cloud Project — <a id="updateLink">Review & Apply</a>
+    <button style="margin-left:.6rem" class="secondary-btn" onclick="this.parentElement.classList.add('hidden')">Dismiss</button>
+  </div>
+
+  <!-- AI badge + tooltip -->
+  <div id="aiBadge" aria-label="About this AI-assisted sample">
+    🤖 <span>AI-Assisted</span>
+  </div>
+  <div id="aiTip">
+    <strong>Heads-up:</strong> this sample includes an AI-generated UX layer. All cloud changes still go through IBM Cloud APIs with least privileges. <br/><br/>
+    <small>Attribution: inspired by work from <a href="#" target="_blank" rel="noopener">Arn Hyndman</a> on a static-website Deployable Architecture. “Powered by IBM Cloud.”</small>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <script>
+    // Minimal state & helpers
+    window.vibeConfig = {
+      project: { url: "${project_url}" || "" },
+      functions: {
+        directPushUrl: "${function_push_url}" || "",
+        requestUpdateUrl: "${function_request_url}" || ""
+      }
+    };
+
+    function toast(msg){
+      const t = document.getElementById("toast");
+      t.textContent = msg; t.style.display = "block";
+      clearTimeout(window.__toastT);
+      window.__toastT = setTimeout(()=> t.style.display="none", 2600);
+    }
+    function toastError(msg){ toast("❌ " + msg); }
+
+    // A pleasant starter doc
+    function sampleHTML(h){
+      return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Your Vibe</title>
+    <style>
+      :root{--h:${h};}
+      body{font-family: system-ui, -apple-system, "IBM Plex Sans", sans-serif; margin:0; background:#0b0d14; color:#e5e7eb;}
+      main{display:grid; place-items:center; min-height:100vh; padding:2rem;}
+      .card{max-width:780px; background:rgba(255,255,255,.02); border:1px solid rgba(147,197,253,.2);
+            padding:28px; border-radius:16px; box-shadow:0 20px 50px rgba(0,0,0,.45)}
+      h1{margin:0 0 .4rem; font-size:clamp(1.6rem, 3vw, 2.2rem);}
+      p{line-height:1.55}
+      .cta{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:1rem}
+      .btn{border:none; padding:.6rem 1rem; border-radius:9999px; color:#fff;
+           background:linear-gradient(135deg, hsl(var(--h),90%,60%), hsl(calc(var(--h)+60),80%,55%)); font-weight:700}
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="card">
+        <h1>It works! ✨</h1>
+        <p>
+          You’re looking at the live page that your editor will upload to Cloud Object Storage.<br/>
+          Choose <b>Ship to COS 🚀</b> to push directly (fast, creates drift), or 
+          <b>Request Project Update ✅</b> to do it the “right way” via your IBM Cloud Project.
+        </p>
+        <div class="cta">
+          <a class="btn" href="#" onclick="parent.postMessage('vibe:ship','*');return false;">Ship to COS 🚀</a>
+          <a class="btn" href="#" onclick="parent.postMessage('vibe:update','*');return false;">Request Project Update ✅</a>
+        </div>
+        <p style="opacity:.75;margin-top:10px">Powered by IBM Cloud.</p>
+      </div>
+    </main>
+  </body>
+</html>`;
+    }
+
+    // Wire parent-message shortcuts
+    window.addEventListener("message", (e) => {
+      if (e.data === "vibe:ship") document.getElementById("pushDirect").click();
+      if (e.data === "vibe:update") document.getElementById("requestUpdate").click();
+    });
+
+    // Boot once DOM ready
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window._vibeBoot) window._vibeBoot();
+    });
+  </script>
 </body>
 </html>
-
