@@ -15,10 +15,12 @@ provider "ibm" {
   region = var.region
 }
 
+# Resource group lookup
 data "ibm_resource_group" "group" {
   name = var.resource_group
 }
 
+# Uniqueness suffix
 resource "random_string" "suffix" {
   length  = 6
   upper   = false
@@ -27,7 +29,7 @@ resource "random_string" "suffix" {
   special = false
 }
 
-# COS instance
+# COS instance (Lite)
 resource "ibm_resource_instance" "cos_instance" {
   name              = "vibe-instance-${random_string.suffix.result}"
   service           = "cloud-object-storage"
@@ -36,96 +38,38 @@ resource "ibm_resource_instance" "cos_instance" {
   resource_group_id = data.ibm_resource_group.group.id
 }
 
-# COS bucket
+# COS bucket (no inline website block in provider >=1.84)
 resource "ibm_cos_bucket" "bucket" {
   bucket_name          = "vibe-bucket-${random_string.suffix.result}"
   resource_instance_id = ibm_resource_instance.cos_instance.id
   region_location      = var.region
   storage_class        = "standard"
   force_delete         = true
-
-    enable    = true
-    mainpage  = "index.html"
-    errorpage = "404.html"
-  }
 }
 
-resource "ibm_function_namespace" "ns" {
-  resource_group_id = data.ibm_resource_group.group.id
-  name = "vibe-ns-${random_string.suffix.result}"
-}
-
-  name      = "vibe-funcs-${random_string.suffix.result}"
-  namespace = ibm_function_namespace.ns.name
-}
-
-# Functions (Node.js:18 zips)
-resource "ibm_function_action" "push_to_cos" {
-  name      = "push_to_cos"
-  namespace = ibm_function_namespace.ns.name
-}
-
-resource "ibm_function_action" "push_to_project" {
-  name      = "push_to_project"
-  namespace = ibm_function_namespace.ns.name
-}
-
-# Live URLs for injection
-locals {
-  push_cos_url     = ibm_function_action.push_to_cos.invoke_url
-  push_project_url = ibm_function_action.push_to_project.invoke_url
-}
-
-# Upload an HTML page with live Function URLs injected
-resource "ibm_cos_bucket_object" "index_html" {
-  bucket_crn   = ibm_cos_bucket.bucket.crn
-  key          = "index.html"
-  content      = base64encode(
-    templatefile("${path.module}/samples/index.html", {
-      PUSH_COS_URL     = local.push_cos_url
-      PUSH_PROJECT_URL = local.push_project_url
-    })
-  )
-  content_type = "text/html"
-}
-
-# (Optional) A 404 page to avoid ugly errors
-resource "ibm_cos_bucket_object" "page_404" {
-  bucket_crn   = ibm_cos_bucket.bucket.crn
-  key          = "404.html"
-  content      = base64encode("<!doctype html><html><head><meta charset=\"utf-8\"><title>404</title></head><body style=\"font-family:sans-serif; background:#0b1020; color:#e2e8f0\"><h1>404 — the vibe you seek is elsewhere</h1><p><a href=\"/\">Return to the Vibe IDE</a></p></body></html>")
-  content_type = "text/html"
-}
-
-output "vibe_url" {
-  value       = ibm_cos_bucket.bucket.website_url
-  description = "Primary Vibe site URL (promoted output)"
-}
-
-output "vibe_bucket_url" {
-  value = ibm_cos_bucket.bucket.website_url
-}
-
-output "push_cos_url" {
-  value       = local.push_cos_url
-  description = "Live IBM Cloud Function URL for Push-to-COS"
-}
-
-output "push_project_url" {
-  value       = local.push_project_url
-  description = "Live IBM Cloud Function URL for Push-to-Project"
-}
-
-# Added for v1.1.6 - Provider 1.84.3 compliance
+# Static website configuration
 resource "ibm_cos_bucket_website_configuration" "bucket_website" {
   bucket_crn     = ibm_cos_bucket.bucket.crn
   main_document  = "index.html"
   error_document = "404.html"
 }
 
+# IBM Cloud Functions namespace & package
+resource "ibm_function_namespace" "ns" {
+  name              = "vibe-ns-${random_string.suffix.result}"
+  resource_group_id = data.ibm_resource_group.group.id
+}
+
+resource "ibm_function_package" "pkg" {
+  name      = "vibe-funcs-${random_string.suffix.result}"
+  namespace = ibm_function_namespace.ns.name
+}
+
+# Actions (provider >=1.84 uses nested exec{})
 resource "ibm_function_action" "push_to_cos" {
   name      = "push_to_cos"
   namespace = ibm_function_namespace.ns.name
+
   exec {
     kind      = "nodejs:18"
     code_path = "${path.module}/functions/push_to_cos.zip"
@@ -135,8 +79,34 @@ resource "ibm_function_action" "push_to_cos" {
 resource "ibm_function_action" "push_to_project" {
   name      = "push_to_project"
   namespace = ibm_function_namespace.ns.name
+
   exec {
     kind      = "nodejs:18"
     code_path = "${path.module}/functions/push_to_project.zip"
   }
+}
+
+# Live Function URLs for client-side injection
+locals {
+  push_cos_url     = ibm_function_action.push_to_cos.invoke_url
+  push_project_url = ibm_function_action.push_to_project.invoke_url
+}
+
+# Upload index.html with live URLs injected
+resource "ibm_cos_bucket_object" "index_html" {
+  bucket_crn   = ibm_cos_bucket.bucket.crn
+  key          = "index.html"
+  content      = base64encode(templatefile("${path.module}/samples/index.html", {
+    PUSH_COS_URL     = local.push_cos_url,
+    PUSH_PROJECT_URL = local.push_project_url
+  }))
+  content_type = "text/html"
+}
+
+# Upload 404 fallback page
+resource "ibm_cos_bucket_object" "page_404" {
+  bucket_crn   = ibm_cos_bucket.bucket.crn
+  key          = "404.html"
+  content      = base64encode(file("${path.module}/samples/404.html"))
+  content_type = "text/html"
 }
