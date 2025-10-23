@@ -1,0 +1,9 @@
+{
+  "name": "vibe-push-to-cos",
+  "version": "1.0.0",
+  "description": "Pushes content to COS bucket",
+  "main": "main.js",
+  "dependencies": {
+    "@ibm-cloud/object-storage": "^1.13.0"
+  }
+}

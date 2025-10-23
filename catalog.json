@@ -1,6 +1,6 @@
 {
   "name": "vibe-da-ibm-cloud",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "type": "terraform",
   "provider": "ibm",
   "display_name": "Vibe IDE — Deployable Architecture",
@@ -12,6 +12,14 @@
       "description": "Paste your HTML directly — Terraform will handle encoding.",
       "ui:widget": "textarea",
       "default": ""
+    },
+    {
+      "name": "project_url",
+      "type": "string",
+      "description": "Optional: The URL of the IBM Cloud Project this DA is part of.",
+      "default": "",
+      "hidden": false,
+      "required": false
     }
   ],
   "outputs": [
