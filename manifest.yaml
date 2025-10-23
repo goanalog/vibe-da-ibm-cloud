@@ -1,0 +1,48 @@
+name: vibe-da-ibm-cloud
+version: 1.0.1
+description: >
+  Deploy a full-stack vibe-coding landing zone powered by IBM Cloud Object Storage (Lite).
+  Instantly spin up a public static-site bucket with live HTML injection and remixable IDE features.
+type: terraform
+
+tags:
+  - vibe
+  - creative-coding
+  - ibm-cloud-object-storage
+  - static-website
+  - deployable-architecture
+
+license: Apache-2.0
+arch: amd64
+os: linux
+
+install:
+  terraform:
+    dir: .
+    primary_output_key: push_project_url
+
+inputs:
+  - name: region
+    type: string
+    description: IBM Cloud region (example: us-south)
+    default: us-south
+    required: true
+  - name: resource_group
+    type: string
+    description: IBM Cloud resource group name
+    default: Default
+    required: true
+
+outputs:
+  - name: vibe_bucket_crn
+    description: Cloud Object Storage bucket unique identifier
+  - name: push_cos_url
+    description: IBM Cloud Function endpoint for pushing updates to your bucket
+  - name: push_project_url
+    description: IBM Cloud Function endpoint for updating your project (primary output)
+
+project:
+  validated: true
+  visibility: public
+  compliance:
+    schema_version: 1.0.0
