@@ -1,0 +1,15 @@
+
+{
+  "name": "vibe-da-ibm-cloud",
+  "display_name": "Vibe Landing Zone — Muted Neon Edition",
+  "version": "1.1.1",
+  "type": "terraform",
+  "description": "Deploy a whole mood — instantly and reliably. The Muted Neon Edition of Vibe Landing Zone pairs IBM Cloud Object Storage with Functions for dynamic updates and effortless redeploys.",
+  "tags": ["vibe", "object-storage", "neon", "deployable-architecture"],
+  "license": "Apache-2.0",
+  "primary_output": "vibe_url",
+  "icon_url": "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/assets/vibe-neon-icon.png",
+  "documentation_url": "https://github.com/goanalog/vibe-da-ibm-cloud",
+  "source_url": "https://github.com/goanalog/vibe-da-ibm-cloud",
+  "readme_url": "README.md"
+}

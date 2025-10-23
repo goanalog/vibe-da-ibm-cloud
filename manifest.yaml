@@ -1,0 +1,21 @@
+
+schema_version: "1.0.0"
+name: vibe-da-ibm-cloud
+display_name: Vibe Landing Zone — Muted Neon Edition
+description: Deploy a live web experience directly to IBM Cloud Object Storage with interactive Vibe IDE features, always-on Functions, and reliable end-to-end setup.
+version: 1.1.1
+type: terraform
+tags:
+  - vibe
+  - object-storage
+  - website
+  - ibm-cloud
+  - deployable-architecture
+  - neon
+license: Apache-2.0
+readme: README.md
+outputs:
+  - name: vibe_url
+    description: Public website endpoint
+    type: string
+    is_primary_output: true
