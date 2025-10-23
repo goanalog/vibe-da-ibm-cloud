@@ -21,6 +21,7 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   bucket_name          = "vibe-bucket-${random_string.suffix.result}"
   resource_instance_id = ibm_resource_instance.vibe_instance.id
   storage_class        = "standard"
+  acl                  = "public-read"
   region_location      = "us-south"
   force_delete         = true
 }
