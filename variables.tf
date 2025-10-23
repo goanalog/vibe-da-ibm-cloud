@@ -1,7 +1,12 @@
-# The "vibe_code_raw" variable has been removed.
 
-variable "project_url" {
-  description = "Optional: The URL of the IBM Cloud Project this DA is part of."
+variable "region" {
   type        = string
+  description = "IBM Cloud region for the bucket and endpoints"
+  default     = "us-south"
+}
+
+variable "html_input" {
+  type        = string
+  description = "Optional inline HTML to publish as index.html (falls back to bundled file)"
   default     = ""
 }

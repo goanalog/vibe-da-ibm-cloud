@@ -1,26 +1,8 @@
 {
-  "name": "vibe-da-ibm-cloud",
-  "version": "0.6.0",
-  "type": "terraform",
-  "provider": "ibm",
-  "display_name": "Vibe IDE — Deployable Architecture",
-  "description": "A deployable architecture that deploys a static Vibe app hosted on IBM Cloud Object Storage.",
-  "variables": [
-    {
-      "name": "project_url",
-      "type": "string",
-      "description": "Optional: The URL of the IBM Cloud Project this DA is part of.",
-      "default": "",
-      "hidden": false,
-      "required": false
-    }
-  ],
-  "outputs": [
-    {
-      "name": "vibe_url",
-      "type": "string",
-      "description": "Public URL for your deployed Vibe app",
-      "primary_output": true
-    }
-  ]
+  "displayName": "Vibe Static Site \u2014 Functional Uploader",
+  "name": "vibe-static-site-functional",
+  "provider": "Vibe",
+  "shortDescription": "COS static site with working Cloud Function uploader",
+  "longDescription": "Creates COS Lite + bucket, HMAC key, and a Node.js action that uploads index.html via S3 API.",
+  "version": "1.0.0"
 }

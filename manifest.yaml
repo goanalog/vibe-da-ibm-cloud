@@ -1,18 +1,9 @@
-name: vibe-da-ibm-cloud
-version: 0.3.2
-type: terraform
-runtime_version: terraform_v1.5
-description: |
-  Deploys a Vibe-driven IDE experience to IBM Cloud Object Storage.
-  Paste code, hit deploy, manifest your vibe live on the web.
-license: Apache-2.0
-tags:
-  - terraform
-  - ibm-cloud
-  - object-storage
-  - deployable-architecture
+
 metadata:
-  authors:
-    - Brendan Fitzpatrick
-  created: "2025-10-23"
-  source: "https://github.com/goanalog/vibe-da-ibm-cloud"
+  displayname: "Vibe Static Site — Functional Uploader"
+  description: "COS static site with a fully functional Cloud Function uploader (HMAC)"
+  version: "1.0.0"
+  supportedplatforms: ["ibm"]
+plan:
+  name: "default"
+  description: "Deploys COS, HMAC key, Functions, and uploads index.html"
