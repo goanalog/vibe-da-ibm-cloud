@@ -7,8 +7,7 @@ resource "random_string" "suffix" {
 }
 
 locals {
-  # OPTIMIZED: Use the raw HTML variable if provided, otherwise read the file content.
-  # This removes the unnecessary base64 encode/decode cycle.
+  # This optimization is still correct
   html_content = var.vibe_code_raw != "" ? var.vibe_code_raw : file("${path.module}/index.html")
 }
 
@@ -25,15 +24,25 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   storage_class        = "standard"
   region_location      = "us-south"
   force_delete         = true
+  # REMOVED: public_access = true (This was the source of Error 1)
+}
 
-  # BUG FIX: Add this line to make the website URL public (403 fix)
-  public_access        = true
+# FIX 1: Add a separate resource to manage public access
+resource "ibm_cos_bucket_public_access" "vibe_bucket_public_access" {
+  resource_instance_id = ibm_resource_instance.vibe_instance.id
+  bucket_name          = ibm_cos_bucket.vibe_bucket.bucket_name
+  public_access        = "public" # Allows public read access
 }
 
 resource "ibm_cos_bucket_object" "vibe_code" {
-  bucket  = ibm_cos_bucket.vibe_bucket.bucket_name
+  # FIX 2: Use the arguments required by the provider (as seen in logs)
+  bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
+  bucket_location = ibm_cos_bucket.vibe_bucket.region_location
+
+  # REMOVED: bucket = ibm_cos_bucket.vibe_bucket.bucket_name (Source of Error 2)
+  
+  # These arguments are correct
   key     = "index.html"
-  # UPDATED: Use the optimized local variable
   content = local.html_content
   etag    = md5(local.html_content)
 }
