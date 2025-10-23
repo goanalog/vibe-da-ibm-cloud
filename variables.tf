@@ -1,23 +1,23 @@
 variable "region" {
-  description = "IBM Cloud region for bucket objects (e.g. us-south)"
+  description = "IBM Cloud region for COS bucket hosting (e.g., us-south)"
   type        = string
   default     = "us-south"
 }
 
 variable "resource_group" {
-  description = "Resource group name"
+  description = "IBM Cloud Resource Group name"
   type        = string
   default     = "Default"
 }
 
 variable "enable_functions" {
-  description = "Create Functions, bind COS, and expose web endpoints"
+  description = "Whether to deploy the Cloud Functions and bindings"
   type        = bool
   default     = true
 }
 
 variable "bucket_prefix" {
-  description = "Prefix for bucket name"
+  description = "Prefix for bucket name (a random suffix will be added)"
   type        = string
   default     = "vibe-bucket"
 }

@@ -1,5 +1,11 @@
-// nodejs:18 | web-export:true
-async function main(args){
-  return {statusCode:200,body:{ok:true,msg:"Project reapply simulated"}};
-}
-exports.main=main;
+/**
+ * Placeholder action that you can wire to Schematics/Projects.
+ * For now, it just returns OK (and echoes any JSON body).
+ */
+exports.main = async (params) => {
+  return {
+    statusCode: 200,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ok: true, received: params || {} })
+  };
+};
