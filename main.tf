@@ -35,15 +35,19 @@ resource "ibm_cos_bucket_object" "vibe_code" {
   etag    = md5(local.html_content)
 }
 
+# --- THE AWS CLI HACK ---
+# This uses the awscli (which should be in the environment)
+# to set the public ACL via the S3 API.
 resource "null_resource" "make_object_public" {
   depends_on = [ibm_cos_bucket_object.vibe_code]
 
   provisioner "local-exec" {
-    # FIX: First, force-install the COS plugin, then run the ACL command.
-    # The '&&' ensures the second command only runs if the plugin install succeeds.
-    command = "ibmcloud plugin install cloud-object-storage -r \"IBM Cloud\" -f && ibmcloud cos object-acl-put --bucket ${ibm_cos_bucket.vibe_bucket.bucket_name} --key ${ibm_cos_bucket_object.vibe_code.key} --acl public-read"
+    # Command uses awscli s3api to set public-read ACL
+    # We use the public S3 endpoint provided by the ibm_cos_bucket resource
+    command = "aws --endpoint-url https://${ibm_cos_bucket.vibe_bucket.s3_endpoint_public} s3api put-object-acl --bucket ${ibm_cos_bucket.vibe_bucket.bucket_name} --key ${ibm_cos_bucket_object.vibe_code.key} --acl public-read"
   }
 }
+# --- END HACK ---
 
 output "vibe_url" {
   value       = "https://s3.us-south.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.vibe_bucket.bucket_name}/index.html"
