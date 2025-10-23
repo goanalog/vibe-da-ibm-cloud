@@ -2,7 +2,6 @@
 
 provider "ibm" {}
 
-# ADD THIS DATA SOURCE
 data "ibm_resource_group" "default" {
   is_default = true
 }
@@ -14,7 +13,6 @@ resource "random_string" "suffix" {
 }
 
 locals {
-  # This part is correct
   html_content = templatefile("${path.module}/index.html.tftpl", {
     function_push_url    = ibm_function_action.push_to_cos.web_action_url
     function_request_url = "" 
@@ -27,7 +25,6 @@ resource "ibm_resource_instance" "vibe_instance" {
   service           = "cloud-object-storage"
   plan              = "lite"
   location          = "global"
-  # ADD THIS LINE
   resource_group_id = data.ibm_resource_group.default.id
 }
 
@@ -38,10 +35,7 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   region_location      = "us-south"
   force_delete         = true
   
-  # ADD THIS BLOCK to enable static website hosting
-  static_website {
-    index_document = "index.html"
-  }
+  # The 'static_website' block has been REMOVED
 }
 
 resource "ibm_cos_bucket_object" "vibe_code" {
@@ -52,6 +46,3 @@ resource "ibm_cos_bucket_object" "vibe_code" {
   content = local.html_content
   etag    = md5(local.html_content)
 }
-
-# REMOVE the entire 'ibm_cos_bucket_policy' resource block.
-# We will add the correct policy to 'iam.tf'
