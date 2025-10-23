@@ -23,21 +23,24 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   storage_class        = "standard"
   region_location      = "us-south"
   force_delete         = true
-  
-  # All attempts to set public access (public_access, acl) have been removed
-  # as they are unsupported by this provider version.
+}
+
+# FIX: Add the IBM-specific public access resource block back in.
+# This will now work because we updated versions.tf
+resource "ibm_cos_bucket_public_access" "vibe_bucket_public_access" {
+  resource_instance_id = ibm_resource_instance.vibe_instance.id
+  bucket_name          = ibm_cos_bucket.vibe_bucket.bucket_name
+  public_access        = "public" # Allows public read access
 }
 
 resource "ibm_cos_bucket_object" "vibe_code" {
-  # These arguments are REQUIRED per the first error log
+  # These arguments are still required per the first log
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
   bucket_location = ibm_cos_bucket.vibe_bucket.region_location
 
   key     = "index.html"
   content = local.html_content
   etag    = md5(local.html_content)
-
-  # REMOVED: acl = "public-read" (This was the cause of the latest plan failure)
 }
 
 output "vibe_url" {
