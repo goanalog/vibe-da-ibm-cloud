@@ -24,11 +24,12 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   region_location      = "us-south"
   force_delete         = true
   
-  # REMOVED: acl = "public-read" (This argument is not supported on the bucket)
+  # All attempts to set public access (public_access, acl) have been removed
+  # as they are unsupported by this provider version.
 }
 
 resource "ibm_cos_bucket_object" "vibe_code" {
-  # These arguments are from the first set of error logs and are correct
+  # These arguments are REQUIRED per the first error log
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
   bucket_location = ibm_cos_bucket.vibe_bucket.region_location
 
@@ -36,8 +37,7 @@ resource "ibm_cos_bucket_object" "vibe_code" {
   content = local.html_content
   etag    = md5(local.html_content)
 
-  # FIX ATTEMPT 4: Apply the public-read ACL to the *object* itself.
-  acl     = "public-read"
+  # REMOVED: acl = "public-read" (This was the cause of the latest plan failure)
 }
 
 output "vibe_url" {
