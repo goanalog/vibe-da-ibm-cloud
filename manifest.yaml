@@ -1,9 +1,9 @@
 
 metadata:
-  displayname: "Vibe Static Site — Functional Uploader"
-  description: "COS static site with a fully functional Cloud Function uploader (HMAC)"
+  displayname: "Vibe Static Site — Share-Ready"
+  description: "COS static site with inline Cloud Function and social meta for easy sharing"
   version: "1.0.0"
   supportedplatforms: ["ibm"]
 plan:
   name: "default"
-  description: "Deploys COS, HMAC key, Functions, and uploads index.html"
+  description: "Deploys COS bucket, uploads index.html, and provides an inline verify endpoint"

@@ -1,4 +1,3 @@
-
 terraform {
   required_version = ">= 1.5.0"
   required_providers {
@@ -27,7 +26,6 @@ resource "random_string" "suffix" {
   special = false
 }
 
-# COS instance (Lite plan in a fresh account)
 resource "ibm_resource_instance" "cos" {
   name              = "vibe-cos-${random_string.suffix.result}"
   service           = "cloud-object-storage"
@@ -37,17 +35,6 @@ resource "ibm_resource_instance" "cos" {
   tags              = ["vibe", "starter"]
 }
 
-# HMAC resource key for the action
-resource "ibm_resource_key" "cos_hmac" {
-  name                 = "vibe-hmac-${random_string.suffix.result}"
-  role                 = "Writer"
-  resource_instance_id = ibm_resource_instance.cos.id
-  parameters = {
-    HMAC = true
-  }
-}
-
-# Bucket for website
 resource "ibm_cos_bucket" "bucket" {
   bucket_name          = "vibe-bucket-${random_string.suffix.result}"
   resource_instance_id = ibm_resource_instance.cos.id
@@ -55,7 +42,6 @@ resource "ibm_cos_bucket" "bucket" {
   storage_class        = "standard"
 }
 
-# Upload index.html immediately so site is live even before function is invoked
 resource "ibm_cos_bucket_object" "index_html" {
   bucket_crn      = ibm_resource_instance.cos.id
   bucket_name     = ibm_cos_bucket.bucket.bucket_name
@@ -67,10 +53,9 @@ resource "ibm_cos_bucket_object" "index_html" {
   depends_on      = [ibm_cos_bucket.bucket]
 }
 
-# ---------- IBM Cloud Functions (modern schema) ----------
-
 resource "ibm_function_namespace" "ns" {
-  name = "vibe-ns-${random_string.suffix.result}"
+  name              = "vibe-ns-${random_string.suffix.result}"
+  resource_group_id = data.ibm_resource_group.default.id
 }
 
 resource "ibm_function_package" "pkg" {
@@ -80,17 +65,10 @@ resource "ibm_function_package" "pkg" {
   description = "Vibe function package"
 }
 
-"
-  package      = ibm_function_package.pkg.name
-  service_name = ibm_resource_instance.cos.name
-}
-
-# Action uploaded as a ZIP artifact (binary) with package.json + code.
-# NOTE: Some environments require node_modules to be included; the README covers alternatives.
 resource "ibm_function_action" "push_to_cos" {
   name        = "${ibm_function_package.pkg.name}/push_to_cos"
   namespace   = ibm_function_namespace.ns.name
-  description = "Dependency-free scaffold: echoes bytes; Terraform handles initial upload."
+  description = "Inline verify endpoint: echoes bytes; Terraform handles initial upload."
   publish     = true
   web         = true
 
@@ -103,7 +81,12 @@ resource "ibm_function_action" "push_to_cos" {
         return {
           statusCode: 200,
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ ok: true, bucket: bucket_name, received_bytes: size })
+          body: JSON.stringify({
+            ok: true,
+            message: "Inline action alive - redeploy with html_input to update COS.",
+            bucket: bucket_name,
+            received_bytes: size
+          })
         };
       }
       exports.main = main;
@@ -116,36 +99,23 @@ resource "ibm_function_action" "push_to_cos" {
   }
 
   limits { timeout = 60000 }
-}/push_to_cos"
-  namespace   = ibm_function_namespace.ns.name
-  description = "Uploads index.html to COS using HMAC creds and S3 API."
-  publish     = true
-
-  exec {
-    kind        = "nodejs:default"
-    code        = filebase64("${path.module}/functions/push_to_cos.zip")
-    binary      = true
-  }
-
-  # Parameters supplied to the action
-  parameters = {
-    bucket_name            = ibm_cos_bucket.bucket.bucket_name
-    html_input             = var.html_input != "" ? var.html_input : file("${path.module}/index.html")
-    cos_region             = var.region
-    cos_endpoint           = "https://s3.${var.region}.cloud-object-storage.appdomain.cloud"
-    hmac_access_key_id     = ibm_resource_key.cos_hmac.credentials["cos_hmac_keys"]["access_key_id"]
-    hmac_secret_access_key = ibm_resource_key.cos_hmac.credentials["cos_hmac_keys"]["secret_access_key"]
-  }
-
-  limits { timeout = 60000 }
 }
 
-output "index_html_url" {
+output "vibe_url" {
+  description = "Open your live site"
   value       = "https://s3.${var.region}.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.bucket.bucket_name}/index.html"
-  description = "Direct URL to index.html"
+  metadata {
+    displayName       = "Open live site"
+    primaryoutputlink = true
+  }
 }
 
-output "push_to_cos_web_action_url" {
+output "vibe_action_url" {
+  description = "Test your publish endpoint (inline, dependency-free)."
   value       = "https://us-south.functions.appdomain.cloud/api/v1/web/${ibm_function_namespace.ns.name}/${ibm_function_action.push_to_cos.name}"
-  description = "Web action URL"
+}
+
+output "vibe_bucket_url" {
+  description = "Bucket root (enable Static website for a pretty root path)."
+  value       = "https://s3.${var.region}.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.bucket.bucket_name}/"
 }

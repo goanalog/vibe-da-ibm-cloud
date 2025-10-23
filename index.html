@@ -1,30 +1,101 @@
+
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Vibe — Hello IBM Cloud</title>
+
+  <!-- Social meta -->
+  <meta property="og:title" content="Vibe-Coding Badge — deployed on IBM Cloud">
+  <meta property="og:description" content="I just deployed my vibe code straight to IBM Cloud. Paste, manifest, share.">
+  <meta property="og:image" content="social-card.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Vibe-Coding Badge — deployed on IBM Cloud">
+  <meta name="twitter:description" content="I just vibe-coded on IBM Cloud ✨">
+  <meta name="twitter:image" content="social-card.png">
+
   <style>
-    html,body{margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;background:#0b1020;color:#f1f5f9}
-    .wrap{max-width:780px;margin:8vh auto;padding:24px}
-    h1{font-size:clamp(28px,5vw,44px);line-height:1.1;margin:0 0 16px}
-    p{color:#cbd5e1}
-    .chip{display:inline-block;background:#111827;border:1px solid #334155;border-radius:999px;padding:8px 12px;margin:12px 8px 0 0;font-size:14px;color:#e2e8f0}
-    a{color:#93c5fd}
-    .ok{background:#122c1d;border-color:#14532d;color:#86efac}
-    .muted{color:#94a3b8}
-    code{background:#0f172a;padding:2px 6px;border-radius:6px;border:1px solid #334155}
-    footer{margin-top:40px;font-size:12px;color:#94a3b8}
+    :root { --bg1:#0a0018; --bg2:#1a0036; --text:#f6f7fb; }
+    * { box-sizing:border-box }
+    html,body { height:100% }
+    body {
+      margin:0; color:var(--text);
+      font-family: "IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
+      background:linear-gradient(135deg,var(--bg1),var(--bg2));
+      background-size:300% 300%;
+      animation:shift 20s ease-in-out infinite alternate;
+      overflow-x:hidden;
+    }
+    @keyframes shift { from { background-position:0 0 } to { background-position:100% 100% } }
+    .wrap { max-width:900px; margin:8vh auto; padding:24px }
+    h1 { font-size:clamp(28px,5vw,48px); line-height:1.1; margin:0 0 12px }
+    p { color:#cbd5e1; line-height:1.7 }
+    .row { display:flex; gap:12px; flex-wrap:wrap; margin:20px 0 12px }
+    .btn {
+      appearance:none; border:1px solid #334155; background:#0f172a; color:#e2e8f0;
+      padding:12px 16px; border-radius:12px; cursor:pointer; font-weight:600;
+      transition:transform .06s ease, box-shadow .2s ease;
+    }
+    .btn:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(0,0,0,.25) }
+    .muted { color:#94a3b8 }
+    .badge { background:#122c1d; border:1px solid #14532d; color:#86efac; border-radius:999px; padding:6px 12px; font-size:14px; display:inline-block }
+    footer { margin-top:36px; border-top:1px dashed #334155; padding-top:16px; color:#94a3b8; font-size:14px }
+    .share { display:flex; gap:12px; align-items:center; flex-wrap:wrap }
+    .toast { position:fixed; right:16px; bottom:16px; background:#0f172a; border:1px solid #334155; padding:10px 14px; border-radius:10px; display:none }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>It works! 🎉</h1>
-    <p>This page was uploaded to <strong>IBM Cloud Object Storage</strong> by Terraform & Cloud Functions. You can re-publish by invoking the <code>push_to_cos</code> action.</p>
-    <div class="chip ok">COS + Static Website</div>
-    <div class="chip">Terraform Provider: IBM v1.84+</div>
-    <div class="chip">Region: us-south</div>
-    <footer>Vibe starter • replace this with your own content</footer>
+    <p>This page was uploaded to <strong>IBM Cloud Object Storage</strong> by Terraform. To change it, paste your HTML in the IBM Cloud Project input and redeploy. For the demo endpoint, use the <span class="badge">push_to_cos</span> action — it replies with a JSON status.</p>
+
+    <div class="row">
+      <button class="btn" id="remix">Remix & Publish</button>
+      <span class="badge" id="badge" style="display:none">Vibe-Coding Badge Activated</span>
+    </div>
+
+    <footer>
+      <div class="share">
+        <button class="btn" id="copy">🔗 Copy Link</button>
+        <button class="btn" id="linkedin">💼 Share on LinkedIn</button>
+        <button class="btn" id="claim">🪩 Claim Vibe‑Coding Badge</button>
+        <span class="muted">Go ahead — let your professional network know you coded a whole vibe.</span>
+      </div>
+    </footer>
   </div>
+
+  <div class="toast" id="toast">Link copied</div>
+
+  <script>
+    const toast = (msg) => {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.display = 'block';
+      setTimeout(()=> t.style.display = 'none', 1800);
+    };
+
+    document.getElementById('copy').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        toast('Link copied');
+      } catch(e) { console.log(e); }
+    });
+
+    document.getElementById('linkedin').addEventListener('click', () => {
+      const text = encodeURIComponent('I just earned my Vibe-Coding Badge on IBM Cloud ✨');
+      const url  = encodeURIComponent(window.location.href);
+      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}&text=${text}`, '_blank');
+    });
+
+    document.getElementById('claim').addEventListener('click', () => {
+      document.getElementById('badge').style.display = 'inline-block';
+      toast('Badge claimed');
+    });
+
+    document.getElementById('remix').addEventListener('click', () => {
+      alert('Open this in IBM Cloud Projects → edit the "html_input" value → Deploy to publish your remix.');
+    });
+  </script>
 </body>
 </html>

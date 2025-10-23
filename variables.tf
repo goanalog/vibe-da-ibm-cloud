@@ -1,7 +1,7 @@
 
 variable "region" {
   type        = string
-  description = "IBM Cloud region for the bucket and endpoints"
+  description = "IBM Cloud region for bucket and endpoints"
   default     = "us-south"
 }
 
