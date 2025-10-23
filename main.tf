@@ -138,9 +138,8 @@ resource "ibm_function_action" "push_to_cos" {
     code = file("${path.module}/push_to_cos.js")
   }
 
-  # FIX 1: Wrap the map in jsonencode()
-  # FIX 2: Remove the "cos_hmac_keys" nesting
-  parameters = jsonencode({
+  # FIX: Renamed 'parameters' to 'parameters_json'
+  parameters_json = jsonencode({
     COS_ENDPOINT      = ibm_cos_bucket.bucket.s3_endpoint_public
     COS_BUCKET        = ibm_cos_bucket.bucket.bucket_name
     COS_REGION        = var.region
@@ -161,8 +160,8 @@ resource "ibm_function_action" "push_to_project" {
     code = file("${path.module}/push_to_project.js")
   }
 
-  # FIX 1: Wrap the map in jsonencode()
-  parameters = jsonencode({
+  # FIX: Renamed 'parameters' to 'parameters_json'
+  parameters_json = jsonencode({
     NOTE = "Replace with Schematics trigger later (demo endpoint)"
   })
 }
