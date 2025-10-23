@@ -1,66 +1,58 @@
-schema_version: "1.0.0"
 name: vibe-da-ibm-cloud
-version: 1.1.4
-display_name: "Vibe Code Landing Zone"
-description: "Deploy a live, vibe-driven HTML landing zone powered by IBM Cloud Object Storage (Lite)."
-long_description: |
-  This Deployable Architecture provisions a free IBM Cloud Object Storage (Lite) instance,
-  configures it for static website hosting, and includes a live sample app for instant remixing.
-
-  Optionally, you can enable IBM Cloud Functions that expose public endpoints
-  for pushing content or triggering redeploy actions — all directly from the browser.
-
-  🌐 Deploy. 🎨 Remix. ☁️ Share your vibe.
-
-license:
-  name: Apache 2.0
-  url: https://www.apache.org/licenses/LICENSE-2.0
-
-architectures:
-  - amd64
-
-inputs:
-  - name: region
-    type: string
-    default: us-south
-    description: "IBM Cloud region for Object Storage resources (e.g. us-south)"
-  - name: resource_group
-    type: string
-    default: Default
-    description: "Resource group for the resources"
-  - name: enable_functions
-    type: bool
-    default: true
-    description: "Enable IBM Cloud Functions integration for push and reapply endpoints"
-  - name: bucket_prefix
-    type: string
-    default: vibe-bucket
-    description: "Prefix for your COS bucket name"
-
-outputs:
-  - name: vibe_bucket_website_endpoint
-    type: string
-    description: "Public website endpoint for your live app"
-    is_primary_output: true
-  - name: vibe_bucket
-    type: string
-    description: "Name of created bucket"
-  - name: push_cos_url
-    type: string
-    description: "Endpoint URL for COS upload function"
-  - name: push_project_url
-    type: string
-    description: "Endpoint URL for reapply (project trigger)"
+version: 1.2.1-law
+type: terraform
+description: >
+  Deploy a live "Vibe Landing Zone" on IBM Cloud — a creative static website hosted
+  on IBM Cloud Object Storage (Lite) with optional Cloud Functions for pushing
+  updates and reapplying projects. Includes automatic IAM bindings so functions can
+  write directly to your COS bucket.
 
 tags:
-  - vibe
-  - ibm cloud
-  - object storage
-  - static website
-  - creative coding
-  - deployable architecture
+  - vibe-coding
+  - static-website
+  - cloud-functions
+  - object-storage
+  - deployable-architecture
+  - ibm-cloud
+  - creative-coding
 
-metadata:
-  website: https://www.ibm.com/architectures/deployable-architectures
-  source_url: https://github.com/goanalog/vibe-da-ibm-cloud
-  icon_url: https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/assets/vibe-icon.png
+icon: https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/icon.png
+diagram: https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/diagram.svg
+
+# main entrypoint
+template:
+  terraform:
+    source: .
+    provider: ibm
+    variables: 
+      - name: region
+        type: string
+        default: us-south
+        description: "IBM Cloud region for hosting the website (e.g. us-south, eu-de)."
+      - name: resource_group
+        type: string
+        default: Default
+        description: "IBM Cloud resource group where resources will be created."
+      - name: enable_functions
+        type: bool
+        default: true
+        description: "Enable Cloud Functions for push and reapply actions."
+      - name: bucket_prefix
+        type: string
+        default: vibe-bucket
+        description: "Prefix for generated bucket names (a random suffix is appended)."
+
+outputs:
+  - name: vibe_bucket
+    description: "Bucket name hosting the site."
+  - name: vibe_bucket_website_endpoint
+    description: "Public website endpoint for the hosted vibe app."
+  - name: push_cos_url
+    description: "Invoke URL for push_to_cos Cloud Function."
+  - name: push_project_url
+    description: "Invoke URL for push_to_project Cloud Function."
+  - name: s3_public_endpoint
+    description: "S3 public endpoint for the region."
+
+primary_output: vibe_bucket_website_endpoint
+readme: README.md

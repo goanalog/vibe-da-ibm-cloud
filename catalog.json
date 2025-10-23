@@ -1,83 +1,81 @@
 {
-  "schema_version": "1.0.0",
   "name": "vibe-da-ibm-cloud",
-  "display_name": "Vibe Code Landing Zone",
-  "version": "1.1.4",
-  "description": "Deploy a live, vibe-driven HTML landing zone powered by IBM Cloud Object Storage (Lite). Paste your code, manifest your vibe, and share it live — instantly and repeatedly.",
-  "long_description": "This Deployable Architecture provisions a free IBM Cloud Object Storage (Lite) instance, creates a globally accessible bucket, configures website hosting with a live sample app, and optionally enables IBM Cloud Functions for live code updates and reapply hooks.\n\nUse this to experiment with vibe-coding: paste HTML into the sample IDE, deploy to a public bucket, and share your creative energy.\n\nIncludes:\n- IBM Cloud Object Storage (Lite)\n- COS public website configuration\n- Optional IBM Cloud Functions (Node.js 18) for content push and reapply\n- Interactive sample web app with gradient ‘vibe IDE’ design",
-  "icon_url": "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/assets/vibe-icon.png",
-  "metadata": {
-    "tags": [
-      "vibe",
-      "ibm cloud",
-      "object storage",
-      "static website",
-      "deployable architecture",
-      "creative coding"
-    ],
-    "architectures": [
-      "amd64"
-    ],
-    "languages": [
-      "terraform",
-      "html",
-      "javascript"
-    ],
-    "license": {
-      "name": "Apache 2.0",
-      "url": "https://www.apache.org/licenses/LICENSE-2.0"
-    },
-    "website": "https://www.ibm.com/architectures/deployable-architectures",
-    "support_url": "https://cloud.ibm.com/docs",
-    "source_url": "https://github.com/goanalog/vibe-da-ibm-cloud"
+  "version": "1.2.1-law",
+  "displayName": "Vibe Landing Zone — IBM Cloud Edition",
+  "shortDescription": "Deploy a whole mood — instantly and repeatedly.",
+  "longDescription": "The Vibe Landing Zone deploys a fully functional static website on IBM Cloud Object Storage (Lite plan) with optional Cloud Functions that can write back to your bucket and trigger reapplications. Designed for creators, coders, and curious explorers alike — powered by IBM Cloud’s free-tier capabilities.",
+  "tags": [
+    "vibe-coding",
+    "deployable-architecture",
+    "ibm-cloud",
+    "object-storage",
+    "static-website",
+    "cloud-functions",
+    "creative"
+  ],
+  "type": "terraform",
+  "category": "Web Application",
+  "architectureDiagramUrl": "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/diagram.svg",
+  "iconUrl": "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/icon.png",
+  "instructionsUrl": "https://github.com/goanalog/vibe-da-ibm-cloud",
+  "source": {
+    "type": "git",
+    "url": "https://github.com/goanalog/vibe-da-ibm-cloud"
   },
-  "inputs": [
+  "template": {
+    "terraform": {
+      "provider": "ibm",
+      "path": ".",
+      "variables": [
+        {
+          "name": "region",
+          "type": "string",
+          "default": "us-south",
+          "description": "IBM Cloud region for hosting the website."
+        },
+        {
+          "name": "resource_group",
+          "type": "string",
+          "default": "Default",
+          "description": "IBM Cloud resource group where resources will be created."
+        },
+        {
+          "name": "enable_functions",
+          "type": "bool",
+          "default": true,
+          "description": "Enable Cloud Functions to push updates or reapply your project."
+        },
+        {
+          "name": "bucket_prefix",
+          "type": "string",
+          "default": "vibe-bucket",
+          "description": "Prefix for generated COS buckets (a random suffix is appended)."
+        }
+      ],
+      "outputs": [
+        {
+          "name": "vibe_bucket_website_endpoint",
+          "description": "Public website endpoint for the hosted app."
+        },
+        {
+          "name": "push_cos_url",
+          "description": "Invoke URL for the push_to_cos action."
+        },
+        {
+          "name": "push_project_url",
+          "description": "Invoke URL for the push_to_project action."
+        }
+      ],
+      "primaryOutput": "vibe_bucket_website_endpoint"
+    }
+  },
+  "readmeUrl": "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/README.md",
+  "authors": [
     {
-      "name": "region",
-      "type": "string",
-      "default": "us-south",
-      "description": "IBM Cloud region for Object Storage resources (e.g. us-south)"
-    },
-    {
-      "name": "resource_group",
-      "type": "string",
-      "default": "Default",
-      "description": "Resource group for the resources"
-    },
-    {
-      "name": "enable_functions",
-      "type": "bool",
-      "default": true,
-      "description": "Enable IBM Cloud Functions integration for push and reapply endpoints"
-    },
-    {
-      "name": "bucket_prefix",
-      "type": "string",
-      "default": "vibe-bucket",
-      "description": "Prefix for your COS bucket name"
+      "name": "Brendan Fitzpatrick",
+      "email": "realbrendan@us.ibm.com"
     }
   ],
-  "outputs": [
-    {
-      "name": "vibe_bucket_website_endpoint",
-      "type": "string",
-      "description": "Public website endpoint for your live app",
-      "is_primary_output": true
-    },
-    {
-      "name": "vibe_bucket",
-      "type": "string",
-      "description": "The name of the created bucket"
-    },
-    {
-      "name": "push_cos_url",
-      "type": "string",
-      "description": "Endpoint URL for COS upload function"
-    },
-    {
-      "name": "push_project_url",
-      "type": "string",
-      "description": "Endpoint URL for reapply (project trigger)"
-    }
-  ]
+  "license": "Apache-2.0",
+  "aiGenerated": true
 }
