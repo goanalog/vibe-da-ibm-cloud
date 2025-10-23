@@ -1,12 +1,8 @@
 {
-  "schema_version": "1.0.0",
   "name": "vibe-da-ibm-cloud",
-  "version": "0.3.2", // Bump version again
+  "version": "0.3.2",
   "type": "terraform",
   "provider": "ibm",
-  
-  "terraform_version": "terraform_1.5", // <-- Try this version
-
   "display_name": "Vibe IDE — Deployable Architecture",
   "description": "A deployable architecture that turns raw HTML into a live Vibe app hosted on IBM Cloud Object Storage.",
   "variables": [
@@ -15,7 +11,7 @@
       "type": "string",
       "description": "Paste your HTML directly — Terraform will handle encoding.",
       "ui:widget": "textarea",
-      "default": "" 
+      "default": ""
     }
   ],
   "outputs": [
@@ -23,7 +19,7 @@
       "name": "vibe_url",
       "type": "string",
       "description": "Public URL for your deployed Vibe app",
-      "is_primary_output": true
+      "primary_output": true
     }
   ]
 }
