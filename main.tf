@@ -35,17 +35,16 @@ resource "ibm_cos_bucket_object" "vibe_code" {
 }
 
 # --- IAM Public Access Group Policy Attempt ---
-# Grant the built-in "Public access" group the "Content Reader" role
-# on this specific COS bucket instance.
 resource "ibm_iam_access_group_policy" "bucket_public_read_policy" {
   access_group_id = "AccessGroupId-PublicAccess" 
 
-  roles = ["Content Reader"] 
+  # FIX: Use the specific "Object Reader" role for data access
+  roles = ["Object Reader"] 
 
   resources {
     service              = "cloud-object-storage"
     resource_instance_id = ibm_resource_instance.vibe_instance.id
-    # FIX: Add resource_type and resource to target the bucket specifically
+    # Keep targeting the specific bucket
     resource_type        = "bucket" 
     resource             = ibm_cos_bucket.vibe_bucket.bucket_name 
   }
