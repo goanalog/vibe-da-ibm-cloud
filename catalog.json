@@ -1,7 +1,0 @@
-{
-  "name": "Vibe IDE — Max Vibe Edition",
-  "short_description": "Branded static site on IBM Cloud with optional Cloud Functions.",
-  "long_description": "Deploys a COS static website and, optionally, IBM Cloud Functions to push updates to the site or a project. Designed for frictionless demos and repeatable vibes.",
-  "labels": ["vibe", "website", "functions"],
-  "primaryoutputlink": "vibe_bucket_website_endpoint"
-}
