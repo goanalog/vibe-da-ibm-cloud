@@ -9,8 +9,8 @@ resource "random_string" "suffix" {
 }
 
 locals {
-  html_content = var.vibe_code_raw != "" ?
-  var.vibe_code_raw : file("${path.module}/index.html")
+  # This conditional logic is now on a single line to fix the init error
+  html_content = var.vibe_code_raw != "" ? var.vibe_code_raw : file("${path.module}/index.html")
 }
 
 resource "ibm_resource_instance" "vibe_instance" {
@@ -36,6 +36,6 @@ resource "ibm_cos_bucket_object" "vibe_code" {
   content = local.html_content
   etag    = md5(local.html_content)
   
-  # This makes the individual object public, fixing the 403 error
+  # This makes the individual object public
   acl = "public-read"
 }
