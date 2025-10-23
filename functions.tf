@@ -14,22 +14,27 @@ data "archive_file" "push_to_cos_zip" {
 
 # --- Cloud Function Action (Push to COS) ---
 resource "ibm_function_action" "push_to_cos" {
-  name         = "vibe-push-to-cos"
-  namespace_id = ibm_function_namespace.vibe_namespace.id
-  publish      = true 
+  name    = "vibe-push-to-cos"
+  # FIX 1: Use 'namespace' not 'namespace_id'
+  namespace = ibm_function_namespace.vibe_namespace.name
+  publish   = true 
   
-  # --- THIS BLOCK IS THE FIX ---
-  # We removed the 'exec' block and are using 'zip' to pass the file path
-  zip     = data.archive_file.push_to_cos_zip.output_path
-  # We still need to specify the runtime
-  runtime = "nodejs:16" 
-  # --- END FIX ---
+  # FIX 2: 'exec' block is required
+  exec {
+    # FIX 3: 'runtime' ('kind') goes inside 'exec'
+    kind = "nodejs:16" 
+    # FIX 4: Use filebase64() to read the zip file content
+    code = filebase64(data.archive_file.push_to_cos_zip.output_path)
+  }
   
-  parameters = {
+  # FIX 5: 'parameters' must be a JSON string
+  parameters = jsonencode({
     BUCKET_NAME     = ibm_cos_bucket.vibe_bucket.bucket_name
     COS_ENDPOINT    = "s3.${ibm_cos_bucket.vibe_bucket.region_location}.cloud-object-storage.appdomain.cloud"
     COS_INSTANCE_ID = ibm_resource_instance.vibe_instance.crn
-  }
+    # FIX 6: Pass the API key as a parameter
+    __OW_API_KEY    = ibm_iam_service_api_key.vibe_function_sid_key.api_key
+  })
 
-  service_credential_key = ibm_iam_service_api_key.vibe_function_sid_key.name
+  # FIX 7: 'service_credential_key' is removed
 }
