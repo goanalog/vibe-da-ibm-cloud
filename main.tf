@@ -1,6 +1,5 @@
 terraform {
   required_version = ">= 1.5.0"
-
   required_providers {
     ibm = {
       source  = "ibm-cloud/ibm"
@@ -13,41 +12,76 @@ terraform {
   }
 }
 
-provider "ibm" {}
+provider "ibm" {
+  region = var.region
+}
 
+# Resolve the resource group by name
 data "ibm_resource_group" "group" {
   name = var.resource_group
 }
 
+# Random suffix to keep names unique
 resource "random_string" "suffix" {
   length  = 6
   lower   = true
   upper   = false
-  numeric = true
   special = false
+  numeric = true
 }
 
-# ----------------------------------------------------------
-#  IBM Cloud Object Storage (Lite) Instance + Website Bucket
-# ----------------------------------------------------------
+locals {
+  bucket_name = "${var.bucket_prefix}-${random_string.suffix.result}"
+}
 
+# COS instance (Lite)
 resource "ibm_resource_instance" "cos_instance" {
-  name              = "vibe-instance-${random_string.suffix.result}"
+  name              = "vibe-cos-${random_string.suffix.result}"
   service           = "cloud-object-storage"
   plan              = "lite"
   location          = "global"
   resource_group_id = data.ibm_resource_group.group.id
+  tags              = ["vibe", "max-vibe-edition"]
 }
 
+# Website bucket
 resource "ibm_cos_bucket" "bucket" {
-  bucket_name          = "${var.bucket_prefix}-${random_string.suffix.result}"
+  bucket_name          = local.bucket_name
   resource_instance_id = ibm_resource_instance.cos_instance.id
   region_location      = var.region
   storage_class        = "standard"
   endpoint_type        = "public"
   force_delete         = true
+  tags                 = ["vibe", "website"]
 }
 
+# HTML objects
+resource "ibm_cos_bucket_object" "index_html" {
+  bucket_crn      = ibm_cos_bucket.bucket.crn
+  bucket_location = var.region
+  endpoint_type   = "public"
+  key             = "index.html"
+  content         = file("${path.module}/index.html")
+  force_delete    = true
+}
+
+resource "ibm_cos_bucket_object" "page_404" {
+  bucket_crn      = ibm_cos_bucket.bucket.crn
+  bucket_location = var.region
+  endpoint_type   = "public"
+  key             = "404.html"
+  content         = <<HTML
+<!doctype html><html><head><meta charset="utf-8"><title>404</title>
+<style>body{background:#0b0f14;color:#e6f1ff;display:grid;place-items:center;height:100vh;font:16px/1.5 system-ui}
+.card{background:#121823;border:1px solid rgba(122,252,255,.35);padding:24px;border-radius:16px}
+a{color:#7afcff}</style></head><body>
+<div class="card"><h1>404</h1><p>File not found.</p><p><a href="/">Go home</a></p></div>
+</body></html>
+HTML
+  force_delete    = true
+}
+
+# Website configuration
 resource "ibm_cos_bucket_website_configuration" "bucket_website" {
   bucket_crn      = ibm_cos_bucket.bucket.crn
   bucket_location = var.region
@@ -57,62 +91,41 @@ resource "ibm_cos_bucket_website_configuration" "bucket_website" {
     index_document { suffix = "index.html" }
     error_document { key = "404.html" }
   }
+
+  depends_on = [
+    ibm_cos_bucket_object.index_html,
+    ibm_cos_bucket_object.page_404
+  ]
 }
 
-resource "ibm_cos_bucket_object" "index_html" {
-  bucket_crn      = ibm_cos_bucket.bucket.crn
-  bucket_location = var.region
-  key             = "index.html"
-  content         = file("${path.module}/index.html")
-  endpoint_type   = "public"
-  force_delete    = true
-  depends_on      = [ibm_cos_bucket_website_configuration.bucket_website]
-}
-
-# ----------------------------------------------------------
-#  Optional: IBM Cloud Functions Integration
-# ----------------------------------------------------------
-
-locals {
-  enable_functions = var.enable_functions
-}
-
-resource "ibm_iam_authorization_policy" "functions_to_cos" {
-  count = local.enable_functions ? 1 : 0
-
-  source_service_name = "cloud-functions"
-  target_service_name = "cloud-object-storage"
-  roles               = ["Writer"]
-}
-
+# Writer key with HMAC
 resource "ibm_resource_key" "cos_writer" {
-  count                = local.enable_functions ? 1 : 0
-  name                 = "vibe-cos-writer-${random_string.suffix.result}"
-  role                 = "Writer"
-  resource_instance_id = ibm_resource_instance.cos_instance.id
-  parameters = {
-    HMAC = true
-  }
+  name       = "vibe-cos-writer-${random_string.suffix.result}"
+  source_crn = ibm_resource_instance.cos_instance.id
+  role       = "Writer"
+  parameters = { HMAC = true }
 }
+
+############################
+# Cloud Functions (optional)
+############################
 
 resource "ibm_function_namespace" "ns" {
-  count             = local.enable_functions ? 1 : 0
-  name              = "vibe-${random_string.suffix.result}"
-  resource_group_id = data.ibm_resource_group.group.id
+  count              = var.enable_functions ? 1 : 0
+  name               = "vibe-ns-${random_string.suffix.result}"
+  resource_group_id  = data.ibm_resource_group.group.id
 }
 
 resource "ibm_function_package" "pkg" {
-  count     = local.enable_functions ? 1 : 0
+  count     = var.enable_functions ? 1 : 0
   name      = "vibe"
-  namespace = ibm_function_namespace.ns[0].name
-  publish   = false
+  namespace = ibm_function_namespace.ns[0].id
 }
 
-# --- Function: push_to_cos ---
 resource "ibm_function_action" "push_to_cos" {
-  count     = local.enable_functions ? 1 : 0
+  count     = var.enable_functions ? 1 : 0
   name      = "push_to_cos"
-  namespace = ibm_function_namespace.ns[0].name
+  namespace = ibm_function_namespace.ns[0].id
 
   exec {
     kind = "nodejs:18"
@@ -120,19 +133,23 @@ resource "ibm_function_action" "push_to_cos" {
   }
 
   parameters = jsonencode({
-    COS_BUCKET_NAME     = ibm_cos_bucket.bucket.bucket_name
-    COS_REGION          = var.region
-    COS_RESOURCE_CRN    = ibm_resource_instance.cos_instance.crn
-    COS_HMAC_ACCESS_KEY = ibm_resource_key.cos_writer.credentials["cos_hmac_keys"]["access_key_id"]
-    COS_HMAC_SECRET_KEY = ibm_resource_key.cos_writer.credentials["cos_hmac_keys"]["secret_access_key"]
+    COS_ENDPOINT       = ibm_cos_bucket.bucket.s3_endpoint_public
+    COS_BUCKET         = ibm_cos_bucket.bucket.bucket_name
+    COS_REGION         = var.region
+    ACCESS_KEY_ID      = ibm_resource_key.cos_writer.credentials["cos_hmac_keys"]["access_key_id"]
+    SECRET_ACCESS_KEY  = ibm_resource_key.cos_writer.credentials["cos_hmac_keys"]["secret_access_key"]
   })
+
+  user_defined_annotations = jsonencode([])
+  user_defined_parameters  = jsonencode([])
+
+  depends_on = [ibm_resource_key.cos_writer]
 }
 
-# --- Function: push_to_project ---
 resource "ibm_function_action" "push_to_project" {
-  count     = local.enable_functions ? 1 : 0
+  count     = var.enable_functions ? 1 : 0
   name      = "push_to_project"
-  namespace = ibm_function_namespace.ns[0].name
+  namespace = ibm_function_namespace.ns[0].id
 
   exec {
     kind = "nodejs:18"
@@ -140,6 +157,35 @@ resource "ibm_function_action" "push_to_project" {
   }
 
   parameters = jsonencode({
-    NOTE = "Replace with Schematics trigger later"
+    NOTE = "Replace with Schematics trigger later (demo endpoint)"
   })
+
+  user_defined_annotations = jsonencode([])
+  user_defined_parameters  = jsonencode([])
+}
+
+##################################
+# Post-apply helper (local script)
+##################################
+
+resource "null_resource" "inject_urls" {
+  count = var.enable_functions ? 1 : 0
+
+  triggers = {
+    cos_url     = ibm_function_action.push_to_cos[0].target_endpoint_url
+    project_url = ibm_function_action.push_to_project[0].target_endpoint_url
+  }
+
+  provisioner "local-exec" {
+    command = <<EOT
+      echo "PUSH_COS_URL=${self.triggers.cos_url}" > injected-vars.txt
+      echo "PUSH_PROJECT_URL=${self.triggers.project_url}" >> injected-vars.txt
+      echo "Injected vars into injected-vars.txt"
+    EOT
+  }
+
+  depends_on = [
+    ibm_function_action.push_to_cos,
+    ibm_function_action.push_to_project
+  ]
 }

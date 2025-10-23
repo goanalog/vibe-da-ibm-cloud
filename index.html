@@ -1,55 +1,89 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Vibe on IBM Cloud</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Vibe IDE — Max Vibe Edition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#0b0f14; --card:#121823; --txt:#e6f1ff; --muted:#9aa6b2; --neon:#7afcff;
+      --bg:#0b0f14; --card:#121823; --muted:#9aa6b2; --txt:#e6f1ff; --neon:#7afcff; --neon2:#ffa6ff; --neon3:#9dffad
     }
+    *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0; background:radial-gradient(1000px 600px at 20% -10%, rgba(122,252,255,.08), transparent 60%),
-                   radial-gradient(900px 700px at 120% 120%, rgba(255,166,255,.08), transparent 60%), var(--bg);
-         color:var(--txt); font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; display:grid; place-items:center; padding:24px;}
-    .card{width:min(920px, 92vw); background:linear-gradient(180deg, rgba(122,252,255,.06), rgba(255,166,255,.06)) padding-box,
-                          linear-gradient(180deg, rgba(122,252,255,.35), rgba(255,166,255,.35)) border-box;
-          border:1px solid transparent; border-radius:20px; padding:28px; box-shadow:0 20px 60px rgba(0,0,0,.45), 0 0 60px rgba(122,252,255,.08) inset;}
-    h1{margin:0 0 8px; font-size:clamp(28px, 4vw, 44px); letter-spacing:.3px}
+    body{
+      margin:0; color:var(--txt); font:16px/1.6 "IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      background:
+        radial-gradient(1200px 800px at 15% 0%, rgba(122,252,255,.08), transparent 60%),
+        radial-gradient(900px 600px at 120% 10%, rgba(255,166,255,.08), transparent 60%),
+        radial-gradient(900px 700px at 80% 120%, rgba(157,255,173,.08), transparent 60%),
+        var(--bg);
+      display:grid; place-items:center; padding:24px;
+      cursor: crosshair;
+    }
+    .card{
+      width:min(940px, 94vw);
+      background:
+        linear-gradient(180deg, rgba(122,252,255,.06), rgba(255,166,255,.06)) padding-box,
+        linear-gradient(180deg, rgba(122,252,255,.35), rgba(255,166,255,.35)) border-box;
+      border:1px solid transparent; border-radius:20px; padding:28px;
+      box-shadow:0 24px 80px rgba(0,0,0,.45), 0 0 60px rgba(122,252,255,.08) inset;
+    }
+    h1{margin:0 0 6px; font-size:clamp(28px,4vw,44px); letter-spacing:.3px}
     p{margin:0 0 18px; color:var(--muted)}
     .row{display:flex; gap:14px; flex-wrap:wrap; margin-top:18px}
-    .btn{border:1px solid rgba(122,252,255,.35); padding:12px 16px; border-radius:12px; cursor:pointer; background:#0e141d; color:var(--txt);
-         text-decoration:none; display:inline-flex; align-items:center; gap:10px; transition: transform .08s ease, box-shadow .15s ease, border-color .15s ease;}
-    .btn:hover{ transform:translateY(-1px); border-color:var(--neon); box-shadow:0 0 24px rgba(122,252,255,.25) }
-    code{background:#0d1420; border:1px solid rgba(122,252,255,.15); padding:2px 6px; border-radius:8px}
+    .btn{
+      border:1px solid rgba(122,252,255,.35);
+      padding:12px 16px; border-radius:12px; cursor:pointer; background:#0e141d; color:var(--txt);
+      text-decoration:none; display:inline-flex; align-items:center; gap:10px;
+      transition: transform .08s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+    .btn:hover{transform:translateY(-1px); border-color:var(--neon)}
+    code{background:#0d1420;border:1px solid rgba(122,252,255,.15);padding:2px 6px;border-radius:8px;font-family:"IBM Plex Mono",monospace}
     footer{margin-top:18px; font-size:12px; color:#7d8a97}
+    .kbd{font-family:"IBM Plex Mono",monospace; font-size:12px; padding:1px 6px; border-radius:6px; background:#0d1420; border:1px solid rgba(122,252,255,.15)}
   </style>
 </head>
 <body>
   <main class="card">
     <h1>Vibe is live ✨</h1>
-    <p>Deployed on IBM Cloud Object Storage as a static website. The buttons below call IBM Cloud Functions that you can adapt for your workflows.</p>
+    <p>Deployed on IBM Cloud Object Storage as a static website. Use the buttons below to trigger IBM Cloud Functions (if enabled).</p>
 
     <div class="row">
       <a class="btn" id="pushCos">Push to COS</a>
       <a class="btn" id="pushProject">Push to Project</a>
+      <a class="btn" href="https://www.ibm.com/architectures/deployable-architectures" target="_blank">Deployable Architectures</a>
+      <a class="btn" href="https://www.ibm.com/products/bob" target="_blank">IBM Project Bob</a>
     </div>
 
-    <footer>Edit this page in <code>index.html</code>. Function URLs come from Terraform outputs.</footer>
+    <footer>
+      Edit this page in <code>${location.pathname.replace(/[^/]+$/,'')}index.html</code>.  
+      Tip: press <span class="kbd">R</span> to “remix” the vibe gradient.
+    </footer>
   </main>
 
   <script>
-    // Paste the two outputs here (optional) or call them from your app/CI.
-    const PUSH_COS_URL = "__PUSH_COS_URL__";
+    // These get templated by Terraform Outputs in Schematics "View outputs"
+    const PUSH_COS_URL     = "__PUSH_COS_URL__";
     const PUSH_PROJECT_URL = "__PUSH_PROJECT_URL__";
 
     function call(url){
-      fetch(url, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ ok:true, time:new Date().toISOString() })})
-        .then(r => r.text()).then(t => alert("Response: " + t))
+      if(!url || url === "null"){ alert("Function is disabled in this deploy (enable_functions=false)"); return; }
+      fetch(url, { method:"POST" })
+        .then(r => r.text())
+        .then(t => alert("Response: " + t))
         .catch(e => alert("Error: " + e));
     }
     document.getElementById("pushCos").onclick = () => call(PUSH_COS_URL);
     document.getElementById("pushProject").onclick = () => call(PUSH_PROJECT_URL);
+
+    // Little vibe remix
+    addEventListener("keydown", (e)=>{
+      if(e.key.toLowerCase()==="r"){
+        document.body.style.backgroundPosition = `${Math.random()*100}% ${Math.random()*100}%`;
+      }
+    });
   </script>
 </body>
 </html>
