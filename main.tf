@@ -1,4 +1,3 @@
-
 terraform {
   required_providers {
     ibm = {
@@ -13,137 +12,114 @@ terraform {
 }
 
 provider "ibm" {
-  # Region used for COS bucket location
   region = var.region
 }
 
-data "ibm_resource_group" "default" {
-  is_default = true
+data "ibm_resource_group" "group" {
+  name = var.resource_group
 }
 
 resource "random_string" "suffix" {
   length  = 6
   upper   = false
+  lower   = true
+  numeric = true
   special = false
 }
 
-# COS instance (Lite)
-resource "ibm_resource_instance" "cos" {
-  name              = "vibe-cos-${random_string.suffix.result}"
+# COS instance
+resource "ibm_resource_instance" "cos_instance" {
+  name              = "vibe-instance-${random_string.suffix.result}"
   service           = "cloud-object-storage"
   plan              = "lite"
   location          = "global"
-  resource_group_id = data.ibm_resource_group.default.id
-  tags              = ["vibe","da","v1-1-1"]
-}
-
-# HMAC key for Functions to write to COS
-resource "ibm_resource_key" "cos_hmac" {
-  name                 = "vibe-hmac-${random_string.suffix.result}"
-  role                 = "Writer"
-  resource_instance_id = ibm_resource_instance.cos.id
-  parameters           = { HMAC = true }
+  resource_group_id = data.ibm_resource_group.group.id
 }
 
 # COS bucket
 resource "ibm_cos_bucket" "bucket" {
   bucket_name          = "vibe-bucket-${random_string.suffix.result}"
-  resource_instance_id = ibm_resource_instance.cos.id
+  resource_instance_id = ibm_resource_instance.cos_instance.id
   region_location      = var.region
   storage_class        = "standard"
+  force_delete         = true
+
+  website {
+    enable    = true
+    mainpage  = "index.html"
+    errorpage = "404.html"
+  }
 }
 
-# Upload initial index.html
-resource "ibm_cos_bucket_object" "index_html" {
-  bucket_crn      = ibm_resource_instance.cos.id
-  bucket_name     = ibm_cos_bucket.bucket.bucket_name
-  key             = "index.html"
-  content         = file("${path.module}/index.html")
-  content_type    = "text/html"
-  region_location = var.region
-  etag_verify     = false
-  depends_on      = [ibm_cos_bucket.bucket]
-}
-
-# ---------------- IBM Cloud Functions ----------------
+# IBM Cloud Functions namespace + package
 resource "ibm_function_namespace" "ns" {
-  name              = "vibe-ns-${random_string.suffix.result}"
-  resource_group_id = data.ibm_resource_group.default.id
+  name = "vibe-ns-${random_string.suffix.result}"
 }
 
 resource "ibm_function_package" "pkg" {
-  name        = "vibe"
-  namespace   = ibm_function_namespace.ns.name
-  publish     = true
-  description = "Vibe IDE Functions"
+  name      = "vibe-funcs-${random_string.suffix.result}"
+  namespace = ibm_function_namespace.ns.name
 }
 
-# push_to_cos: writes HTML to COS using HMAC creds
+# Functions (Node.js:18 zips)
 resource "ibm_function_action" "push_to_cos" {
-  name        = "${ibm_function_package.pkg.name}/push_to_cos"
-  namespace   = ibm_function_namespace.ns.name
-  description = "Write updated index.html into COS (drift-causing)"
-  publish     = true
-  web         = true
-
-  exec {
-    kind   = "nodejs:default"
-    code   = filebase64("${path.module}/functions/push_to_cos.zip")
-    binary = true
-  }
-
-  parameters = {
-    bucket_name = ibm_cos_bucket.bucket.bucket_name
-    region      = var.region
-    # Endpoint format: s3.<region>.cloud-object-storage.appdomain.cloud
-    cos_endpoint = "s3.${var.region}.cloud-object-storage.appdomain.cloud"
-    access_key_id     = ibm_resource_key.cos_hmac.credentials["cos_hmac_keys"]["access_key_id"]
-    secret_access_key = ibm_resource_key.cos_hmac.credentials["cos_hmac_keys"]["secret_access_key"]
-  }
+  name      = "push_to_cos"
+  namespace = ibm_function_namespace.ns.name
+  package   = ibm_function_package.pkg.name
+  exec_kind = "nodejs:18"
+  code_path = "${path.module}/functions/push_to_cos.zip"
 }
 
-# push_to_project: stages HTML to /staged/index.html (safe path).
-# NOTE: Projects API wiring can be added later; this function provides a real staging artifact now.
 resource "ibm_function_action" "push_to_project" {
-  name        = "${ibm_function_package.pkg.name}/push_to_project"
-  namespace   = ibm_function_namespace.ns.name
-  description = "Stage updated HTML as staged/index.html (Project-friendly)"
-  publish     = true
-  web         = true
-
-  exec {
-    kind   = "nodejs:default"
-    code   = filebase64("${path.module}/functions/push_to_project.zip")
-    binary = true
-  }
-
-  parameters = {
-    bucket_name = ibm_cos_bucket.bucket.bucket_name
-    region      = var.region
-    cos_endpoint = "s3.${var.region}.cloud-object-storage.appdomain.cloud"
-    access_key_id     = ibm_resource_key.cos_hmac.credentials["cos_hmac_keys"]["access_key_id"]
-    secret_access_key = ibm_resource_key.cos_hmac.credentials["cos_hmac_keys"]["secret_access_key"]
-  }
+  name      = "push_to_project"
+  namespace = ibm_function_namespace.ns.name
+  package   = ibm_function_package.pkg.name
+  exec_kind = "nodejs:18"
+  code_path = "${path.module}/functions/push_to_project.zip"
 }
 
-# ---------------- Outputs ----------------
+# Live URLs for injection
+locals {
+  push_cos_url     = ibm_function_action.push_to_cos.invoke_url
+  push_project_url = ibm_function_action.push_to_project.invoke_url
+}
+
+# Upload an HTML page with live Function URLs injected
+resource "ibm_cos_bucket_object" "index_html" {
+  bucket_crn   = ibm_cos_bucket.bucket.crn
+  key          = "index.html"
+  content      = base64encode(
+    templatefile("${path.module}/samples/index.html", {
+      PUSH_COS_URL     = local.push_cos_url
+      PUSH_PROJECT_URL = local.push_project_url
+    })
+  )
+  content_type = "text/html"
+}
+
+# (Optional) A 404 page to avoid ugly errors
+resource "ibm_cos_bucket_object" "page_404" {
+  bucket_crn   = ibm_cos_bucket.bucket.crn
+  key          = "404.html"
+  content      = base64encode("<!doctype html><html><head><meta charset=\"utf-8\"><title>404</title></head><body style=\"font-family:sans-serif; background:#0b1020; color:#e2e8f0\"><h1>404 — the vibe you seek is elsewhere</h1><p><a href=\"/\">Return to the Vibe IDE</a></p></body></html>")
+  content_type = "text/html"
+}
+
 output "vibe_url" {
-  description = "Open your live site"
-  value       = "https://s3.${var.region}.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.bucket.bucket_name}/index.html"
+  value       = ibm_cos_bucket.bucket.website_url
+  description = "Primary Vibe site URL (promoted output)"
 }
 
 output "vibe_bucket_url" {
-  description = "Bucket root"
-  value       = "https://s3.${var.region}.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.bucket.bucket_name}/"
+  value = ibm_cos_bucket.bucket.website_url
 }
 
-# best-effort web action URLs (OpenWhisk pattern)
-output "push_to_cos_url" {
-  description = "Web action for pushing HTML directly to COS"
-  value       = "https://us-south.functions.appdomain.cloud/api/v1/web/${ibm_function_namespace.ns.name}/${ibm_function_action.push_to_cos.name}"
+output "push_cos_url" {
+  value       = local.push_cos_url
+  description = "Live IBM Cloud Function URL for Push-to-COS"
 }
 
-output "push_to_project_url" {
-  description = "Web action for staging HTML to /staged/index.html"
-  value       = "https://us-south.functions.appdomain.cloud/api/v1/web/${ibm_function_namespace.ns.name}/${ibm_function_action.push_to_project.name}"
+output "push_project_url" {
+  value       = local.push_project_url
+  description = "Live IBM Cloud Function URL for Push-to-Project"
 }

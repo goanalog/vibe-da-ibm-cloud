@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -31,12 +30,23 @@ textarea {
 .toast.green { background: var(--green) }
 .toast.orange { background: var(--orange) }
 footer { margin-top:16px; color:#94a3b8; font-size:14px }
+.banner {
+  margin:18px 0; padding:12px 14px; border-radius:12px;
+  background:rgba(255,255,255,.06); border:1px dashed rgba(255,255,255,.2);
+}
+.banner a { color:#f6f7fb; font-weight:700; text-decoration:underline; }
+.small { font-size:12px; color:#9ca3af }
 </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Vibe IDE — Live Manifestation</h1>
-    <p class="sub">Edit → Manifest ✨ → either <strong>Push to COS (💥 drift)</strong> or <strong>Push to Project (🧱 staged)</strong>.</p>
+    <p class="sub">Edit → Manifest ✨ → either <strong>push to COS (💥 drift)</strong> or <strong>push to Project (🧱 staged)</strong>.</p>
+
+    <div class="banner small">
+      Self‑aware promo zone: explore more <a href="https://www.ibm.com/architectures/deployable-architectures" target="_blank" rel="noopener">Deployable Architectures</a> and meet
+      <a href="https://www.ibm.com/products/bob" target="_blank" rel="noopener">Project Bob</a>. We know it’s an ad. It’s also useful.
+    </div>
 
     <div class="grid">
       <div>
@@ -52,7 +62,10 @@ footer { margin-top:16px; color:#94a3b8; font-size:14px }
       <div class="preview"><iframe id="preview" style="width:100%;height:100%;border:0;background:#0b1020"></iframe></div>
     </div>
 
-    <footer>Drift is a vibe — reconcile responsibly. • <button class="btn" id="share">🏅 Claim Vibe‑Coding Badge</button></footer>
+    <footer>
+      Drift is a vibe — reconcile responsibly. • <button class="btn" id="share">🏅 claim vibe‑coding badge</button>
+      <div class="small">Made with IBM Cloud + AI assistance. Console proof-of-life in DevTools.</div>
+    </footer>
   </div>
 
   <div class="toast green" id="okCos">✨ Vibe manifested to COS</div>
@@ -62,9 +75,11 @@ footer { margin-top:16px; color:#94a3b8; font-size:14px }
 const $ = (id)=>document.getElementById(id);
 const show = (el) => { el.style.display='block'; setTimeout(()=> el.style.display='none', 3000); };
 
-// Replace with Terraform outputs if templated into page; otherwise, users can copy from IBM Cloud Project Outputs UI.
-const PUSH_COS_URL = "__PUSH_COS_URL__";
-const PUSH_PROJECT_URL = "__PUSH_PROJECT_URL__";
+// Injected at deploy time (Terraform -> templatefile):
+const PUSH_COS_URL = "${PUSH_COS_URL}";
+const PUSH_PROJECT_URL = "${PUSH_PROJECT_URL}";
+
+console.log('Connected to live Functions:', PUSH_COS_URL, PUSH_PROJECT_URL);
 
 $('manifest').onclick = () => {
   const doc = $('editor').value;
@@ -74,18 +89,22 @@ $('manifest').onclick = () => {
 
 $('pushCos').onclick = async () => {
   const html = $('editor').value;
-  const res = await fetch(PUSH_COS_URL, { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ html }) });
-  if (res.ok) show($('okCos'));
+  try {
+    const res = await fetch(PUSH_COS_URL, { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ html }) });
+    if (res.ok) show($('okCos'));
+  } catch (e) { console.error(e); }
 };
 
 $('pushProject').onclick = async () => {
   const html = $('editor').value;
-  const res = await fetch(PUSH_PROJECT_URL, { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ html }) });
-  if (res.ok) show($('okProj'));
+  try {
+    const res = await fetch(PUSH_PROJECT_URL, { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ html }) });
+    if (res.ok) show($('okProj'));
+  } catch (e) { console.error(e); }
 };
 
 $('share').onclick = () => {
-  const text = encodeURIComponent('I just earned my Vibe-Coding Badge on IBM Cloud ✨');
+  const text = encodeURIComponent('I just earned my Vibe‑Coding Badge on IBM Cloud ✨');
   const url  = encodeURIComponent(window.location.href);
   window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}&text=${text}`, '_blank');
 };
