@@ -5,22 +5,133 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Vibe Landing Zone — Max Vibe Edition</title>
 
-  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
-  <!-- CodeMirror 6 (via esm.run bundles) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js" defer></script>
+
   <script type="module">
     import { EditorView, basicSetup } from "https://esm.run/codemirror@6.0.1";
-    import { javascript } from "https://esm.run/@codemirror/lang-javascript@6.2.1";
     import { html } from "https://esm.run/@codemirror/lang-html@6.4.8";
     import { oneDark } from "https://esm.run/@codemirror/theme-one-dark@6.2.0";
 
-    window._vibeBoot = () => {
-      const codeEl = document.getElementById("code");
+    // Boot the entire application once the DOM is ready
+    document.addEventListener("DOMContentLoaded", () => {
+      
+      // --- Configuration ---
+      const cfg = window.vibeConfig || { project: {}, functions: {} };
+
+      // --- Lightweight Reactive State ---
+      const ui = {
+        preview: document.getElementById("preview"),
+        updateBar: document.getElementById("updateBar"),
+        aiTip: document.getElementById("aiTip"),
+        updateLink: document.getElementById("updateLink"),
+        toast: document.getElementById("toast"),
+        codeEl: document.getElementById("code"),
+      };
+
+      const state = {
+        isPreviewing: false,
+        isTipOpen: false,
+        updateAvailable: false,
+        toastTimer: null
+      };
+
+      // A single function to update the DOM based on state
+      function render() {
+        ui.preview.classList.toggle("hidden", !state.isPreviewing);
+        ui.aiTip.classList.toggle("open", state.isTipOpen);
+        ui.updateBar.classList.toggle("hidden", !state.updateAvailable);
+      }
+
+      // --- Helper Functions (now in local scope) ---
+      function toast(msg) {
+        ui.toast.textContent = msg;
+        ui.toast.style.display = "block";
+        clearTimeout(state.toastTimer);
+        state.toastTimer = setTimeout(() => ui.toast.style.display = "none", 2600);
+      }
+      function toastError(msg) { toast("❌ " + msg); }
+      
+      function sampleHTML(h) {
+        return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Your Vibe</title>
+    <style>
+      :root{--h:${h};}
+      body{font-family: system-ui, -apple-system, "IBM Plex Sans", sans-serif;
+ margin:0; background:#0b0d14; color:#e5e7eb;}
+      main{display:grid; place-items:center; min-height:100vh; padding:2rem;}
+      .card{max-width:780px; background:rgba(255,255,255,.02);
+ border:1px solid rgba(147,197,253,.2);
+            padding:28px; border-radius:16px; box-shadow:0 20px 50px rgba(0,0,0,.45)}
+      h1{margin:0 0 .4rem;
+ font-size:clamp(1.6rem, 3vw, 2.2rem);}
+      p{line-height:1.55}
+      .cta{display:flex; gap:.5rem; flex-wrap:wrap;
+ margin-top:1rem}
+      .btn{border:none; padding:.6rem 1rem; border-radius:9999px; color:#fff;
+           background:linear-gradient(135deg, hsl(var(--h),90%,60%), hsl(calc(var(--h)+60),80%,55%));
+ font-weight:700}
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="card">
+        <h1>It works! ✨</h1>
+        <p>
+          You’re looking at the live page that your editor will upload to Cloud Object Storage.<br/>
+          Choose <b>Ship to COS 🚀</b> to push directly (fast, creates drift), or 
+          <b>Request Project Update ✅</b> to do it the “right way” via your IBM Cloud Project.
+ </p>
+        <div class="cta">
+          <a class="btn" href="#" onclick="parent.postMessage('vibe:ship','*');return false;">Ship to COS 🚀</a>
+          <a class="btn" href="#" onclick="parent.postMessage('vibe:update','*');return false;">Request Project Update ✅</a>
+        </div>
+        <p style="opacity:.75;margin-top:10px">Powered by IBM Cloud.</p>
+      </div>
+    </main>
+  </body>
+</html>`;
+      }
+      
+      const confirmOnce = (msg) => window.confirm(msg);
+
+      const callFn = async (url, payload) => {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload || {})
+        });
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+      };
+      
+      function markUpdateAvailable(ref) {
+        ui.updateLink.onclick = () => {
+          toast("Opening Project…");
+          if (cfg.project.url) window.open(cfg.project.url, "_blank");
+        };
+        // REFACTORED: Update state and render
+        state.updateAvailable = true;
+        render();
+      }
+
+      function showBannerOnce() {
+        if (!localStorage.getItem("vibe_banner_shown")) {
+          document.getElementById("banner").classList.remove("hidden");
+          localStorage.setItem("vibe_banner_shown", "1");
+        }
+      }
+
+      // --- Boot Logic ---
       const initial = sampleHTML(220);
+      
       const updatePreview = () => {
-        const iframe = document.getElementById("preview");
-        iframe.srcdoc = view.state.doc.toString();
+        ui.preview.srcdoc = view.state.doc.toString();
       };
 
       const view = new EditorView({
@@ -31,46 +142,38 @@
           oneDark,
           EditorView.lineWrapping
         ],
-        parent: codeEl
+        parent: ui.codeEl
       });
 
-      // Buttons
+      // --- Event Listeners (Refactored for state) ---
+      
+      // Editor buttons
       document.getElementById("copyCode").onclick = async () => {
         await navigator.clipboard.writeText(view.state.doc.toString());
         toast("Copied ✨");
       };
       document.getElementById("saveLocal").onclick = () => {
-        const blob = new Blob([view.state.doc.toString()], {type:"text/html"});
+        const blob = new Blob([view.state.doc.toString()], { type: "text/html" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
         a.download = "vibe-code.html";
         a.click();
-        setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
       };
+      
+      // State-changing buttons
       document.getElementById("manifest").onclick = () => {
-        document.getElementById("preview").classList.remove("hidden");
         updatePreview();
         showBannerOnce();
+        state.isPreviewing = true;
+        render();
       };
       document.getElementById("remix").onclick = () => {
-        document.getElementById("preview").classList.add("hidden");
+        state.isPreviewing = false;
+        render();
       };
 
-      // Flow Buttons (no-op placeholders wired to Functions)
-      const cfg = window.vibeConfig;
-      const confirmOnce = (msg) => window.confirm(msg);
-
-      const callFn = async (url, payload) => {
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "content-type":"application/json" },
-          body: JSON.stringify(payload || {})
-        });
-        if (!res.ok) throw new Error(await res.text());
-        return res.json();
-      };
-
-      // Direct push (will drift the Project) — only runs if user clicks the explicit button
+      // Function-calling buttons
       document.getElementById("pushDirect").onclick = async () => {
         if (!cfg.functions.directPushUrl) return toastError("Function URL missing");
         if (!confirmOnce("This will push your code straight to the bucket (and your Project will later detect drift). Proceed?")) return;
@@ -83,8 +186,6 @@
           toastError("Push failed: " + (e?.message || e));
         }
       };
-
-      // Right way: request a Project config update (no drift)
       document.getElementById("requestUpdate").onclick = async () => {
         if (!cfg.functions.requestUpdateUrl) return toastError("Function URL missing");
         try {
@@ -93,128 +194,132 @@
           toast("Project update requested ✅");
           markUpdateAvailable(result?.change_id || new Date().toISOString());
         } catch (e) {
-          toastError("Request failed: " + (e?.message || e));
+          toastError("Request failed: "" + (e?.message || e));
         }
       };
 
-      // Tooltip popover content (AI note + attribution)
-      const tip = document.getElementById("aiTip");
+      // AI Tooltip
       const tipBtn = document.getElementById("aiBadge");
-      let tipOpen = false;
-      const toggleTip = () => {
-        tipOpen = !tipOpen;
-        tip.classList.toggle("open", tipOpen);
-      };
-      tipBtn.addEventListener("click", toggleTip);
-      tipBtn.addEventListener("mouseenter", () => tip.classList.add("open"));
-      tip.addEventListener("mouseleave", () => tip.classList.remove("open"));
+      tipBtn.addEventListener("click", () => {
+        state.isTipOpen = !state.isTipOpen;
+        render();
+      });
+      tipBtn.addEventListener("mouseenter", () => {
+        state.isTipOpen = true;
+        render();
+      });
+      ui.aiTip.addEventListener("mouseleave", () => {
+        state.isTipOpen = false;
+        render();
+      });
+      
+      // Wire parent-message shortcuts
+      window.addEventListener("message", (e) => {
+        if (e.data === "vibe:ship") document.getElementById("pushDirect").click();
+        if (e.data === "vibe:update") document.getElementById("requestUpdate").click();
+      });
 
-      // Sticky “update available” banner
-      function markUpdateAvailable(ref) {
-        const bar = document.getElementById("updateBar");
-        const link = document.getElementById("updateLink");
-        bar.classList.remove("hidden");
-        link.onclick = () => {
-          // This could call another Function that triggers a Project run.
-          toast("Opening Project…");
-          if (cfg.project.url) window.open(cfg.project.url, "_blank");
-        };
-      }
-      function showBannerOnce(){
-        if(!localStorage.getItem("vibe_banner_shown")){
-          document.getElementById("banner").classList.remove("hidden");
-          localStorage.setItem("vibe_banner_shown","1");
-        }
-      }
-
-      // Public controls that other scripts need:
-      window.__vibe = { view, updatePreview, toast };
-    };
+    });
   </script>
 
-  <!-- Tone.js for ambience (optional, off by default) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js" defer></script>
-
   <style>
-    :root { --hue: 220; --fg: #e5e7eb; --bg: #000; --glow-intensity: 1.0; }
-    * { box-sizing: border-box; }
+    :root { --hue: 220;
+ --fg: #e5e7eb; --bg: #000; --glow-intensity: 1.0; }
+    * { box-sizing: border-box;
+ }
     html, body { height: 100%; margin: 0; }
-    body { background: var(--bg); color: var(--fg); overflow: hidden; font-family: "IBM Plex Sans", system-ui; }
+    body { background: var(--bg);
+ color: var(--fg); overflow: hidden; font-family: "IBM Plex Sans", system-ui; }
 
-    #particles, #bg { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
-    #particles { pointer-events: none; }
+    #particles, #bg { position: fixed; inset: 0;
+ width: 100%; height: 100%; display: block; z-index: 0; }
+    #particles { pointer-events: none;
+ }
 
     .hidden { display: none !important; }
 
     /* Editor chrome */
     #editor {
-      position: fixed; top: 7vh; left: 6vw; right: 6vw; min-height: 42vh;
+      position: fixed;
+ top: 7vh; left: 6vw; right: 6vw; min-height: 42vh;
       z-index: 4; background: rgba(10,12,18,0.75); border: 1px solid rgba(147,197,253,0.15);
-      border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 40px hsla(var(--hue),90%,60%,0.22) inset;
-    }
+      border-radius: 16px;
+ box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 40px hsla(var(--hue),90%,60%,0.22) inset;
+ }
     #editor-title {
-      display: flex; align-items: center; gap: .6rem; padding: .8rem 1rem; font-weight: 600;
+      display: flex; align-items: center; gap: .6rem; padding: .8rem 1rem;
+ font-weight: 600;
       background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0));
       border-bottom: 1px solid rgba(147,197,253,0.15);
     }
 
-    #code { height: 40vh; }
-    .cm-editor { height: 100%; border-top: 1px solid rgba(147,197,253,0.1); background:#0b0d14; }
+    #code { height: 40vh;
+ }
+    .cm-editor { height: 100%; border-top: 1px solid rgba(147,197,253,0.1); background:#0b0d14;
+ }
 
-    #actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; padding: .8rem 1rem 1rem; }
+    #actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; padding: .8rem 1rem 1rem;
+ }
     .secondary-btn {
-      background: rgba(120, 180, 255, 0.1); border: 1px solid rgba(120, 180, 255, 0.35);
+      background: rgba(120, 180, 255, 0.1);
+ border: 1px solid rgba(120, 180, 255, 0.35);
       color: #dbeafe; padding: .5rem .9rem; border-radius: 9999px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
-    }
+ }
     .btn {
       border: none; cursor: pointer; border-radius: 9999px; padding: .7rem 1.1rem;
-      color: white; font-weight: 800; letter-spacing: .02em;
+ color: white; font-weight: 800; letter-spacing: .02em;
       background: linear-gradient(135deg, hsl(var(--hue),90%,60%), hsl(calc(var(--hue)+60),80%,55%));
       box-shadow: 0 0 18px hsla(var(--hue),90%,60%,.4), 0 0 28px hsla(var(--hue),90%,60%,.2);
-    }
-    .btn:disabled { background: #444; opacity: .7; cursor: not-allowed; }
+ }
+    .btn:disabled { background: #444; opacity: .7; cursor: not-allowed;
+ }
 
     /* Preview */
-    #preview { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; z-index: 3; }
+    #preview { position: fixed; inset: 0; width: 100%; height: 100%;
+ border: 0; background: transparent; z-index: 3; }
 
     /* Update banner */
     #updateBar {
-      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      position: fixed;
+ bottom: 20px; left: 50%; transform: translateX(-50%);
       background: rgba(10,12,18,0.9); border:1px solid rgba(147,197,253,.35);
       color:#e0e7ff; padding:.7rem 1rem; border-radius: 9999px; z-index: 8;
-      box-shadow: 0 10px 40px rgba(0,0,0,.4);
+ box-shadow: 0 10px 40px rgba(0,0,0,.4);
     }
-    #updateBar a { color:#93c5fd; text-decoration: underline; cursor: pointer; }
+    #updateBar a { color:#93c5fd; text-decoration: underline; cursor: pointer;
+ }
 
     /* AI badge + tooltip */
     #aiBadge {
-      position: fixed; right: 18px; bottom: 18px; z-index: 9;
+      position: fixed;
+ right: 18px; bottom: 18px; z-index: 9;
       background: rgba(12,14,20,.85); border:1px solid rgba(147,197,253,.25);
       border-radius: 9999px; padding:.45rem .7rem; font-size:.82rem; display:flex; align-items:center; gap:.4rem;
-      cursor: pointer;
+ cursor: pointer;
     }
     #aiTip {
-      position: fixed; right: 18px; bottom: 58px; z-index: 9; width: 320px;
+      position: fixed; right: 18px; bottom: 58px;
+ z-index: 9; width: 320px;
       padding:.8rem; background: rgba(0,0,0,.85); border:1px solid rgba(147,197,253,.3);
       border-radius: 12px; color:#dbeafe; display:none;
-    }
+ }
     #aiTip.open { display:block; }
-    #aiTip small a { color:#93c5fd; }
+    #aiTip small a { color:#93c5fd;
+ }
 
     /* Toast */
-    #toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.85);
-      color:#fff; padding:.6rem .9rem; border-radius: 8px; z-index: 20; display:none; }
+    #toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+ background: rgba(0,0,0,.85);
+      color:#fff; padding:.6rem .9rem; border-radius: 8px; z-index: 20; display:none;
+ }
   </style>
 </head>
 <body>
-  <!-- Background canvases (lightweight, non-blocking) -->
   <canvas id="bg" aria-hidden="true"></canvas>
   <canvas id="particles" aria-hidden="true"></canvas>
 
-  <!-- Preview -->
   <iframe id="preview" class="hidden" title="Vibe Preview"></iframe>
 
-  <!-- Editor -->
   <section id="editor" aria-label="Vibe code editor">
     <div id="editor-title">
       <span style="width:.7rem;height:.7rem;border-radius:50%;background:#ff5f56"></span>
@@ -224,7 +329,8 @@
     </div>
     <div id="code" aria-label="Edit vibe HTML code"></div>
     <div id="actions">
-      <button id="saveLocal" class="secondary-btn" type="button" aria-label="Save vibe to local file">Save File ⤓</button>
+      <button id="saveLocal" class="secondary-btn" 
+ type="button" aria-label="Save vibe to local file">Save File ⤓</button>
       <button id="copyCode" class="secondary-btn" type="button" aria-label="Copy vibe code">Copy Code ❐</button>
       <button id="manifest" class="btn" type="button" aria-label="Manifest your vibe">Manifest ✨</button>
       <button id="pushDirect" class="btn" type="button" aria-label="Direct push to COS (drift)">Ship to COS 🚀</button>
@@ -233,26 +339,26 @@
     </div>
   </section>
 
-  <!-- Update-available bar (sticky until dismissed) -->
-  <div id="updateBar" class="hidden" role="status" aria-live="polite">
+  <div id="updateBar" class="hidden" role="status" 
+ aria-live="polite">
     New vibe is ready to apply in your IBM Cloud Project — <a id="updateLink">Review & Apply</a>
     <button style="margin-left:.6rem" class="secondary-btn" onclick="this.parentElement.classList.add('hidden')">Dismiss</button>
   </div>
 
-  <!-- AI badge + tooltip -->
   <div id="aiBadge" aria-label="About this AI-assisted sample">
     🤖 <span>AI-Assisted</span>
   </div>
   <div id="aiTip">
-    <strong>Heads-up:</strong> this sample includes an AI-generated UX layer. All cloud changes still go through IBM Cloud APIs with least privileges. <br/><br/>
-    <small>Attribution: inspired by work from <a href="#" target="_blank" rel="noopener">Arn Hyndman</a> on a static-website Deployable Architecture. “Powered by IBM Cloud.”</small>
+    <strong>Heads-up:</strong> this sample includes an AI-generated UX layer.
+ All cloud changes still go through IBM Cloud APIs with least privileges.
+ <br/><br/>
+    <small>Attribution: inspired by work from <a href="#" target="_blank" rel="noopener">Arn Hyndman</a> on a static-website Deployable Architecture.
+ “Powered by IBM Cloud.”</small>
   </div>
 
-  <!-- Toast -->
-  <div id="toast"></div>
+  <div id="toast" role="status" aria-live="assertive"></div>
 
   <script>
-    // Minimal state & helpers
     window.vibeConfig = {
       project: { url: "${project_url}" || "" },
       functions: {
@@ -260,66 +366,6 @@
         requestUpdateUrl: "${function_request_url}" || ""
       }
     };
-
-    function toast(msg){
-      const t = document.getElementById("toast");
-      t.textContent = msg; t.style.display = "block";
-      clearTimeout(window.__toastT);
-      window.__toastT = setTimeout(()=> t.style.display="none", 2600);
-    }
-    function toastError(msg){ toast("❌ " + msg); }
-
-    // A pleasant starter doc
-    function sampleHTML(h){
-      return `<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Your Vibe</title>
-    <style>
-      :root{--h:${h};}
-      body{font-family: system-ui, -apple-system, "IBM Plex Sans", sans-serif; margin:0; background:#0b0d14; color:#e5e7eb;}
-      main{display:grid; place-items:center; min-height:100vh; padding:2rem;}
-      .card{max-width:780px; background:rgba(255,255,255,.02); border:1px solid rgba(147,197,253,.2);
-            padding:28px; border-radius:16px; box-shadow:0 20px 50px rgba(0,0,0,.45)}
-      h1{margin:0 0 .4rem; font-size:clamp(1.6rem, 3vw, 2.2rem);}
-      p{line-height:1.55}
-      .cta{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:1rem}
-      .btn{border:none; padding:.6rem 1rem; border-radius:9999px; color:#fff;
-           background:linear-gradient(135deg, hsl(var(--h),90%,60%), hsl(calc(var(--h)+60),80%,55%)); font-weight:700}
-    </style>
-  </head>
-  <body>
-    <main>
-      <div class="card">
-        <h1>It works! ✨</h1>
-        <p>
-          You’re looking at the live page that your editor will upload to Cloud Object Storage.<br/>
-          Choose <b>Ship to COS 🚀</b> to push directly (fast, creates drift), or 
-          <b>Request Project Update ✅</b> to do it the “right way” via your IBM Cloud Project.
-        </p>
-        <div class="cta">
-          <a class="btn" href="#" onclick="parent.postMessage('vibe:ship','*');return false;">Ship to COS 🚀</a>
-          <a class="btn" href="#" onclick="parent.postMessage('vibe:update','*');return false;">Request Project Update ✅</a>
-        </div>
-        <p style="opacity:.75;margin-top:10px">Powered by IBM Cloud.</p>
-      </div>
-    </main>
-  </body>
-</html>`;
-    }
-
-    // Wire parent-message shortcuts
-    window.addEventListener("message", (e) => {
-      if (e.data === "vibe:ship") document.getElementById("pushDirect").click();
-      if (e.data === "vibe:update") document.getElementById("requestUpdate").click();
-    });
-
-    // Boot once DOM ready
-    document.addEventListener("DOMContentLoaded", () => {
-      if (window._vibeBoot) window._vibeBoot();
-    });
   </script>
 </body>
 </html>

@@ -7,9 +7,9 @@ resource "random_string" "suffix" {
 }
 
 locals {
-  # Handle both raw HTML and fallback sample
-  source_final = var.vibe_code_raw != "" ? base64encode(var.vibe_code_raw) : base64encode(file("${path.module}/index.html"))
-  html_decoded = base64decode(local.source_final)
+  # OPTIMIZED: Use the raw HTML variable if provided, otherwise read the file content.
+  # This removes the unnecessary base64 encode/decode cycle.
+  html_content = var.vibe_code_raw != "" ? var.vibe_code_raw : file("${path.module}/index.html")
 }
 
 resource "ibm_resource_instance" "vibe_instance" {
@@ -25,13 +25,17 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   storage_class        = "standard"
   region_location      = "us-south"
   force_delete         = true
+
+  # BUG FIX: Add this line to make the website URL public (403 fix)
+  public_access        = true
 }
 
 resource "ibm_cos_bucket_object" "vibe_code" {
   bucket  = ibm_cos_bucket.vibe_bucket.bucket_name
   key     = "index.html"
-  content = local.html_decoded
-  etag    = md5(local.html_decoded)
+  # UPDATED: Use the optimized local variable
+  content = local.html_content
+  etag    = md5(local.html_content)
 }
 
 output "vibe_url" {
