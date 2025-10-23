@@ -1,5 +1,4 @@
 provider "ibm" {}
-provider "null" {}
 
 resource "random_string" "suffix" {
   length  = 6
@@ -35,19 +34,29 @@ resource "ibm_cos_bucket_object" "vibe_code" {
   etag    = md5(local.html_content)
 }
 
-# --- THE AWS CLI HACK ---
-# This uses the awscli (which should be in the environment)
-# to set the public ACL via the S3 API.
-resource "null_resource" "make_object_public" {
-  depends_on = [ibm_cos_bucket_object.vibe_code]
+# --- IAM Public Access Policy Attempt ---
+# Applies an IAM policy allowing public GetObject access
+resource "ibm_cos_bucket_policy" "vibe_bucket_public_policy" {
+  endpoint_type        = "public" # Use public endpoint for policy management
+  bucket_crn           = ibm_cos_bucket.vibe_bucket.crn
+  bucket_location      = ibm_cos_bucket.vibe_bucket.region_location
 
-  provisioner "local-exec" {
-    # Command uses awscli s3api to set public-read ACL
-    # We use the public S3 endpoint provided by the ibm_cos_bucket resource
-    command = "aws --endpoint-url https://${ibm_cos_bucket.vibe_bucket.s3_endpoint_public} s3api put-object-acl --bucket ${ibm_cos_bucket.vibe_bucket.bucket_name} --key ${ibm_cos_bucket_object.vibe_code.key} --acl public-read"
-  }
+  policy_document = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid       = "PublicReadGetObject",
+        Effect    = "Allow",
+        Principal = "*", # Represents Public Access
+        Action    = "s3:GetObject",
+        Resource  = "${ibm_cos_bucket.vibe_bucket.crn}/*" # Apply to all objects within the bucket
+      }
+    ]
+  })
 }
-# --- END HACK ---
+# --- END IAM Policy Attempt ---
+
+# REMOVED the null_resource hack
 
 output "vibe_url" {
   value       = "https://s3.us-south.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.vibe_bucket.bucket_name}/index.html"
