@@ -1,26 +1,21 @@
 {
-  "version": "1.0.1",
   "name": "vibe-da-ibm-cloud",
-  "display_name": "Vibe Deployable Architecture — Flat COS + Optional Functions",
-  "description": "Provisions COS Lite + bucket and serves a sample index.html. Optionally deploys an IBM Cloud Functions web action for presigned uploads (flag off by default for zero-friction validation).",
-  "type": "terraform",
-  "tags": ["vibe", "ibm-cloud", "cos", "lite", "serverless"],
-  "outputs": [
-    {
-      "name": "vibe_url",
-      "type": "string",
-      "description": "Public URL for your deployed Vibe app",
-      "is_primary_output": true
-    },
-    {
-      "name": "vibe_bucket_name",
-      "type": "string",
-      "description": "Name of the COS bucket"
-    },
-    {
-      "name": "vibe_presign_endpoint",
-      "type": "string",
-      "description": "Functions presign endpoint (only when enable_functions=true)"
-    }
-  ]
+  "active": true,
+  "kind": "terraform",
+  "tags": [
+    "web",
+    "object-storage",
+    "serverless",
+    "vibe"
+  ],
+  "short_description": "Vibe IDE \u2014 Cloud Manifestor (COS + Functions, Lite)",
+  "provider": "IBM",
+  "metadata": {
+    "version": "0.2.0",
+    "displayName": "Vibe IDE \u2014 Cloud Manifestor",
+    "language": "en",
+    "longDescription": "Deploy a COS-hosted web IDE with IBM Cloud Functions for safe uploads and staged project updates. Primary output is a live link.",
+    "created": "2025-10-23",
+    "images": []
+  }
 }

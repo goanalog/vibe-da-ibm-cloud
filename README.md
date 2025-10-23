@@ -1,16 +1,26 @@
-# 🌀 Vibe Deployable Architecture — Flat COS + Optional Functions
+# Vibe IDE — Cloud Manifestor
 
-**Powered by IBM Cloud**
+**Deploy → Click → Remix.** Provisions **IBM Cloud Object Storage (Lite)** + **IBM Cloud Functions (Lite)**,
+injects endpoints into your app, and uploads it instantly — your vibe is live right after apply.
 
-- Provisions **Cloud Object Storage (Lite)** and a public bucket (cross-region `us-geo`).
-- Uploads a sample **index.html** so your URL works instantly.
-- Exposes a primary output: **`vibe_url`**.
-- (Optional) Deploys an **IBM Cloud Functions** web action for presigned uploads.
-  - Disabled by default via `enable_functions = false` to ensure smooth validation.
+- Primary Output: **vibe_url** → click to open your live app.
+- Safe by default: Lite plans only; uploads via Functions (no creds in browser).
+- Public-read bucket for demo convenience (tighten later as needed).
 
-## Deploy notes
-- Works via IBM Cloud **Catalog** or **Projects**.
-- To enable Functions:
-  - Set variable `enable_functions=true` at deploy time.
+## Created resources
+- COS instance (Lite) + website bucket
+- Functions (Lite):
+  - `vibe-upload` — upload + versioning + rollback
+  - `vibe-status` — readiness check
+  - `vibe-project-update` — stages `project-update-request.json`
 
-Paste. Look. Share. **Vibe.**
+## Revert
+Each deploy copies `index.html` → `index.prev.html`. Click **Revert 💫** in the app to restore.
+
+## Pre-existing resources
+- If `bucket_name` exists (and you own it), we reuse it.
+- To avoid conflicts, delete old demo buckets or pick a new name.
+- Destroy cleans up (`force_delete=true`).
+
+## Attribution
+Builds on static website DA concepts by **Arn Hyndman** (colleague).

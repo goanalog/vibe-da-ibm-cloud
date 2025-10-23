@@ -1,5 +1,41 @@
 name: vibe-da-ibm-cloud
-version: 1.0.1
-type: terraform
-description: COS Lite + bucket with sample index.html (optional Functions presign endpoint).
-primary_output: vibe_url
+display_name: Vibe IDE — Cloud Manifestor
+short_description: Deploy a COS-hosted web IDE with Functions (Lite) for safe uploads — live on first deploy.
+description: >
+  Frictionless web IDE that deploys itself to IBM Cloud Object Storage (Lite) and uses IBM Cloud Functions (Lite)
+  to safely upload code and stage project update requests. Primary output is a live link to your app.
+  Builds on static website DA concepts by Arn Hyndman (colleague).
+version: "0.2.0"
+tags: [web, object-storage, serverless, vibe]
+project:
+  inputs:
+    - name: region
+      type: string
+      label: "🌎 Region"
+      default: us-south
+    - name: resource_group_name
+      type: string
+      label: "👥 Resource group"
+      default: Default
+    - name: bucket_name
+      type: string
+      label: "🪣 Bucket name (optional)"
+      description: "Leave blank to auto-generate a unique name."
+    - name: enable_functions
+      type: bool
+      label: "⚡ Enable Functions (Lite)"
+      default: true
+  outputs:
+    - name: vibe_url
+      description: "Primary — open your live app"
+      is_primary: true
+    - name: vibe_bucket_name
+      description: "COS bucket name"
+    - name: vibe_status
+      description: "Deployment health check"
+    - name: vibe_upload_endpoint
+      description: "Web action for uploads & rollback"
+    - name: vibe_status_endpoint
+      description: "Web action for readiness checks"
+    - name: vibe_project_update_endpoint
+      description: "Web action for Project updates (staged)"

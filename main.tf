@@ -1,77 +1,101 @@
-    random = {
-      source  = "hashicorp/random"
-      version = ">= 3.5.1"
-    }
-  }
-  required_version = ">= 1.5.0"
-}
+provider "ibm" { region = var.region }
 
-provider "ibm" {}
+data "ibm_resource_group" "rg" { name = var.resource_group_name }
 
-# Random suffix for globally-unique names
-resource "random_string" "suffix" {
-  length  = 6
-  upper   = false
-  special = false
-}
+resource "random_string" "suffix" { length=6 upper=false special=false }
 
-# ----- Variables -----
-
-
-# ----- COS Lite Instance -----
 resource "ibm_resource_instance" "cos" {
   name     = "vibe-cos-${random_string.suffix.result}"
   service  = "cloud-object-storage"
   plan     = "lite"
   location = var.region
-  tags     = ["vibe", "lite", "da"]
+  resource_group_id = data.ibm_resource_group.rg.id
 }
 
-# ----- COS Bucket (cross-region us-geo for public hosting) -----
+resource "ibm_resource_key" "cos_hmac" {
+  name                 = "vibe-cos-hmac-${random_string.suffix.result}"
+  role                 = "Writer"
+  resource_instance_id = ibm_resource_instance.cos.id
+  parameters           = { HMAC = true }
+}
+
 resource "ibm_cos_bucket" "vibe" {
-  bucket_name           = "vibe-bucket-${random_string.suffix.result}"
-  ibm_cos_instance_crn  = ibm_resource_instance.cos.id
-  storage_class         = "standard"
-  cross_region_location = "us-geo"
+  bucket_name          = coalesce(var.bucket_name, "vibe-da-${random_string.suffix.result}")
+  resource_instance_id = ibm_resource_instance.cos.id
+  region_location      = var.region
+  storage_class        = "standard"
+  force_delete         = true
+  access               = "public"
+  website { index_document = "index.html" error_document = "index.html" }
 }
 
-# ----- Upload sample index.html at deploy time -----
-resource "ibm_cos_bucket_object" "index" {
-  bucket_crn      = ibm_cos_bucket.vibe.bucket_crn
-  bucket_location = ibm_cos_bucket.vibe.cross_region_location
-  key             = "index.html"
-  content         = file("${path.module}/index.html")
-  content_type    = "text/html"
+locals {
+  bucket_public_url = "https://${ibm_cos_bucket.vibe.bucket_name}.${var.region}.cloud-object-storage.appdomain.cloud"
+  vibe_id           = "vibe-${random_string.suffix.result}"
 }
 
-# (Optional) IBM Cloud Functions resources - behind a feature flag
-# NOTE: Provider schemas may differ across versions; this block is disabled by default.
-# Enable by setting -var enable_functions=true
-# The code for the action lives in manifest_upload.js (Node.js).
-# If you enable this, ensure your account has Functions Lite enabled in the chosen region.
-resource "ibm_function_namespace" "vibe" {
-  count     = var.enable_functions ? 1 : 0
-  name      = "vibe-ns-${random_string.suffix.result}"
-  location  = var.region
-}
-
-resource "ibm_function_action" "presign" {
-  count      = var.enable_functions ? 1 : 0
-  name       = "vibe-presign-${random_string.suffix.result}"
-  namespace  = ibm_function_namespace.vibe[0].name
-  exec {
-    kind = "nodejs:default"
-    code = file("${path.module}/manifest_upload.js")
+resource "ibm_function_action" "vibe_upload" {
+  name       = "vibe-upload-${random_string.suffix.result}"
+  runtime    = "python:3.11"
+  publish    = true
+  web        = true
+  code       = file("${path.module}/vibe_upload.py")
+  user_defined_parameters = {
+    COS_ACCESS_KEY_ID     = jsondecode(ibm_resource_key.cos_hmac.credentials_json).cos_hmac_keys[0].access_key_id
+    COS_SECRET_ACCESS_KEY = jsondecode(ibm_resource_key.cos_hmac.credentials_json).cos_hmac_keys[0].secret_access_key
+    BUCKET                = ibm_cos_bucket.vibe.bucket_name
+    REGION                = var.region
   }
-  # Expose as web action (annotations may be schema-version dependent)
-  annotations = jsonencode({
-    "web-export" = "true",
-    "raw-http"   = "true"
-  })
 }
 
-# ----- Outputs -----
-
+resource "ibm_function_action" "vibe_status" {
+  name       = "vibe-status-${random_string.suffix.result}"
+  runtime    = "python:3.11"
+  publish    = true
+  web        = true
+  code       = file("${path.module}/vibe_status.py")
+  user_defined_parameters = {
+    URL = "${local.bucket_public_url}/index.html"
+  }
 }
 
+resource "ibm_function_action" "vibe_project_update" {
+  name       = "vibe-project-update-${random_string.suffix.result}"
+  runtime    = "python:3.11"
+  publish    = true
+  web        = true
+  code       = file("${path.module}/vibe_upload.py")
+  user_defined_parameters = {
+    COS_ACCESS_KEY_ID     = jsondecode(ibm_resource_key.cos_hmac.credentials_json).cos_hmac_keys[0].access_key_id
+    COS_SECRET_ACCESS_KEY = jsondecode(ibm_resource_key.cos_hmac.credentials_json).cos_hmac_keys[0].secret_access_key
+    BUCKET                = ibm_cos_bucket.vibe.bucket_name
+    REGION                = var.region
+    PROJECT_MODE          = "update_request"
+  }
+}
+
+# Render template (replace placeholders with endpoints & ids)
+resource "local_file" "index_rendered" {
+  filename = "${path.module}/index.html"
+  content  = replace(replace(replace(replace(replace(file("${path.module}/index.html"), "%%UPLOAD_ENDPOINT%%", ibm_function_action.vibe_upload.web_action_url), "%%STATUS_ENDPOINT%%", ibm_function_action.vibe_status.web_action_url), "%%PROJECT_UPDATE_ENDPOINT%%", ibm_function_action.vibe_project_update.web_action_url), "%%BUCKET_PUBLIC_URL%%", local.bucket_public_url), "%%VIBE_ID%%", local.vibe_id)
+}
+
+resource "null_resource" "bootstrap_upload" {
+  triggers = {
+    rendered_sha = filesha256(local_file.index_rendered.filename)
+    endpoint     = ibm_function_action.vibe_upload.web_action_url
+  }
+  provisioner "local-exec" {
+    command = <<EOC
+python3 - <<'PY'
+import json, base64, urllib.request
+endpoint = "${ibm_function_action.vibe_upload.web_action_url}"
+b = open("index.html","rb").read()
+payload = json.dumps({"action":"upload","key":"index.html","content_b64":base64.b64encode(b).decode()}).encode()
+req = urllib.request.Request(endpoint, data=payload, headers={"Content-Type":"application/json"})
+print(urllib.request.urlopen(req, timeout=60).read().decode())
+PY
+EOC
+  }
+  depends_on = [ibm_cos_bucket.vibe, ibm_function_action.vibe_upload, local_file.index_rendered]
 }
