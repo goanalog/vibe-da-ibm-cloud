@@ -1,9 +1,0 @@
-
-metadata:
-  displayname: "Vibe Static Site — Share-Ready"
-  description: "COS static site with inline Cloud Function and social meta for easy sharing"
-  version: "1.0.0"
-  supportedplatforms: ["ibm"]
-plan:
-  name: "default"
-  description: "Deploys COS bucket, uploads index.html, and provides an inline verify endpoint"

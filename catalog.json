@@ -1,8 +1,0 @@
-{
-  "displayName": "Vibe Static Site \u2014 Share-Ready",
-  "name": "vibe-static-site-share",
-  "provider": "Vibe",
-  "shortDescription": "COS static site with inline Cloud Function and shareable UX.",
-  "longDescription": "Deploys a COS Lite site with an inline Functions endpoint, primary output link, and social meta for easy sharing.",
-  "version": "1.0.0"
-}
