@@ -1,0 +1,23 @@
+schema_version: 1
+name: "Vibe IDE \u2014 Max Vibe Edition"
+description: Static website on IBM Cloud Object Storage with optional Cloud Functions
+  to push updates and re-apply.
+registry: ibm
+architectures:
+- ibm:cloud-object-storage
+- ibm:cloud-functions
+- ibm:projects
+tags:
+- vibe
+- website
+- functions
+primaryoutputlink: vibe_bucket_website_endpoint
+icons:
+- icon.png
+diagram: diagram.svg
+inputs:
+- name: resource_group_id
+  type: string
+  required: true
+  default: ${project.resource_group_id}
+  hidden: true
