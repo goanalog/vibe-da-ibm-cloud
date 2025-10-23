@@ -122,7 +122,8 @@
 
       function showBannerOnce() {
         if (!localStorage.getItem("vibe_banner_shown")) {
-          document.getElementById("banner").classList.remove("hidden");
+          // Assuming a banner element with id="banner" exists if needed
+          // document.getElementById("banner").classList.remove("hidden"); 
           localStorage.setItem("vibe_banner_shown", "1");
         }
       }
