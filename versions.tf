@@ -2,13 +2,17 @@ terraform {
   required_providers {
     ibm = {
       source  = "IBM-Cloud/ibm"
-      # FIX: Force a provider version newer than 1.84.2
-      version = ">= 1.85.0"
+      # Go back to the version that works
+      version = ">= 1.84.0"
     }
     random = {
       source  = "hashicorp/random"
       version = ">= 3.0.0"
-    
-}
+    }
+    # Add the "null" provider for our workaround
+    null = {
+      source  = "hashicorp/null"
+      version = ">= 3.0.0"
+    }
   }
 }
