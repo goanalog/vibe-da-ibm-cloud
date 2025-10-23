@@ -1,9 +1,0 @@
-
-metadata:
-  displayname: "Vibe Static Site — Functional Uploader"
-  description: "COS static site with a fully functional Cloud Function uploader (HMAC)"
-  version: "1.0.0"
-  supportedplatforms: ["ibm"]
-plan:
-  name: "default"
-  description: "Deploys COS, HMAC key, Functions, and uploads index.html"
