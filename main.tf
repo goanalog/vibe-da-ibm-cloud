@@ -107,7 +107,6 @@ resource "ibm_resource_key" "cos_writer" {
   resource_instance_id = ibm_resource_instance.cos_instance.id
   role                 = "Writer"
 
-  # FIX: Changed 'parameters_json' to 'parameters' and provided a map
   parameters = {
     HMAC = true
   }
@@ -139,14 +138,15 @@ resource "ibm_function_action" "push_to_cos" {
     code = file("${path.module}/push_to_cos.js")
   }
 
-  # FIX: Combined 'parameter' blocks into one 'parameters' map
-  parameters = {
+  # FIX 1: Wrap the map in jsonencode()
+  # FIX 2: Remove the "cos_hmac_keys" nesting
+  parameters = jsonencode({
     COS_ENDPOINT      = ibm_cos_bucket.bucket.s3_endpoint_public
     COS_BUCKET        = ibm_cos_bucket.bucket.bucket_name
     COS_REGION        = var.region
-    ACCESS_KEY_ID     = ibm_resource_key.cos_writer.credentials["cos_hmac_keys"]["access_key_id"]
-    SECRET_ACCESS_KEY = ibm_resource_key.cos_writer.credentials["cos_hmac_keys"]["secret_access_key"]
-  }
+    ACCESS_KEY_ID     = ibm_resource_key.cos_writer.credentials["access_key_id"]
+    SECRET_ACCESS_KEY = ibm_resource_key.cos_writer.credentials["secret_access_key"]
+  })
 
   depends_on = [ibm_resource_key.cos_writer]
 }
@@ -161,10 +161,10 @@ resource "ibm_function_action" "push_to_project" {
     code = file("${path.module}/push_to_project.js")
   }
 
-  # FIX: Combined 'parameter' blocks into one 'parameters' map
-  parameters = {
+  # FIX 1: Wrap the map in jsonencode()
+  parameters = jsonencode({
     NOTE = "Replace with Schematics trigger later (demo endpoint)"
-  }
+  })
 }
 
 # ---------------------------------------------------------
