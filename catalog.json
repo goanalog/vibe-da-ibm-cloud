@@ -1,0 +1,8 @@
+{
+  "displayName": "Vibe Static Site \u2014 Functional Uploader",
+  "name": "vibe-static-site-functional",
+  "provider": "Vibe",
+  "shortDescription": "COS static site with working Cloud Function uploader",
+  "longDescription": "Creates COS Lite + bucket, HMAC key, and a Node.js action that uploads index.html via S3 API.",
+  "version": "1.0.0"
+}
