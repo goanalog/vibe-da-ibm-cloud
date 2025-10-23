@@ -1,58 +1,82 @@
-name: vibe-da-ibm-cloud
-version: 1.2.1-law
-type: terraform
+# ----------------------------------------------------------
+# IBM Cloud Deployable Architecture Manifest
+# ----------------------------------------------------------
+
+schema_version: "1.0"
+name: "vibe-da-ibm-cloud"
+version: "0.1.0"
 description: >
-  Deploy a live "Vibe Landing Zone" on IBM Cloud — a creative static website hosted
-  on IBM Cloud Object Storage (Lite) with optional Cloud Functions for pushing
-  updates and reapplying projects. Includes automatic IAM bindings so functions can
-  write directly to your COS bucket.
-
+  The Vibe Deployable Architecture — a creative IBM Cloud starter that instantly
+  provisions a free Cloud Object Storage (Lite) instance, hosts a live static
+  "Vibe IDE" sample app, and optionally deploys IBM Cloud Functions for live
+  redeploys and updates.
 tags:
-  - vibe-coding
-  - static-website
-  - cloud-functions
-  - object-storage
-  - deployable-architecture
-  - ibm-cloud
-  - creative-coding
+  - Vibe
+  - Creative Coding
+  - IBM Cloud
+  - Object Storage
+  - Functions
+  - Deployable Architecture
 
-icon: https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/icon.png
-diagram: https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/diagram.svg
+# Terraform configuration
+type: terraform
+terraform_version: "1.5"
 
-# main entrypoint
-template:
-  terraform:
-    source: .
-    provider: ibm
-    variables: 
-      - name: region
-        type: string
-        default: us-south
-        description: "IBM Cloud region for hosting the website (e.g. us-south, eu-de)."
-      - name: resource_group
-        type: string
-        default: Default
-        description: "IBM Cloud resource group where resources will be created."
-      - name: enable_functions
-        type: bool
-        default: true
-        description: "Enable Cloud Functions for push and reapply actions."
-      - name: bucket_prefix
-        type: string
-        default: vibe-bucket
-        description: "Prefix for generated bucket names (a random suffix is appended)."
+# Path to entry point Terraform
+main: main.tf
 
+# Inputs visible in IBM Cloud Catalog and Projects UI
+inputs:
+  - name: region
+    type: string
+    description: "IBM Cloud region for deployment (e.g. us-south, eu-de)"
+    default: "us-south"
+
+  - name: resource_group
+    type: string
+    description: "IBM Cloud resource group name"
+    default: "default"
+
+  - name: bucket_prefix
+    type: string
+    description: "Prefix for COS bucket name"
+    default: "vibe-bucket"
+
+  - name: enable_functions
+    type: bool
+    description: "Enable IBM Cloud Functions for auto-push and reapply features"
+    default: true
+    optional: true
+
+# Outputs displayed after deployment
 outputs:
-  - name: vibe_bucket
-    description: "Bucket name hosting the site."
-  - name: vibe_bucket_website_endpoint
-    description: "Public website endpoint for the hosted vibe app."
-  - name: push_cos_url
-    description: "Invoke URL for push_to_cos Cloud Function."
-  - name: push_project_url
-    description: "Invoke URL for push_to_project Cloud Function."
-  - name: s3_public_endpoint
-    description: "S3 public endpoint for the region."
+  - name: primaryoutputlink
+    type: string
+    description: "Public link to your deployed Vibe site"
+    visibility: visible
+    ui_hints:
+      important: true
+      type: link
 
-primary_output: vibe_bucket_website_endpoint
-readme: README.md
+  - name: push_cos_url
+    type: string
+    description: "IBM Cloud Function endpoint for pushing updates to COS"
+
+  - name: push_project_url
+    type: string
+    description: "IBM Cloud Function endpoint for integrating with IBM Cloud Projects"
+
+# Metadata for catalog UI
+catalog:
+  display_name: "Vibe Deployable Architecture"
+  icon: "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/icon.png"
+  architecture_diagram: "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/diagram.svg"
+  long_description: >
+    **Deploy a whole mood — instantly and repeatedly.**  
+    The Vibe Deployable Architecture provisions a free IBM Cloud Object Storage (Lite)
+    bucket, uploads a live "Vibe IDE" web app, and optionally deploys IBM Cloud
+    Functions that let users redeploy and update directly from their browser.
+  website: "https://www.ibm.com/architectures/deployable-architectures"
+  documentation_url: "https://github.com/goanalog/vibe-da-ibm-cloud"
+  support_url: "https://cloud.ibm.com/unifiedsupport"
+  license: Apache-2.0

@@ -27,8 +27,12 @@ resource "random_string" "suffix" {
   special = false
 }
 
+# ----------------------------------------------------------
+#  IBM Cloud Object Storage (Lite) Instance + Website Bucket
+# ----------------------------------------------------------
+
 resource "ibm_resource_instance" "cos_instance" {
-  name              = "vibe-cos-${var.region}"
+  name              = "vibe-instance-${random_string.suffix.result}"
   service           = "cloud-object-storage"
   plan              = "lite"
   location          = "global"
@@ -65,6 +69,10 @@ resource "ibm_cos_bucket_object" "index_html" {
   depends_on      = [ibm_cos_bucket_website_configuration.bucket_website]
 }
 
+# ----------------------------------------------------------
+#  Optional: IBM Cloud Functions Integration
+# ----------------------------------------------------------
+
 locals {
   enable_functions = var.enable_functions
 }
@@ -100,7 +108,7 @@ resource "ibm_function_package" "pkg" {
   publish   = false
 }
 
-# --- Cloud Function: push_to_cos ---
+# --- Function: push_to_cos ---
 resource "ibm_function_action" "push_to_cos" {
   count     = local.enable_functions ? 1 : 0
   name      = "push_to_cos"
@@ -120,7 +128,7 @@ resource "ibm_function_action" "push_to_cos" {
   })
 }
 
-# --- Cloud Function: push_to_project ---
+# --- Function: push_to_project ---
 resource "ibm_function_action" "push_to_project" {
   count     = local.enable_functions ? 1 : 0
   name      = "push_to_project"
@@ -134,20 +142,4 @@ resource "ibm_function_action" "push_to_project" {
   parameters = jsonencode({
     NOTE = "Replace with Schematics trigger later"
   })
-}
-
-# --- Outputs ---
-output "vibe_bucket_website_endpoint" {
-  description = "Public URL of your live Vibe site"
-  value       = "https://s3.${var.region}.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.bucket.bucket_name}/index.html"
-}
-
-output "push_cos_url" {
-  description = "Invoke URL for push_to_cos Cloud Function"
-  value       = local.enable_functions ? "https://${var.region}.functions.appdomain.cloud/api/v1/web/${ibm_function_namespace.ns[0].name}/default/push_to_cos" : ""
-}
-
-output "push_project_url" {
-  description = "Invoke URL for push_to_project Cloud Function"
-  value       = local.enable_functions ? "https://${var.region}.functions.appdomain.cloud/api/v1/web/${ibm_function_namespace.ns[0].name}/default/push_to_project" : ""
 }
