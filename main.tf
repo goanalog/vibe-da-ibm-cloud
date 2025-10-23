@@ -45,8 +45,9 @@ resource "ibm_iam_access_group_policy" "bucket_public_read_policy" {
   resources {
     service              = "cloud-object-storage"
     resource_instance_id = ibm_resource_instance.vibe_instance.id
+    # FIX: Add resource_type and resource to target the bucket specifically
+    resource_type        = "bucket" 
+    resource             = ibm_cos_bucket.vibe_bucket.bucket_name 
   }
 }
 # --- END IAM Policy Attempt ---
-
-# The output block for vibe_url that was here should be completely gone.
