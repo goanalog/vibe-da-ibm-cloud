@@ -1,9 +1,11 @@
-import json, os, urllib.request, urllib.error
-def main(args):
-    url = os.environ.get("URL")
-    if not url: return {"status":"no-url"}
+import json, requests
+def main(params):
+    url = params.get("url")
+    if not url:
+        return {"statusCode": 400, "body": "Missing url"}
     try:
-        with urllib.request.urlopen(url, timeout=30) as resp:
-            return {"status":"success" if resp.getcode()==200 else f"http-{resp.getcode()}", "url": url}
-    except urllib.error.HTTPError as e: return {"status": f"http-{e.code}", "url": url}
-    except Exception as e: return {"status":"error", "error": str(e), "url": url}
+        r = requests.get(url, timeout=8)
+        ok = r.status_code == 200
+        return {"statusCode": 200 if ok else 502, "headers": {"Content-Type": "application/json"}, "body": json.dumps({"ok": ok, "status": r.status_code})}
+    except Exception as e:
+        return {"statusCode": 502, "body": str(e)}

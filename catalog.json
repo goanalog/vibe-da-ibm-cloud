@@ -1,21 +1,15 @@
 {
   "name": "vibe-da-ibm-cloud",
-  "active": true,
-  "kind": "terraform",
+  "version": "0.1.0",
+  "displayName": "Vibe IDE \u2014 Static Web + Cloud Functions \u2728",
+  "description": "A playful, production-friendly static web IDE on IBM Cloud: COS (Lite) + Functions (Lite). Press Manifest to deploy. Public by default.",
+  "primary_output": "vibe_url",
   "tags": [
-    "web",
-    "object-storage",
-    "serverless",
+    "static-website",
+    "cos",
+    "functions",
+    "ibm-cloud",
     "vibe"
   ],
-  "short_description": "Vibe IDE \u2014 Cloud Manifestor (COS + Functions, Lite)",
-  "provider": "IBM",
-  "metadata": {
-    "version": "0.2.0",
-    "displayName": "Vibe IDE \u2014 Cloud Manifestor",
-    "language": "en",
-    "longDescription": "Deploy a COS-hosted web IDE with IBM Cloud Functions for safe uploads and staged project updates. Primary output is a live link.",
-    "created": "2025-10-23",
-    "images": []
-  }
+  "license": "Apache-2.0"
 }

@@ -1,26 +1,38 @@
-# Vibe IDE — Cloud Manifestor
+# Vibe IDE — Static Web + Cloud Functions ✨
 
-**Deploy → Click → Remix.** Provisions **IBM Cloud Object Storage (Lite)** + **IBM Cloud Functions (Lite)**,
-injects endpoints into your app, and uploads it instantly — your vibe is live right after apply.
+**Deployable Architecture** for IBM Cloud that ships a single-file web IDE with live deploys to Cloud Object Storage and Cloud Functions for uploads, status, project updates, and anonymous analytics.
 
-- Primary Output: **vibe_url** → click to open your live app.
-- Safe by default: Lite plans only; uploads via Functions (no creds in browser).
-- Public-read bucket for demo convenience (tighten later as needed).
+## What you get
+- **COS (Lite)** public bucket for hosting your site + analytics JSON
+- **Functions (Lite)** for:
+  - `vibe_index` (serves the IDE immediately as the primary link)
+  - `vibe_manifest` (uploads `index.html` to COS, public-read)
+  - `vibe_status` (pings a URL to confirm readiness)
+  - `vibe_update_project` (stages a config update request file in the bucket)
+  - `vibe_analytics` (anonymous event pings -> COS `/analytics/`)
+- **Primary output**: `vibe_url` (click to open IDE post-deploy)
 
-## Created resources
-- COS instance (Lite) + website bucket
-- Functions (Lite):
-  - `vibe-upload` — upload + versioning + rollback
-  - `vibe-status` — readiness check
-  - `vibe-project-update` — stages `project-update-request.json`
+## How to use
+1. Deploy from IBM Cloud **Catalog** or **Project**.
+2. Click the **vibe_url** output → you’re in the IDE.
+3. Edit code → click **Manifest ✨** → your public page opens.
+4. Click **Pro Update 🌈** to stage a Project config update request JSON in your bucket.
 
-## Revert
-Each deploy copies `index.html` → `index.prev.html`. Click **Revert 💫** in the app to restore.
+## Public access
+Objects uploaded by `vibe_manifest` are written with `public-read` ACL so anyone with the URL can view (`https://<bucket>.<region>.cloud-object-storage.appdomain.cloud/index.html`).
 
 ## Pre-existing resources
-- If `bucket_name` exists (and you own it), we reuse it.
-- To avoid conflicts, delete old demo buckets or pick a new name.
-- Destroy cleans up (`force_delete=true`).
+- If a bucket with the same name exists, we suffix a random string unless you provide `bucket_name`.
+- Re-deploys won’t delete existing content. Use COS UI to clean up if needed.
+
+## IBM Cloud Private Catalogs
+This DA is designed to shine inside **Private Catalogs** — IBM Cloud’s built-in platform engineering capability.
+- Publish once; your teams deploy with a click.
+- Keep versioned, auditable blueprints.
+- Integrates natively with Projects.
 
 ## Attribution
-Builds on static website DA concepts by **Arn Hyndman** (colleague).
+This work builds upon ideas pioneered by **Arn Hyndman** on a *Static Website Deployable Architecture* within IBM Cloud. 🙌
+
+## License
+Apache-2.0
