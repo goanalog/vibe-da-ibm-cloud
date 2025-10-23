@@ -1,9 +1,7 @@
 
-metadata:
-  displayname: "Vibe Static Site — Share-Ready (v2)"
-  description: "COS static site with inline Cloud Function (IBM Cloud–validated)"
-  version: "1.0.1"
-  supportedplatforms: ["ibm"]
-plan:
-  name: "default"
-  description: "Deploys COS bucket, uploads index.html, and provides an inline verify endpoint"
+schema_version: "1.0.0"
+name: vibe-coder-da-functions
+version: 1.1.1
+type: terraform
+description: "Vibe Coder — Live Functions Edition"
+primary_output: vibe_url

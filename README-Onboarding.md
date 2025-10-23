@@ -1,1 +1,0 @@
-IBM Cloud Catalog onboarding guidance; metadata removed for compatibility.

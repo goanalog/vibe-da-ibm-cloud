@@ -1,12 +1,6 @@
 
 variable "region" {
   type        = string
-  description = "IBM Cloud region for bucket and endpoints"
+  description = "IBM Cloud region for COS"
   default     = "us-south"
-}
-
-variable "html_input" {
-  type        = string
-  description = "Optional inline HTML to publish as index.html (falls back to bundled file)"
-  default     = ""
 }
