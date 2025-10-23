@@ -53,6 +53,7 @@ resource "ibm_cos_bucket" "bucket" {
 
 # IBM Cloud Functions namespace + package
 resource "ibm_function_namespace" "ns" {
+  resource_group_id = data.ibm_resource_group.group.id
   name = "vibe-ns-${random_string.suffix.result}"
 }
 
