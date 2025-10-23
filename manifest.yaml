@@ -1,36 +1,9 @@
-apiVersion: v1
-kind: deployable-architecture
-metadata:
-  name: vibe-da-ibm-cloud
-  version: 0.1.0
-  displayName: "Vibe IDE — Static Web + Cloud Functions ✨"
-  description: "One-click, public, vibey static web IDE with IBM Cloud COS + Functions (Lite). Click Manifest to ship."
-  tags: [static-website, cos, functions, vibey]
-  license: Apache-2.0
-spec:
-  primaryOutput: "vibe_url"
-  inputs:
-    - name: region
-      label: "🌎 Region"
-      type: string
-      default: "us-south"
-    - name: resource_group_name
-      label: "👥 Resource Group"
-      type: string
-      default: "Default"
-    - name: bucket_name
-      label: "🪣 Optional bucket name"
-      type: string
-      required: false
-    - name: enable_functions
-      label: "⚡ Enable Functions"
-      type: boolean
-      default: true
-    - name: functions_namespace
-      label: "🧭 Functions Namespace"
-      type: string
-      default: "default"
-    - name: project_id
-      label: "📁 IBM Cloud Project ID (optional)"
-      type: string
-      required: false
+name: vibe-da-ibm-cloud
+version: 0.3.0
+description: |
+  Deploys a Vibe-driven IDE experience to IBM Cloud Object Storage. Paste code, hit deploy, manifest your vibe live on the web.
+tags:
+  - terraform
+  - ibm-cloud
+  - object-storage
+  - deployable-architecture

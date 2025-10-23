@@ -1,15 +1,25 @@
 {
+  "schema_version": "1.0.0",
   "name": "vibe-da-ibm-cloud",
-  "version": "0.1.0",
-  "displayName": "Vibe IDE \u2014 Static Web + Cloud Functions \u2728",
-  "description": "A playful, production-friendly static web IDE on IBM Cloud: COS (Lite) + Functions (Lite). Press Manifest to deploy. Public by default.",
-  "primary_output": "vibe_url",
-  "tags": [
-    "static-website",
-    "cos",
-    "functions",
-    "ibm-cloud",
-    "vibe"
+  "version": "0.3.0",
+  "type": "terraform",
+  "provider": "ibm",
+  "display_name": "Vibe IDE — Deployable Architecture",
+  "description": "A deployable architecture that turns raw HTML into a live Vibe app hosted on IBM Cloud Object Storage.",
+  "variables": [
+    {
+      "name": "vibe_code_raw",
+      "type": "string",
+      "description": "Paste your HTML directly — Terraform will handle encoding.",
+      "ui:widget": "textarea"
+    }
   ],
-  "license": "Apache-2.0"
+  "outputs": [
+    {
+      "name": "vibe_url",
+      "type": "string",
+      "description": "Public URL for your deployed Vibe app",
+      "is_primary_output": true
+    }
+  ]
 }
