@@ -1,0 +1,7 @@
+{
+  "displayName": "Vibe Static Site \u2014 Share-Ready (v2)",
+  "name": "vibe-static-site-share-v2",
+  "provider": "Vibe",
+  "shortDescription": "COS static site with inline Cloud Function, IBM Cloud\u2013validated.",
+  "version": "1.0.1"
+}
