@@ -90,6 +90,34 @@ resource "ibm_function_package" "pkg" {
 resource "ibm_function_action" "push_to_cos" {
   name        = "${ibm_function_package.pkg.name}/push_to_cos"
   namespace   = ibm_function_namespace.ns.name
+  description = "Dependency-free scaffold: echoes bytes; Terraform handles initial upload."
+  publish     = true
+  web         = true
+
+  exec {
+    kind = "nodejs:default"
+    code = <<-EOF
+      async function main(params) {
+        const { bucket_name, html_input } = params;
+        const size = (html_input || "").length;
+        return {
+          statusCode: 200,
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ ok: true, bucket: bucket_name, received_bytes: size })
+        };
+      }
+      exports.main = main;
+    EOF
+  }
+
+  parameters = {
+    bucket_name = ibm_cos_bucket.bucket.bucket_name
+    html_input  = var.html_input != "" ? var.html_input : file("${path.module}/index.html")
+  }
+
+  limits { timeout = 60000 }
+}/push_to_cos"
+  namespace   = ibm_function_namespace.ns.name
   description = "Uploads index.html to COS using HMAC creds and S3 API."
   publish     = true
 
