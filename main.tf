@@ -26,11 +26,9 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   region_location      = "us-south"
   force_delete         = true
   
-  # --- NEW FIX HERE ---
-  # Setting public_access = true directly on the bucket resource
-  # This replaces the invalid ibm_cos_bucket_public_access resource
-  public_access        = true
-  # --- END OF FIX ---
+  # --- ROLLING BACK PREVIOUS FIX ---
+  # public_access = true is not supported, so it is removed.
+  # --- END OF ROLLBACK ---
 }
 
 # --- REMOVED INVALID RESOURCE ---
@@ -46,6 +44,12 @@ resource "ibm_cos_bucket_object" "vibe_code" {
   bucket_location = ibm_cos_bucket.vibe_bucket.region_location
   # --- END OF FIX ---
   
+  # --- NEW FIX HERE ---
+  # Setting the acl (Access Control List) to "public-read" on the
+  # object itself. This should make this specific file public.
+  acl = "public-read"
+  # --- END OF FIX ---
+
   key     = "index.html"
   content = local.html_decoded
   etag    = md5(local.html_decoded)
