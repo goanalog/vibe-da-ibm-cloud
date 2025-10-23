@@ -1,0 +1,16 @@
+{
+  "name": "vibe-da-ibm-cloud",
+  "version": "1.0.7",
+  "display_name": "Vibe \u2022 IBM Cloud",
+  "description": "Deploy a muted-neon static website to IBM Cloud Object Storage with two IBM Cloud Functions.",
+  "provider": "community",
+  "tags": [
+    "terraform",
+    "ibm",
+    "cos",
+    "functions",
+    "static-site"
+  ],
+  "type": "terraform",
+  "icon": "https://cloud.ibm.com/media/images/IBM_cloud_logo_gkJAik7.width-640.png"
+}
