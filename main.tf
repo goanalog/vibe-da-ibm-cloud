@@ -38,22 +38,15 @@ resource "ibm_cos_bucket_object" "vibe_code" {
 # Grant the built-in "Public access" group the "Content Reader" role
 # on this specific COS bucket instance.
 resource "ibm_iam_access_group_policy" "bucket_public_read_policy" {
-  access_group_id = "AccessGroupId-PublicAccess" # Well-known ID for Public Access group
+  access_group_id = "AccessGroupId-PublicAccess" 
 
-  roles = ["Content Reader"] # COS Data Access Role for reading objects
+  roles = ["Content Reader"] 
 
   resources {
     service              = "cloud-object-storage"
     resource_instance_id = ibm_resource_instance.vibe_instance.id
-    # Optionally narrow down further, but granting to the instance often covers buckets within
-    # resource_type = "bucket" 
-    # resource = ibm_cos_bucket.vibe_bucket.bucket_name
   }
 }
 # --- END IAM Policy Attempt ---
 
-# REMOVED ibm_cos_bucket_policy resource
-
-output "vibe_url" {
-  # Output definition remains in outputs.tf
-}
+# The output block for vibe_url that was here should be completely gone.
