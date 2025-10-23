@@ -3,8 +3,9 @@ output "vibe_bucket_name" {
   description = "The name of the created COS bucket."
 }
 
-# Keep this definition
+# CHANGE THIS OUTPUT
 output "vibe_url" {
-  value       = "https://s3.${ibm_cos_bucket.vibe_bucket.region_location}.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.vibe_bucket.bucket_name}/index.html"
+  # This URL format works with the IAM Public Access policy
+  value       = "http://${ibm_cos_bucket.vibe_bucket.bucket_name}.s3-web.${ibm_cos_bucket.vibe_bucket.region_location}.cloud-object-storage.appdomain.cloud"
   description = "Public URL for your deployed Vibe app"
 }
