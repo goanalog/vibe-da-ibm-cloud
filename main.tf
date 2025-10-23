@@ -47,14 +47,18 @@ resource "ibm_cos_bucket" "bucket" {
   force_delete         = true
 }
 
-# Static website configuration (provider >= 1.84)
+# Static website configuration (provider >=1.84)
 resource "ibm_cos_bucket_website_configuration" "bucket_website" {
   bucket_crn      = ibm_cos_bucket.bucket.crn
   bucket_location = var.region
 
   website_configuration {
-    main_document  = "index.html"
-    error_document = "404.html"
+    index_document {
+      suffix = "index.html"
+    }
+    error_document {
+      key = "404.html"
+    }
   }
 }
 
@@ -102,36 +106,29 @@ resource "ibm_cos_bucket_object" "index_html" {
   bucket_crn      = ibm_cos_bucket.bucket.crn
   bucket_location = var.region
   key             = "index.html"
-
-  # use templatefile -> replace placeholders inside HTML
-  content = base64encode(
-    replace(
-      replace(
-        file("${path.module}/samples/index.html"),
-        "__PUSH_COS_URL__", local.push_cos_url
-      ),
-      "__PUSH_PROJECT_URL__", local.push_project_url
-    )
-  )
-  content_type = "text/html"
+  content         = base64encode(templatefile("${path.module}/samples/index.html", {
+    PUSH_COS_URL     = local.push_cos_url,
+    PUSH_PROJECT_URL = local.push_project_url
+  }))
 }
 
-# Upload 404 page
+# Upload 404 fallback page
 resource "ibm_cos_bucket_object" "page_404" {
   bucket_crn      = ibm_cos_bucket.bucket.crn
   bucket_location = var.region
   key             = "404.html"
   content         = base64encode(file("${path.module}/samples/404.html"))
-  content_type    = "text/html"
 }
 
-output "bucket_name" {
-  value = ibm_cos_bucket.bucket.bucket_name
+# Outputs
+output "vibe_bucket" {
+  description = "COS bucket name"
+  value       = ibm_cos_bucket.bucket.bucket_name
 }
 
-output "website_endpoint" {
-  # users can form full URL: https://<bucket>.<region>.cloud-object-storage.appdomain.cloud/index.html
-  value = "https://${ibm_cos_bucket.bucket.bucket_name}.${var.region}.cloud-object-storage.appdomain.cloud"
+output "website_configured" {
+  description = "Static website config applied"
+  value       = true
 }
 
 output "push_cos_url" {

@@ -1,26 +1,24 @@
-schema_version: "1.0.0"
+schema_version: "1.0"
 name: "vibe-da-ibm-cloud"
-version: "1.0.7"
+version: "v1.0.8"
 type: "terraform"
-metadata:
-  display_name: "Vibe • IBM Cloud"
-  short_description: "Muted neon static site on COS with two IBM Cloud Functions."
-  long_description: "Provisions IBM COS (Lite), a regional bucket with website hosting, and two IBM Cloud Functions. Uploads a themed sample index.html with live function URLs."
-  tags:
-    - terraform
-    - ibm
-    - cos
-    - functions
-    - static-site
-install:
-  primary:
-    script: "main.tf"
-    entrypoint: "."
-files:
-  - path: "main.tf"
-  - path: "variables.tf"
-  - path: "samples/index.html"
-  - path: "samples/404.html"
-  - path: "functions/push_to_cos.zip"
-  - path: "functions/push_to_project.zip"
-  - path: "catalog.json"
+description: "Vibe — IBM Cloud COS static website + Functions (muted neon demo)"
+maintainers:
+  - name: "Vibe Team"
+    email: "team@example.com"
+inputs:
+  - name: region
+    type: string
+    required: true
+    description: "IBM Cloud region, e.g. us-south"
+  - name: resource_group
+    type: string
+    required: true
+    description: "IBM Cloud resource group name"
+entrypoint: "./main.tf"
+samples:
+  - path: "./samples/index.html"
+  - path: "./samples/404.html"
+artifacts:
+  - path: "./functions/push_to_cos.zip"
+  - path: "./functions/push_to_project.zip"
