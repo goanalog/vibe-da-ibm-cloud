@@ -103,11 +103,14 @@ resource "ibm_cos_bucket_website_configuration" "bucket_website" {
 # ---------------------------------------------------------
 
 resource "ibm_resource_key" "cos_writer" {
-  name              = "vibe-cos-writer-${random_string.suffix.result}"
+  name                 = "vibe-cos-writer-${random_string.suffix.result}"
   resource_instance_id = ibm_resource_instance.cos_instance.id
-  role              = "Writer"
+  role                 = "Writer"
 
-  parameters_json = jsonencode({ HMAC = true })
+  # FIX: Changed 'parameters_json' to 'parameters' and provided a map
+  parameters = {
+    HMAC = true
+  }
 }
 
 # ---------------------------------------------------------
@@ -136,25 +139,13 @@ resource "ibm_function_action" "push_to_cos" {
     code = file("${path.module}/push_to_cos.js")
   }
 
-  parameter {
-    key   = "COS_ENDPOINT"
-    value = ibm_cos_bucket.bucket.s3_endpoint_public
-  }
-  parameter {
-    key   = "COS_BUCKET"
-    value = ibm_cos_bucket.bucket.bucket_name
-  }
-  parameter {
-    key   = "COS_REGION"
-    value = var.region
-  }
-  parameter {
-    key   = "ACCESS_KEY_ID"
-    value = ibm_resource_key.cos_writer.credentials["cos_hmac_keys"]["access_key_id"]
-  }
-  parameter {
-    key   = "SECRET_ACCESS_KEY"
-    value = ibm_resource_key.cos_writer.credentials["cos_hmac_keys"]["secret_access_key"]
+  # FIX: Combined 'parameter' blocks into one 'parameters' map
+  parameters = {
+    COS_ENDPOINT      = ibm_cos_bucket.bucket.s3_endpoint_public
+    COS_BUCKET        = ibm_cos_bucket.bucket.bucket_name
+    COS_REGION        = var.region
+    ACCESS_KEY_ID     = ibm_resource_key.cos_writer.credentials["cos_hmac_keys"]["access_key_id"]
+    SECRET_ACCESS_KEY = ibm_resource_key.cos_writer.credentials["cos_hmac_keys"]["secret_access_key"]
   }
 
   depends_on = [ibm_resource_key.cos_writer]
@@ -170,9 +161,9 @@ resource "ibm_function_action" "push_to_project" {
     code = file("${path.module}/push_to_project.js")
   }
 
-  parameter {
-    key   = "NOTE"
-    value = "Replace with Schematics trigger later (demo endpoint)"
+  # FIX: Combined 'parameter' blocks into one 'parameters' map
+  parameters = {
+    NOTE = "Replace with Schematics trigger later (demo endpoint)"
   }
 }
 
