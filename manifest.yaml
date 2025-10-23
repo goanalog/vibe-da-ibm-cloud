@@ -1,0 +1,7 @@
+
+schema_version: "1.0.0"
+name: vibe-coder-da-functions
+version: 1.1.1
+type: terraform
+description: "Vibe Coder — Live Functions Edition"
+primary_output: vibe_url
