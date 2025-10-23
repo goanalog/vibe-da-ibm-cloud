@@ -2,7 +2,6 @@
 resource "ibm_function_namespace" "vibe_namespace" {
   name        = "vibe-da-namespace-${random_string.suffix.result}"
   description = "Namespace for Vibe DA functions"
-  # ADD THIS LINE to fix Error 1
   resource_group_id = data.ibm_resource_group.default.id
 }
 
@@ -18,11 +17,13 @@ resource "ibm_function_action" "push_to_cos" {
   name         = "vibe-push-to-cos"
   namespace_id = ibm_function_namespace.vibe_namespace.id
   publish      = true 
-  exec {
-    kind = "nodejs:16" 
-    # CHANGE THIS LINE to fix Error 2
-    code = data.archive_file.push_to_cos_zip.output_base64
-  }
+  
+  # --- THIS BLOCK IS THE FIX ---
+  # We removed the 'exec' block and are using 'zip' to pass the file path
+  zip     = data.archive_file.push_to_cos_zip.output_path
+  # We still need to specify the runtime
+  runtime = "nodejs:16" 
+  # --- END FIX ---
   
   parameters = {
     BUCKET_NAME     = ibm_cos_bucket.vibe_bucket.bucket_name
