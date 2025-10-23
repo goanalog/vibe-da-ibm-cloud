@@ -23,11 +23,13 @@ resource "ibm_function_action" "push_to_cos" {
     code = filebase64(data.archive_file.push_to_cos_zip.output_path)
   }
   
-  parameters = jsonencode({
+  # --- THIS BLOCK IS THE FIX ---
+  # Changed 'parameters' to 'annotations' to resolve the provider conflict
+  annotations = jsonencode({
     BUCKET_NAME     = ibm_cos_bucket.vibe_bucket.bucket_name
     COS_ENDPOINT    = "s3.${ibm_cos_bucket.vibe_bucket.region_location}.cloud-object-storage.appdomain.cloud"
     COS_INSTANCE_ID = ibm_resource_instance.vibe_instance.crn
-    # --- THIS LINE IS THE FIX ---
-    __OW_API_KEY    = ibm_iam_service_api_key.vibe_function_sid_key.apikey
+    # Renamed the API key variable so it's passed as a parameter
+    VIBE_API_KEY    = ibm_iam_service_api_key.vibe_function_sid_key.apikey
   })
 }

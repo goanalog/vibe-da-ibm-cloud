@@ -5,8 +5,8 @@ const { S3 } = require('@ibm-cloud/object-storage');
 
 async function main(params) {
   // 1. Get parameters passed from Terraform
-  //    __OW_API_KEY is now passed in
-  const { BUCKET_NAME, COS_ENDPOINT, COS_INSTANCE_ID, __OW_API_KEY } = params;
+  //    Updated to use VIBE_API_KEY
+  const { BUCKET_NAME, COS_ENDPOINT, COS_INSTANCE_ID, VIBE_API_KEY } = params;
 
   // 2. Get the HTML content from the request body
   const htmlContent = params.content;
@@ -22,10 +22,11 @@ async function main(params) {
   // 3. Set up the COS client
   const s3Client = new S3({
     endpoint: COS_ENDPOINT,
-    // ADD THIS: We must now provide the API key manually
-    apiKeyId: __OW_API_KEY, 
-    // This is the CRN of the *COS instance*
+    // --- THIS IS THE FIX ---
+    // Use the VIBE_API_KEY from the annotations
+    apiKeyId: VIBE_API_KEY, 
     serviceInstanceId: COS_INSTANCE_ID, 
+    // --- END FIX ---
     s3ForcePathStyle: true,
     signatureVersion: 'v4',
   });
