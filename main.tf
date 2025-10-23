@@ -25,21 +25,18 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   storage_class        = "standard"
   region_location      = "us-south"
   force_delete         = true
+  
+  # --- NEW FIX HERE ---
+  # Setting public_access = true directly on the bucket resource
+  # This replaces the invalid ibm_cos_bucket_public_access resource
+  public_access        = true
+  # --- END OF FIX ---
 }
 
-# --- CRITICAL FIX ADDED HERE ---
-# This resource makes the bucket's contents readable by the public.
-# Without this, the vibe_url will return a 403 Access Denied error.
-resource "ibm_cos_bucket_public_access" "vibe_bucket_public_access" {
-  bucket_name   = ibm_cos_bucket.vibe_bucket.bucket_name
-  public_access = "public-read"
-  
-  # We must ensure this happens *after* the bucket is created
-  depends_on = [
-    ibm_cos_bucket.vibe_bucket
-  ]
-}
-# --- END OF FIX ---
+# --- REMOVED INVALID RESOURCE ---
+# The resource "ibm_cos_bucket_public_access" was here,
+# but it is not valid in this provider version.
+# --- END OF REMOVAL ---
 
 resource "ibm_cos_bucket_object" "vibe_code" {
   # --- FIX based on provider error log ---
@@ -53,10 +50,9 @@ resource "ibm_cos_bucket_object" "vibe_code" {
   content = local.html_decoded
   etag    = md5(local.html_decoded)
 
-  # We must ensure this happens *after* the public access is set
-  depends_on = [
-    ibm_cos_bucket_public_access.vibe_bucket_public_access
-  ]
+  # Removed the depends_on for the invalid resource.
+  # The dependencies on ibm_cos_bucket.crn and ibm_cos_bucket.region_location
+  # are now implicit and sufficient.
 }
 
 output "vibe_url" {
