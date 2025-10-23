@@ -100,7 +100,7 @@ resource "ibm_function_package" "pkg" {
   publish   = false
 }
 
-# push_to_cos function
+# --- Cloud Function: push_to_cos ---
 resource "ibm_function_action" "push_to_cos" {
   count     = local.enable_functions ? 1 : 0
   name      = "push_to_cos"
@@ -115,4 +115,39 @@ resource "ibm_function_action" "push_to_cos" {
     COS_BUCKET_NAME     = ibm_cos_bucket.bucket.bucket_name
     COS_REGION          = var.region
     COS_RESOURCE_CRN    = ibm_resource_instance.cos_instance.crn
-    COS_HMAC_ACCESS_KEY = i_
+    COS_HMAC_ACCESS_KEY = ibm_resource_key.cos_writer.credentials["cos_hmac_keys"]["access_key_id"]
+    COS_HMAC_SECRET_KEY = ibm_resource_key.cos_writer.credentials["cos_hmac_keys"]["secret_access_key"]
+  })
+}
+
+# --- Cloud Function: push_to_project ---
+resource "ibm_function_action" "push_to_project" {
+  count     = local.enable_functions ? 1 : 0
+  name      = "push_to_project"
+  namespace = ibm_function_namespace.ns[0].name
+
+  exec {
+    kind = "nodejs:18"
+    code = file("${path.module}/push_to_project.js")
+  }
+
+  parameters = jsonencode({
+    NOTE = "Replace with Schematics trigger later"
+  })
+}
+
+# --- Outputs ---
+output "vibe_bucket_website_endpoint" {
+  description = "Public URL of your live Vibe site"
+  value       = "https://s3.${var.region}.cloud-object-storage.appdomain.cloud/${ibm_cos_bucket.bucket.bucket_name}/index.html"
+}
+
+output "push_cos_url" {
+  description = "Invoke URL for push_to_cos Cloud Function"
+  value       = local.enable_functions ? "https://${var.region}.functions.appdomain.cloud/api/v1/web/${ibm_function_namespace.ns[0].name}/default/push_to_cos" : ""
+}
+
+output "push_project_url" {
+  description = "Invoke URL for push_to_project Cloud Function"
+  value       = local.enable_functions ? "https://${var.region}.functions.appdomain.cloud/api/v1/web/${ibm_function_namespace.ns[0].name}/default/push_to_project" : ""
+}
