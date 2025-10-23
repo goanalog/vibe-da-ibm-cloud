@@ -1,11 +1,11 @@
 {
   "schema_version": "1.0.0",
   "name": "vibe-da-ibm-cloud",
-  "version": "0.3.1",  
+  "version": "0.3.2", // Bump version again
   "type": "terraform",
   "provider": "ibm",
   
-  "terraform_version": "terraform_1.8", 
+  "terraform_version": "terraform_1.5", // <-- Try this version
 
   "display_name": "Vibe IDE — Deployable Architecture",
   "description": "A deployable architecture that turns raw HTML into a live Vibe app hosted on IBM Cloud Object Storage.",
