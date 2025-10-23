@@ -5,13 +5,11 @@ const { S3 } = require('@ibm-cloud/object-storage');
 
 async function main(params) {
   // 1. Get parameters passed from Terraform
-  // These are injected as environment variables
   const { BUCKET_NAME, COS_ENDPOINT, COS_INSTANCE_ID } = process.env;
 
   // 2. Get the HTML content from the request body
-  // The 'params' object contains the full request
   const htmlContent = params.content;
-  const objectKey = params.key || 'index.html'; // Default to index.html
+  const objectKey = params.key || 'index.html'; 
 
   if (!htmlContent) {
     return {
@@ -21,7 +19,6 @@ async function main(params) {
   }
 
   // 3. Set up the COS client
-  // The function automatically gets auth from the bound Service ID
   const s3Client = new S3({
     endpoint: COS_ENDPOINT,
     s3ForcePathStyle: true,
@@ -37,10 +34,7 @@ async function main(params) {
       Key: objectKey,
       Body: htmlContent,
       ContentType: 'text/html',
-      // This is the key! We are now setting the public-read ACL on push
-      // This is necessary because our bucket policy only allows s3:GetObject
-      // We must make the *new* object public, too.
-      ACL: 'public-read',
+      // The 'ACL: "public-read"' line has been REMOVED
     }).promise();
 
     console.log('Upload successful.');
