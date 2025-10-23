@@ -1,5 +1,6 @@
 terraform {
   required_version = ">= 1.5.0"
+
   required_providers {
     ibm = {
       source  = "ibm-cloud/ibm"
@@ -18,7 +19,6 @@ data "ibm_resource_group" "group" {
   name = var.resource_group
 }
 
-# Random suffix
 resource "random_string" "suffix" {
   length  = 6
   lower   = true
@@ -65,16 +65,6 @@ resource "ibm_cos_bucket_object" "index_html" {
   depends_on      = [ibm_cos_bucket_website_configuration.bucket_website]
 }
 
-resource "ibm_cos_bucket_object" "page_404" {
-  bucket_crn      = ibm_cos_bucket.bucket.crn
-  bucket_location = var.region
-  key             = "404.html"
-  content         = file("${path.module}/404.html")
-  endpoint_type   = "public"
-  force_delete    = true
-  depends_on      = [ibm_cos_bucket_website_configuration.bucket_website]
-}
-
 locals {
   enable_functions = var.enable_functions
 }
@@ -88,9 +78,9 @@ resource "ibm_iam_authorization_policy" "functions_to_cos" {
 }
 
 resource "ibm_resource_key" "cos_writer" {
-  count               = local.enable_functions ? 1 : 0
-  name                = "vibe-cos-writer-${random_string.suffix.result}"
-  role                = "Writer"
+  count                = local.enable_functions ? 1 : 0
+  name                 = "vibe-cos-writer-${random_string.suffix.result}"
+  role                 = "Writer"
   resource_instance_id = ibm_resource_instance.cos_instance.id
   parameters = {
     HMAC = true
@@ -121,45 +111,8 @@ resource "ibm_function_action" "push_to_cos" {
     code = file("${path.module}/push_to_cos.js")
   }
 
-  parameters = [
-    {
-      key   = "COS_BUCKET_NAME"
-      value = ibm_cos_bucket.bucket.bucket_name
-    },
-    {
-      key   = "COS_REGION"
-      value = var.region
-    },
-    {
-      key   = "COS_RESOURCE_CRN"
-      value = ibm_resource_instance.cos_instance.crn
-    },
-    {
-      key   = "COS_HMAC_ACCESS_KEY"
-      value = ibm_resource_key.cos_writer[0].credentials["cos_hmac_keys"]["access_key_id"]
-    },
-    {
-      key   = "COS_HMAC_SECRET_KEY"
-      value = ibm_resource_key.cos_writer[0].credentials["cos_hmac_keys"]["secret_access_key"]
-    }
-  ]
-}
-
-# push_to_project placeholder
-resource "ibm_function_action" "push_to_project" {
-  count     = local.enable_functions ? 1 : 0
-  name      = "push_to_project"
-  namespace = ibm_function_namespace.ns[0].name
-
-  exec {
-    kind = "nodejs:18"
-    code = file("${path.module}/push_to_project.js")
-  }
-
-  parameters = [
-    {
-      key   = "NOTE"
-      value = "Replace with Schematics trigger later"
-    }
-  ]
-}
+  parameters = jsonencode({
+    COS_BUCKET_NAME     = ibm_cos_bucket.bucket.bucket_name
+    COS_REGION          = var.region
+    COS_RESOURCE_CRN    = ibm_resource_instance.cos_instance.crn
+    COS_HMAC_ACCESS_KEY = i_
