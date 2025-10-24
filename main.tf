@@ -70,7 +70,6 @@ resource "ibm_cos_bucket_public_access_block" "vibe_bucket_public_access" {
   ignore_public_acls      = false
   restrict_public_buckets = false
 
-  # Ensure bucket exists before modifying its access policy
   depends_on = [ibm_cos_bucket.vibe_bucket]
 }
 
@@ -92,14 +91,12 @@ resource "ibm_resource_key" "cos_hmac_key" {
   count                 = var.enable_code_engine && local.has_required_ids ? 1 : 0
   name                  = "vibe-cos-hmac-key-${random_string.suffix.result}"
   resource_instance_id  = ibm_resource_instance.cos_instance.id
-  role                  = "Writer" # Grant Writer role
-  service_id_crn        = ibm_iam_service_id.ce_cos_service_id[0].crn # Link to Service ID
+  role                  = "Writer"
+  service_id_crn        = ibm_iam_service_id.ce_cos_service_id[0].crn
 
-  # Specify parameters to create HMAC credentials
   parameters = {
     HMAC = true
   }
-  # Ensure Service ID exists before creating key for it
   depends_on = [ibm_iam_service_id.ce_cos_service_id]
 }
 
@@ -109,14 +106,13 @@ resource "ibm_code_engine_secret" "cos_secret" {
   name       = "cos-credentials"
   format     = "generic"
   data = {
-    # Reference outputs from ibm_resource_key
     ACCESS_KEY_ID     = nonsensitive(ibm_resource_key.cos_hmac_key[0].credentials.cos_hmac_keys_access_key_id)
     SECRET_ACCESS_KEY = nonsensitive(ibm_resource_key.cos_hmac_key[0].credentials.cos_hmac_keys_secret_access_key)
     COS_ENDPOINT      = "https://s3.${var.region}.cloud-object-storage.appdomain.cloud"
     COS_BUCKET        = ibm_cos_bucket.vibe_bucket.bucket_name
     COS_REGION        = var.region
   }
-  depends_on = [ibm_resource_key.cos_hmac_key] # Ensure key exists first
+  depends_on = [ibm_resource_key.cos_hmac_key]
 }
 
 # --- Project Function Security Setup ---
@@ -127,12 +123,11 @@ resource "ibm_iam_service_id" "project_service_id" {
 resource "ibm_iam_service_policy" "project_editor_deploy_policy" {
   count              = var.enable_code_engine && local.has_required_ids ? 1 : 0
   iam_service_id     = ibm_iam_service_id.project_service_id[0].iam_id
-  roles              = ["Editor", "Operator"] # Verify needed roles
+  roles              = ["Editor", "Operator"] # Ensure these roles are sufficient
 
   resources {
     service = "project"
   }
-  # Ensure Service ID exists before applying policy
   depends_on = [ibm_iam_service_id.project_service_id]
 }
 resource "ibm_iam_service_api_key" "project_api_key" {
@@ -147,14 +142,12 @@ resource "ibm_code_engine_secret" "project_secret" {
   name       = "project-credentials"
   format     = "generic"
   data = {
-    # --- Corrected attribute name ---
-    PROJECT_API_KEY = nonsensitive(ibm_iam_service_api_key.project_api_key[0].apikey)
-    # --------------------------------
+    PROJECT_API_KEY = nonsensitive(ibm_iam_service_api_key.project_api_key[0].apikey) # Corrected attribute
     PROJECT_ID      = local.effective_project_id
     CONFIG_ID       = var.config_id
     REGION          = var.region
   }
-  depends_on = [ibm_iam_service_api_key.project_api_key] # Ensure key exists first
+  depends_on = [ibm_iam_service_api_key.project_api_key]
 }
 
 # --- Code Engine Functions ---
@@ -191,7 +184,7 @@ resource "ibm_cos_bucket_object" "index_html" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
   bucket_location = var.region
   key             = var.website_index
-  # --- Removed acl argument ---
+  # acl removed - handled by public access block
 
   content = templatefile("${path.module}/index.html.tftpl", {
     push_cos_url       = var.enable_code_engine && local.has_required_ids ? one(ibm_code_engine_function.push_to_cos[*].url) : "null"
@@ -203,7 +196,6 @@ resource "ibm_cos_bucket_object" "index_html" {
     ibm_code_engine_function.push_to_cos,
     ibm_code_engine_function.push_to_project,
     ibm_code_engine_function.trigger_deploy,
-    # Ensure public access is set before uploading content that relies on it
     ibm_cos_bucket_public_access_block.vibe_bucket_public_access
   ]
 }
@@ -212,9 +204,8 @@ resource "ibm_cos_bucket_object" "error_html" {
   bucket_location = var.region
   key             = var.website_error
   content         = file("${path.module}/404.html")
-  # --- Removed acl argument ---
+  # acl removed - handled by public access block
 
-  # Ensure public access is set before uploading content that relies on it
   depends_on = [ibm_cos_bucket_public_access_block.vibe_bucket_public_access]
 }
 resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {

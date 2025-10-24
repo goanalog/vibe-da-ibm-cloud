@@ -7,7 +7,6 @@ const crypto = require("crypto");
 const https = require("https");
 
 function s3Put({ endpoint, region, bucket, key, body, accessKey, secretKey }) {
-  // Minimal S3 SigV4 for IBM COS (virtual-hosted style URL not required here)
   const host = new URL(endpoint).host;
   const now = new Date();
   const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "") + "Z";
@@ -15,39 +14,24 @@ function s3Put({ endpoint, region, bucket, key, body, accessKey, secretKey }) {
   const path = `/${bucket}/${encodeURIComponent(key)}`;
   const payload = Buffer.from(body);
   const payloadHash = crypto.createHash("sha256").update(payload).digest("hex");
-  const canonicalHeaders =
-    `host:${host}\n` +
-    `x-amz-content-sha256:${payloadHash}\n` +
-    `x-amz-date:${amzDate}\n`;
+  const canonicalHeaders = `host:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
   const signedHeaders = "host;x-amz-content-sha256;x-amz-date";
-  const canonicalRequest =
-    `PUT\n${path}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
-
+  const canonicalRequest = `PUT\n${path}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
   const algorithm = "AWS4-HMAC-SHA256";
   const credentialScope = `${dateStamp}/${region}/s3/aws4_request`;
-  const stringToSign =
-    `${algorithm}\n${amzDate}\n${credentialScope}\n` +
-    crypto.createHash("sha256").update(canonicalRequest).digest("hex");
-
+  const stringToSign = `${algorithm}\n${amzDate}\n${credentialScope}\n${crypto.createHash("sha256").update(canonicalRequest).digest("hex")}`;
   const kDate = crypto.createHmac("sha256", "AWS4" + secretKey).update(dateStamp).digest();
   const kRegion = crypto.createHmac("sha256", kDate).update(region).digest();
   const kService = crypto.createHmac("sha256", kRegion).update("s3").digest();
   const kSigning = crypto.createHmac("sha256", kService).update("aws4_request").digest();
   const signature = crypto.createHmac("sha256", kSigning).update(stringToSign).digest("hex");
-  const authorization =
-    `${algorithm} Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+  const authorization = `${algorithm} Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
   const options = {
-    host,
-    method: "PUT",
-    path,
-    headers: {
-      "Authorization": authorization,
-      "x-amz-date": amzDate,
-      "x-amz-content-sha256": payloadHash,
-      "Content-Length": payload.length
-    }
+    host, method: "PUT", path,
+    headers: { "Authorization": authorization, "x-amz-date": amzDate, "x-amz-content-sha256": payloadHash, "Content-Length": payload.length }
   };
+
   return new Promise((resolve, reject) => {
     const req = https.request(options, res => {
       let data = "";
@@ -64,7 +48,6 @@ function s3Put({ endpoint, region, bucket, key, body, accessKey, secretKey }) {
 }
 
 exports.main = async (params) => {
-  // Read from secure environment variables (injected by Code Engine secrets)
   const endpoint = process.env.COS_ENDPOINT;
   const bucket   = process.env.COS_BUCKET;
   const region   = process.env.COS_REGION;
@@ -79,19 +62,13 @@ exports.main = async (params) => {
   const key  = `vibe-writecheck-${Date.now()}.txt`;
   const body = `max-vibe OK @ ${new Date().toISOString()}\n`;
   try {
-    const result = await s3Put({
-      endpoint,
-      region,
-      bucket,
-      key,
-      body,
-      accessKey: access,
-      secretKey: secret
-    });
+    const result = await s3Put({ endpoint, region, bucket, key, body, accessKey: access, secretKey: secret });
     console.log(`Successfully wrote ${key} to ${bucket}`);
+    // Ensure body is stringified for API Gateway/Function responses
     return { statusCode: result.statusCode, body: `Wrote ${key} to ${bucket}` };
   } catch (e) {
     console.error(`Error writing to COS: ${e.message}`);
+     // Ensure body is stringified for API Gateway/Function responses
     return { statusCode: 500, body: `Error writing to COS: ${e.message}` };
   }
 };

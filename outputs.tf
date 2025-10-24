@@ -15,18 +15,22 @@ output "vibe_bucket_website_endpoint" {
 
 output "push_cos_url" {
   description = "The URL endpoint for the 'push to COS' Code Engine function."
-  # Use 'one()' and '[*]' to safely handle conditional creation
   value       = var.enable_code_engine && local.has_required_ids ? one(ibm_code_engine_function.push_to_cos[*].url) : null
 }
 
 output "push_project_url" {
-  description = "The URL endpoint for the 'push to Project' Code Engine function."
-  # Use 'one()' and '[*]' to safely handle conditional creation
+  description = "The URL endpoint for the 'push to Project' (staging) Code Engine function."
   value       = var.enable_code_engine && local.has_required_ids ? one(ibm_code_engine_function.push_to_project[*].url) : null
+}
+
+output "trigger_deploy_url" {
+  description = "The URL endpoint for the 'trigger project deploy' Code Engine function."
+  value       = var.enable_code_engine && local.has_required_ids ? one(ibm_code_engine_function.trigger_deploy[*].url) : null
 }
 
 # This is the primary output users will click
 output "primaryoutputlink" {
   description = "Primary access URL for the deployed website (used by IBM Cloud Projects)."
   value       = try(ibm_cos_bucket_website_configuration.vibe_bucket_website.website_endpoint, "Website endpoint not available")
+  sensitive   = false # Ensure this isn't accidentally marked sensitive
 }
