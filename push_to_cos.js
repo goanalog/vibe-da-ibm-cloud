@@ -1,6 +1,6 @@
 /**
- * IBM Cloud Functions (Node.js 18) — push_to_cos
- * Expects params: COS_ENDPOINT, COS_BUCKET, COS_REGION, ACCESS_KEY_ID, SECRET_ACCESS_KEY
+ * IBM Cloud Code Engine (Node.js 18) — push_to_cos
+ * Expects env vars: COS_ENDPOINT, COS_BUCKET, COS_REGION, ACCESS_KEY_ID, SECRET_ACCESS_KEY
  * Writes a tiny marker file to the bucket to prove write access works.
  */
 const crypto = require("crypto");
@@ -12,16 +12,13 @@ function s3Put({ endpoint, region, bucket, key, body, accessKey, secretKey }) {
   const now = new Date();
   const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "") + "Z";
   const dateStamp = amzDate.slice(0, 8);
-
   const path = `/${bucket}/${encodeURIComponent(key)}`;
   const payload = Buffer.from(body);
   const payloadHash = crypto.createHash("sha256").update(payload).digest("hex");
-
   const canonicalHeaders =
     `host:${host}\n` +
     `x-amz-content-sha256:${payloadHash}\n` +
     `x-amz-date:${amzDate}\n`;
-
   const signedHeaders = "host;x-amz-content-sha256;x-amz-date";
   const canonicalRequest =
     `PUT\n${path}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
@@ -37,7 +34,6 @@ function s3Put({ endpoint, region, bucket, key, body, accessKey, secretKey }) {
   const kService = crypto.createHmac("sha256", kRegion).update("s3").digest();
   const kSigning = crypto.createHmac("sha256", kService).update("aws4_request").digest();
   const signature = crypto.createHmac("sha256", kSigning).update(stringToSign).digest("hex");
-
   const authorization =
     `${algorithm} Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
@@ -52,7 +48,6 @@ function s3Put({ endpoint, region, bucket, key, body, accessKey, secretKey }) {
       "Content-Length": payload.length
     }
   };
-
   return new Promise((resolve, reject) => {
     const req = https.request(options, res => {
       let data = "";
@@ -69,19 +64,19 @@ function s3Put({ endpoint, region, bucket, key, body, accessKey, secretKey }) {
 }
 
 exports.main = async (params) => {
-  const endpoint = params.COS_ENDPOINT;
-  const bucket   = params.COS_BUCKET;
-  const region   = params.COS_REGION;
-  const access   = params.ACCESS_KEY_ID;
-  const secret   = params.SECRET_ACCESS_KEY;
+  // Read from secure environment variables (injected by Code Engine secrets)
+  const endpoint = process.env.COS_ENDPOINT;
+  const bucket   = process.env.COS_BUCKET;
+  const region   = process.env.COS_REGION;
+  const access   = process.env.ACCESS_KEY_ID;
+  const secret   = process.env.SECRET_ACCESS_KEY;
 
   if(!endpoint || !bucket || !region || !access || !secret){
-    return { statusCode: 400, body: "Missing required COS params" };
+    return { statusCode: 400, body: "Missing required COS params from env" };
   }
 
   const key  = `vibe-writecheck-${Date.now()}.txt`;
   const body = `max-vibe OK @ ${new Date().toISOString()}\n`;
-
   try {
     await s3Put({
       endpoint,

@@ -1,6 +1,7 @@
 /**
- * IBM Cloud Functions (Node.js 18) — push_to_project
- * This is a friendly placeholder. It just echoes a note and timestamp.
+ * IBM Cloud Code Engine (Node.js 18) — push_to_project
+ * This is a friendly placeholder.
+ * It just echoes a note and timestamp.
  * Hook this up to your Project or Schematics trigger later.
  */
 exports.main = async (params) => {

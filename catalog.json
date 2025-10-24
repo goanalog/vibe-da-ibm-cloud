@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "type": "terraform",
   "display_name": "🌀 Vibe Landing Zone — IBM Cloud Edition",
-  "description": "Deploy a live Vibe Landing Zone with IBM Cloud Object Storage (Lite) and optional IBM Cloud Functions for push-to-COS and push-to-Project actions.",
-  "tags": ["ibm-cloud", "vibe-coding", "object-storage", "deployable-architecture"],
+  "description": "Deploy a live Vibe Landing Zone with IBM Cloud Object Storage (Lite) and optional IBM Cloud Code Engine for push-to-COS and push-to-Project actions.",
+  "tags": ["ibm-cloud", "vibe-coding", "object-storage", "deployable-architecture", "code-engine"],
   "icon_url": "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/icon.png",
   "documentation_url": "https://github.com/goanalog/vibe-da-ibm-cloud/blob/main/README.md",
   "source_url": "https://github.com/goanalog/vibe-da-ibm-cloud",
@@ -29,9 +29,9 @@
       "required": true
     },
     {
-      "name": "enable_functions",
+      "name": "enable_code_engine",
       "type": "bool",
-      "description": "Enable IBM Cloud Functions integration.",
+      "description": "Enable IBM Cloud Code Engine integration.",
       "default": true
     },
     {

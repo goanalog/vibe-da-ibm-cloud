@@ -10,7 +10,7 @@ display_name: "🌀 Vibe Landing Zone — IBM Cloud Edition"
 description: >
   Deploy a fully hosted, instantly remixable “Vibe Landing Zone” on IBM Cloud.
   This architecture provisions an Object Storage (Lite) bucket, uploads a live
-  HTML sample app, and optionally enables IBM Cloud Functions for easy updates
+  HTML sample app, and optionally enables IBM Cloud Code Engine for easy updates
   and pushes to IBM Cloud Projects.
 
 # Entry points
@@ -32,9 +32,9 @@ variables:
     description: "Resource Group ID in which to create resources."
     required: true
 
-  - name: enable_functions
+  - name: enable_code_engine
     type: bool
-    description: "Enable IBM Cloud Functions to push updates to COS and Projects."
+    description: "Enable IBM Cloud Code Engine to push updates to COS and Projects."
     default: true
 
   - name: website_index
