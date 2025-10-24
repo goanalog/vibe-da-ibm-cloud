@@ -2,7 +2,8 @@ terraform {
   required_providers {
     ibm = {
       source  = "ibm-cloud/ibm"
-      version = ">= 1.84.3"
+      # --- Try requiring a newer version ---
+      version = ">= 2.0.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -35,33 +36,48 @@ resource "ibm_resource_instance" "cos_instance" {
   resource_group_id = var.resource_group_id
 }
 
-# Create COS bucket
+# Create COS bucket using potentially newer syntax
 resource "ibm_cos_bucket" "vibe_bucket" {
   bucket_name          = "vibe-bucket-${random_string.suffix.result}"
   resource_instance_id = ibm_resource_instance.cos_instance.id
-  region_location      = var.region
+  region_location      = var.region # Use region_location instead of region
   storage_class        = "standard"
   force_delete         = true
+  # --- Attempting simpler public access ---
+  public_access        = true
+
+  # --- Attempting nested website configuration ---
+  # Note: The exact argument names might differ slightly in newer versions
+  # e.g., index_document_suffix vs index_document.suffix
+  website_configuration {
+    index_document {
+       suffix = var.website_index
+    }
+    error_document {
+       key = var.website_error
+    }
+  }
 }
 
-# --- REMOVED: IAM Policy Block and Data Source ---
+# --- REMOVED: Separate website configuration resource ---
+# --- REMOVED: IAM Policy ---
 
-# Upload index.html and set public read access
+# Upload index.html (ACL removed, assuming public_access on bucket works)
 resource "ibm_cos_bucket_object" "index_html" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
   bucket_location = var.region
   key             = "index.html"
   content         = file("${path.module}/index.html")
-  acl             = "public-read" # <-- Set ACL on the object
+  # acl removed
 }
 
-# Upload error page and set public read access
+# Upload error page (ACL removed, assuming public_access on bucket works)
 resource "ibm_cos_bucket_object" "error_html" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
   bucket_location = var.region
   key             = "404.html"
   content         = file("${path.module}/404.html")
-  acl             = "public-read" # <-- Set ACL on the object
+  # acl removed
 }
 
 # Optional: enable IBM Cloud Functions namespace
@@ -94,22 +110,5 @@ resource "ibm_function_action" "push_to_project" {
   exec {
     kind = "nodejs:18"
     code = filebase64("${path.module}/push_to_project.js")
-  }
-}
-
-# Configure bucket for static website hosting
-resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
-  bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
-  endpoint_type   = "public"
-  bucket_location = var.region
-
-  website_configuration {
-    index_document {
-      suffix = var.website_index
-    }
-
-    error_document {
-      key = var.website_error
-    }
   }
 }

@@ -10,8 +10,8 @@ output "vibe_bucket_crn" {
 
 output "vibe_bucket_website_endpoint" {
   description = "The public website endpoint for the COS bucket."
-  # --- Reverted FIX: Use the actual website endpoint attribute ---
-  value       = try(ibm_cos_bucket_website_configuration.vibe_bucket_website.website_endpoint, "Website endpoint not available")
+  # --- Use bucket's own website_endpoint attribute (assuming newer version provides it) ---
+  value       = try(ibm_cos_bucket.vibe_bucket.website_endpoint, "Website endpoint not available")
 }
 
 output "push_cos_url" {
@@ -26,6 +26,6 @@ output "push_project_url" {
 
 output "primaryoutputlink" {
   description = "Primary access URL for the deployed website (used by IBM Cloud Projects)."
-  # --- Reverted FIX: Use the actual website endpoint attribute ---
-  value       = try(ibm_cos_bucket_website_configuration.vibe_bucket_website.website_endpoint, "Website endpoint not available")
+  # --- Use bucket's own website_endpoint attribute (assuming newer version provides it) ---
+  value       = try(ibm_cos_bucket.vibe_bucket.website_endpoint, "Website endpoint not available")
 }
