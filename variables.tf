@@ -2,6 +2,7 @@ variable "ibmcloud_api_key" {
   description = "The IBM Cloud API key used to authenticate with IBM Cloud services."
   type        = string
   sensitive   = true
+  default     = null # <-- ADD THIS LINE
 }
 
 variable "region" {
@@ -13,6 +14,7 @@ variable "region" {
 variable "resource_group_id" {
   description = "The ID of the IBM Cloud Resource Group in which to create resources."
   type        = string
+  default     = null # <-- ADD THIS LINE
 }
 
 variable "enable_functions" {
@@ -31,5 +33,5 @@ variable "website_index" {
 variable "website_error" {
   description = "Name of the error file served by the COS website."
   type        = string
-  default     = "404.html"
+  default     = "4Example 4.html"
 }
