@@ -42,6 +42,7 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   region_location      = var.region
   storage_class        = "standard"
   force_delete         = true
+  acl                  = "public-read" # <-- FIX: Attempt to enable public read access
 }
 
 # Upload index.html
@@ -97,9 +98,8 @@ resource "ibm_function_action" "push_to_project" {
 resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
   endpoint_type   = "public"
-  bucket_location = var.region # <-- FIX: Added required argument
+  bucket_location = var.region
 
-  # --- FIX: Nested index/error docs inside website_configuration block ---
   website_configuration {
     index_document {
       suffix = var.website_index
