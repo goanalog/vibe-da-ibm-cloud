@@ -139,4 +139,10 @@ resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
   endpoint_type = "public" # Use public endpoint for website URL
 
   index_document {
-    suffix
+    suffix = var.website_index
+  }
+
+  error_document {
+    key = var.website_error
+  }
+}
