@@ -2,7 +2,7 @@ terraform {
   required_providers {
     ibm = {
       source  = "ibm-cloud/ibm"
-      version = ">= 1.84.3" # Or your validated version
+      version = ">= 1.84.3" # Pinning to ensure compatibility attempt
     }
     random = {
       source  = "hashicorp/random"
@@ -61,17 +61,7 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   force_delete         = true
 }
 
-# --- Allow Public Access at Bucket Level ---
-resource "ibm_cos_bucket_public_access_block" "vibe_bucket_public_access" {
-  bucket_crn = ibm_cos_bucket.vibe_bucket.crn
-  # Set all to false to allow public read needed for static website
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
-
-  depends_on = [ibm_cos_bucket.vibe_bucket]
-}
+# --- REMOVED ibm_cos_bucket_public_access_block ---
 
 # --- Code Engine Project ---
 resource "ibm_code_engine_project" "vibe_ce_project" {
@@ -92,7 +82,9 @@ resource "ibm_resource_key" "cos_hmac_key" {
   name                  = "vibe-cos-hmac-key-${random_string.suffix.result}"
   resource_instance_id  = ibm_resource_instance.cos_instance.id
   role                  = "Writer"
-  service_id_crn        = ibm_iam_service_id.ce_cos_service_id[0].crn
+  # --- FIX: Use iam_id instead of service_id_crn ---
+  iam_service_id        = ibm_iam_service_id.ce_cos_service_id[0].iam_id
+  # ----------------------------------------------------
 
   parameters = {
     HMAC = true
@@ -105,6 +97,7 @@ resource "ibm_code_engine_secret" "cos_secret" {
   project_id = ibm_code_engine_project.vibe_ce_project[0].id
   name       = "cos-credentials"
   format     = "generic"
+  # Define the data map directly here
   data = {
     ACCESS_KEY_ID     = nonsensitive(ibm_resource_key.cos_hmac_key[0].credentials.cos_hmac_keys_access_key_id)
     SECRET_ACCESS_KEY = nonsensitive(ibm_resource_key.cos_hmac_key[0].credentials.cos_hmac_keys_secret_access_key)
@@ -123,7 +116,7 @@ resource "ibm_iam_service_id" "project_service_id" {
 resource "ibm_iam_service_policy" "project_editor_deploy_policy" {
   count              = var.enable_code_engine && local.has_required_ids ? 1 : 0
   iam_service_id     = ibm_iam_service_id.project_service_id[0].iam_id
-  roles              = ["Editor", "Operator"] # Ensure these roles are sufficient
+  roles              = ["Editor", "Operator"] # Verify needed roles
 
   resources {
     service = "project"
@@ -141,8 +134,9 @@ resource "ibm_code_engine_secret" "project_secret" {
   project_id = ibm_code_engine_project.vibe_ce_project[0].id
   name       = "project-credentials"
   format     = "generic"
+  # Define the data map directly here
   data = {
-    PROJECT_API_KEY = nonsensitive(ibm_iam_service_api_key.project_api_key[0].apikey) # Corrected attribute
+    PROJECT_API_KEY = nonsensitive(ibm_iam_service_api_key.project_api_key[0].apikey)
     PROJECT_ID      = local.effective_project_id
     CONFIG_ID       = var.config_id
     REGION          = var.region
@@ -152,39 +146,116 @@ resource "ibm_code_engine_secret" "project_secret" {
 
 # --- Code Engine Functions ---
 resource "ibm_code_engine_function" "push_to_cos" {
-  count           = var.enable_code_engine && local.has_required_ids ? 1 : 0
-  project_id      = ibm_code_engine_project.vibe_ce_project[0].id
-  name            = "push-to-cos-${random_string.suffix.result}"
-  runtime         = "nodejs-18"
-  code_bundle     = filebase64("${path.module}/push_to_cos.js")
-  env_from_secret = [ibm_code_engine_secret.cos_secret[0].name]
-  depends_on      = [ibm_code_engine_secret.cos_secret]
+  count      = var.enable_code_engine && local.has_required_ids ? 1 : 0
+  project_id = ibm_code_engine_project.vibe_ce_project[0].id
+  name       = "push-to-cos-${random_string.suffix.result}"
+  runtime    = "nodejs-18"
+  # --- FIX: Use code_inline with file() ---
+  code_inline = file("${path.module}/push_to_cos.js")
+  # ----------------------------------------
+  # --- FIX: Define individual env vars ---
+  env {
+    name        = "ACCESS_KEY_ID"
+    secret_name = ibm_code_engine_secret.cos_secret[0].name
+    secret_key  = "ACCESS_KEY_ID"
+  }
+  env {
+    name        = "SECRET_ACCESS_KEY"
+    secret_name = ibm_code_engine_secret.cos_secret[0].name
+    secret_key  = "SECRET_ACCESS_KEY"
+  }
+  env {
+    name        = "COS_ENDPOINT"
+    secret_name = ibm_code_engine_secret.cos_secret[0].name
+    secret_key  = "COS_ENDPOINT"
+  }
+  env {
+    name        = "COS_BUCKET"
+    secret_name = ibm_code_engine_secret.cos_secret[0].name
+    secret_key  = "COS_BUCKET"
+  }
+  env {
+    name        = "COS_REGION"
+    secret_name = ibm_code_engine_secret.cos_secret[0].name
+    secret_key  = "COS_REGION"
+  }
+  # ------------------------------------
+  depends_on = [ibm_code_engine_secret.cos_secret]
 }
+
 resource "ibm_code_engine_function" "push_to_project" { # Staging function
-  count           = var.enable_code_engine && local.has_required_ids ? 1 : 0
-  project_id      = ibm_code_engine_project.vibe_ce_project[0].id
-  name            = "push-to-project-${random_string.suffix.result}"
-  runtime         = "nodejs-18"
-  code_bundle     = filebase64("${path.module}/push_to_project.js")
-  env_from_secret = [ibm_code_engine_secret.project_secret[0].name]
-  depends_on      = [ibm_code_engine_secret.project_secret]
+  count      = var.enable_code_engine && local.has_required_ids ? 1 : 0
+  project_id = ibm_code_engine_project.vibe_ce_project[0].id
+  name       = "push-to-project-${random_string.suffix.result}"
+  runtime    = "nodejs-18"
+  # --- FIX: Use code_inline with file() ---
+  code_inline = file("${path.module}/push_to_project.js")
+  # ----------------------------------------
+  # --- FIX: Define individual env vars ---
+  env {
+    name        = "PROJECT_API_KEY"
+    secret_name = ibm_code_engine_secret.project_secret[0].name
+    secret_key  = "PROJECT_API_KEY"
+  }
+  env {
+    name        = "PROJECT_ID"
+    secret_name = ibm_code_engine_secret.project_secret[0].name
+    secret_key  = "PROJECT_ID"
+  }
+  env {
+    name        = "CONFIG_ID"
+    secret_name = ibm_code_engine_secret.project_secret[0].name
+    secret_key  = "CONFIG_ID"
+  }
+  env {
+    name        = "REGION"
+    secret_name = ibm_code_engine_secret.project_secret[0].name
+    secret_key  = "REGION"
+  }
+  # ------------------------------------
+  depends_on = [ibm_code_engine_secret.project_secret]
 }
+
 resource "ibm_code_engine_function" "trigger_deploy" { # Trigger function
-  count           = var.enable_code_engine && local.has_required_ids ? 1 : 0
-  project_id      = ibm_code_engine_project.vibe_ce_project[0].id
-  name            = "trigger-project-deploy-${random_string.suffix.result}"
-  runtime         = "nodejs-18"
-  code_bundle     = filebase64("${path.module}/trigger_project_deploy.js")
-  env_from_secret = [ibm_code_engine_secret.project_secret[0].name]
-  depends_on      = [ibm_code_engine_secret.project_secret]
+  count      = var.enable_code_engine && local.has_required_ids ? 1 : 0
+  project_id = ibm_code_engine_project.vibe_ce_project[0].id
+  name       = "trigger-project-deploy-${random_string.suffix.result}"
+  runtime    = "nodejs-18"
+  # --- FIX: Use code_inline with file() ---
+  code_inline = file("${path.module}/trigger_project_deploy.js")
+  # ----------------------------------------
+  # --- FIX: Define individual env vars ---
+  env {
+    name        = "PROJECT_API_KEY"
+    secret_name = ibm_code_engine_secret.project_secret[0].name
+    secret_key  = "PROJECT_API_KEY"
+  }
+  env {
+    name        = "PROJECT_ID"
+    secret_name = ibm_code_engine_secret.project_secret[0].name
+    secret_key  = "PROJECT_ID"
+  }
+  env {
+    name        = "CONFIG_ID"
+    secret_name = ibm_code_engine_secret.project_secret[0].name
+    secret_key  = "CONFIG_ID"
+  }
+  env {
+    name        = "REGION"
+    secret_name = ibm_code_engine_secret.project_secret[0].name
+    secret_key  = "REGION"
+  }
+  # ------------------------------------
+  depends_on = [ibm_code_engine_secret.project_secret]
 }
+
 
 # --- COS Website & Content Upload ---
 resource "ibm_cos_bucket_object" "index_html" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
   bucket_location = var.region
   key             = var.website_index
-  # acl removed - handled by public access block
+  # acl removed
 
   content = templatefile("${path.module}/index.html.tftpl", {
     push_cos_url       = var.enable_code_engine && local.has_required_ids ? one(ibm_code_engine_function.push_to_cos[*].url) : "null"
@@ -195,8 +266,8 @@ resource "ibm_cos_bucket_object" "index_html" {
   depends_on = [
     ibm_code_engine_function.push_to_cos,
     ibm_code_engine_function.push_to_project,
-    ibm_code_engine_function.trigger_deploy,
-    ibm_cos_bucket_public_access_block.vibe_bucket_public_access
+    ibm_code_engine_function.trigger_deploy
+    # REMOVED dependency on public_access_block
   ]
 }
 resource "ibm_cos_bucket_object" "error_html" {
@@ -204,9 +275,9 @@ resource "ibm_cos_bucket_object" "error_html" {
   bucket_location = var.region
   key             = var.website_error
   content         = file("${path.module}/404.html")
-  # acl removed - handled by public access block
+  # acl removed
 
-  depends_on = [ibm_cos_bucket_public_access_block.vibe_bucket_public_access]
+  # REMOVED dependency on public_access_block
 }
 resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
   bucket_crn    = ibm_cos_bucket.vibe_bucket.crn
@@ -219,7 +290,7 @@ resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
   }
   depends_on = [
     ibm_cos_bucket_object.index_html,
-    ibm_cos_bucket_object.error_html,
-    ibm_cos_bucket_public_access_block.vibe_bucket_public_access
+    ibm_cos_bucket_object.error_html
+    # REMOVED dependency on public_access_block
   ]
 }
