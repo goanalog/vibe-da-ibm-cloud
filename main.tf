@@ -1,4 +1,23 @@
-# main.tf (Cleaned - Requires providers.tf)
+terraform {
+  required_providers {
+    ibm = {
+      source  = "ibm-cloud/ibm"
+      version = ">= 1.84.3" # Or your validated version
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = ">= 3.0.0"
+    }
+    external = {
+      source  = "hashicorp/external"
+      version = "~> 2.3"
+    }
+  }
+}
+
+provider "ibm" {
+  region = var.region
+}
 
 # --- Data Source to Read Environment Variables ---
 data "external" "env_vars" {
@@ -14,6 +33,8 @@ locals {
     local.effective_resource_group_id != null && local.effective_resource_group_id != "" &&
     var.config_id != null && var.config_id != ""
   )
+  # Check for resource group ID needed for base resources
+  has_required_base_ids = (local.effective_resource_group_id != null && local.effective_resource_group_id != "")
 }
 
 # Random suffix for uniqueness
@@ -25,7 +46,7 @@ resource "random_string" "suffix" {
 
 # Object Storage instance (Lite plan)
 resource "ibm_resource_instance" "cos_instance" {
-  count             = local.has_required_ids ? 1 : 0 # Depend on base IDs
+  count             = local.has_required_base_ids ? 1 : 0
   name              = "vibe-instance-${random_string.suffix.result}"
   service           = "cloud-object-storage"
   plan              = "lite"
@@ -35,7 +56,7 @@ resource "ibm_resource_instance" "cos_instance" {
 
 # Create COS bucket
 resource "ibm_cos_bucket" "vibe_bucket" {
-  count                = local.has_required_ids ? 1 : 0 # Depend on base IDs
+  count                = local.has_required_base_ids ? 1 : 0
   bucket_name          = "vibe-bucket-${random_string.suffix.result}"
   resource_instance_id = ibm_resource_instance.cos_instance[0].id
   region_location      = var.region
@@ -43,30 +64,6 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   force_delete         = true
 }
 
-# --- Allow Public Access via IAM Policy ---
-# (Using this method since ACL and public_access_block had provider version issues)
-data "ibm_iam_policy_template_latest" "object_reader_template" {
-  template_type = "service"
-  service_name  = "cloud-object-storage"
-  policy_type   = "access"
-  roles         = ["Object Reader"] # Role allowing GET/HEAD on objects
-}
-
-resource "ibm_cos_bucket_policy" "public_read_policy" {
-  count                = local.has_required_ids ? 1 : 0
-  bucket_crn           = ibm_cos_bucket.vibe_bucket[0].crn
-  bucket_location      = var.region
-  iam_policy_id        = data.ibm_iam_policy_template_latest.object_reader_template.policy_id
-  iam_access_group_ids = [] # Not needed for public access
-  iam_user_ids         = [] # Not needed for public access
-  public_access        = true # Grant access to public
-
-  depends_on = [
-    ibm_cos_bucket_object.index_html, # Apply policy after objects exist
-    ibm_cos_bucket_object.error_html
-  ]
-}
-# -----------------------------------------------
 
 # --- Code Engine Project ---
 resource "ibm_code_engine_project" "vibe_ce_project" {
@@ -86,7 +83,7 @@ resource "ibm_resource_key" "cos_hmac_key" {
   name                  = "vibe-cos-hmac-key-${random_string.suffix.result}"
   resource_instance_id  = ibm_resource_instance.cos_instance[0].id
   role                  = "Writer"
-  # serviceid_crn or iam_service_id removed - hoping linking works via role/instance
+  # serviceid_crn or iam_service_id removed
 
   parameters = {
     HMAC = true
@@ -144,13 +141,14 @@ resource "ibm_code_engine_secret" "project_secret" {
   depends_on = [ibm_iam_service_api_key.project_api_key]
 }
 
-# --- Code Engine Functions (Using base64 data URL and run_env_variables) ---
-# Assuming a newer provider version that supports this schema is eventually used
+# --- Code Engine Functions ---
+# Using the schema expected by newer provider versions, hoping v1.84.3 might partially support it
+# If these fail, the provider needs updating or functions need removing.
 resource "ibm_code_engine_function" "push_to_cos" {
   count      = var.enable_code_engine && local.has_required_ids ? 1 : 0
   project_id = ibm_code_engine_project.vibe_ce_project[0].id
   name       = "push-to-cos-${random_string.suffix.result}"
-  runtime    = "nodejs-18" # Adjust if needed (e.g., nodejs-20)
+  runtime    = "nodejs-18"
 
   code_reference = "data:application/javascript;base64,${base64encode(file("${path.module}/push_to_cos.js"))}"
 
@@ -213,11 +211,13 @@ resource "ibm_cos_bucket_object" "index_html" {
     trigger_deploy_url = var.enable_code_engine && local.has_required_ids ? one(ibm_code_engine_function.trigger_deploy[*].url) : "null"
   })
 
+  # --- FIX: Removed dependency on policy causing cycle ---
   depends_on = [
     ibm_code_engine_function.push_to_cos,
     ibm_code_engine_function.push_to_project,
-    ibm_code_engine_function.trigger_deploy,
-    ibm_cos_bucket_policy.public_read_policy # Depend on policy
+    ibm_code_engine_function.trigger_deploy
+    # Ensure bucket exists, but don't depend on policy here
+    # ibm_cos_bucket_policy.public_read_policy - REMOVED
   ]
 }
 resource "ibm_cos_bucket_object" "error_html" {
@@ -228,8 +228,35 @@ resource "ibm_cos_bucket_object" "error_html" {
   content         = file("${path.module}/404.html")
   # acl removed
 
-  depends_on = [ibm_cos_bucket_policy.public_read_policy] # Depend on policy
+  # --- FIX: Removed dependency on policy causing cycle ---
+  # depends_on = [ibm_cos_bucket_policy.public_read_policy] - REMOVED
 }
+
+# --- Add IAM Bucket Policy for Public Read Access ---
+data "ibm_iam_policy_template_latest" "object_reader_template" {
+  template_type = "service"
+  service_name  = "cloud-object-storage"
+  policy_type   = "access"
+  roles         = ["Object Reader"]
+}
+
+resource "ibm_cos_bucket_policy" "public_read_policy" {
+  count                = local.has_required_ids ? 1 : 0
+  bucket_crn           = ibm_cos_bucket.vibe_bucket[0].crn
+  bucket_location      = var.region
+  iam_policy_id        = data.ibm_iam_policy_template_latest.object_reader_template.policy_id
+  iam_access_group_ids = []
+  iam_user_ids         = []
+  public_access        = true
+
+  # Depend on objects being created first
+  depends_on = [
+    ibm_cos_bucket_object.index_html,
+    ibm_cos_bucket_object.error_html
+  ]
+}
+# ---------------------------------------------------
+
 resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
   count         = local.has_required_ids ? 1 : 0
   bucket_crn    = ibm_cos_bucket.vibe_bucket[0].crn
@@ -240,6 +267,7 @@ resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
   error_document {
     key = var.website_error
   }
+  # Depend on the policy being applied *after* objects exist
   depends_on = [
     ibm_cos_bucket_policy.public_read_policy
   ]
