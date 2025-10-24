@@ -93,17 +93,20 @@ resource "ibm_function_action" "push_to_project" {
   }
 }
 
-# --- ADDED: Configure bucket for static website hosting ---
+# Configure bucket for static website hosting
 resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
-  bucket_crn    = ibm_cos_bucket.vibe_bucket.crn
-  endpoint_type = "public" # Use public endpoint for website URL
+  bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
+  endpoint_type   = "public"
+  bucket_location = var.region # <-- FIX: Added required argument
 
-  index_document {
-    suffix = var.website_index # From variables.tf (default: index.html)
-  }
+  # --- FIX: Nested index/error docs inside website_configuration block ---
+  website_configuration {
+    index_document {
+      suffix = var.website_index
+    }
 
-  error_document {
-    key = var.website_error # From variables.tf (default: 404.html)
+    error_document {
+      key = var.website_error
+    }
   }
-  # Note: DependsOn not strictly needed as bucket_crn creates implicit dependency
 }
