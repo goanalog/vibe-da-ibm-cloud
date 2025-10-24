@@ -44,7 +44,7 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   force_delete         = true
 }
 
-# --- REMOVED: IAM Policy Block ---
+# --- REMOVED: IAM Policy Block and Data Source ---
 
 # Upload index.html and set public read access
 resource "ibm_cos_bucket_object" "index_html" {
@@ -52,8 +52,7 @@ resource "ibm_cos_bucket_object" "index_html" {
   bucket_location = var.region
   key             = "index.html"
   content         = file("${path.module}/index.html")
-  acl             = "public-read" # <-- FIX: Set ACL on the object
-  # depends_on removed
+  acl             = "public-read" # <-- Set ACL on the object
 }
 
 # Upload error page and set public read access
@@ -62,8 +61,7 @@ resource "ibm_cos_bucket_object" "error_html" {
   bucket_location = var.region
   key             = "404.html"
   content         = file("${path.module}/404.html")
-  acl             = "public-read" # <-- FIX: Set ACL on the object
-  # depends_on removed
+  acl             = "public-read" # <-- Set ACL on the object
 }
 
 # Optional: enable IBM Cloud Functions namespace
@@ -114,5 +112,4 @@ resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
       key = var.website_error
     }
   }
-  # depends_on removed
 }
