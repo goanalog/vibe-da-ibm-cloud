@@ -1,26 +1,4 @@
-terraform {
-  required_providers {
-    ibm = {
-      source  = "ibm-cloud/ibm"
-      version = ">= 1.84.3" # Or your validated version
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = ">= 3.0.0"
-    }
-    external = {
-      source  = "hashicorp/external"
-      version = "~> 2.3"
-    }
-  }
-}
-
-provider "ibm" {
-  region = var.region
-}
-
-# --- Data Source to Read Environment Variables ---
-data "external" "env_vars" {
+ data "external" "env_vars" {
   program = ["sh", "-c", "env | grep -E '^IC_PROJECT_ID=|^IC_RESOURCE_GROUP_ID=' | jq -R 'split(\"=\") | {(.[0]): .[1]}' | jq -s 'add // {}'"]
 }
 
