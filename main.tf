@@ -42,22 +42,30 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   region_location      = var.region
   storage_class        = "standard"
   force_delete         = true
+
+  # --- FIX: Enable static website hosting ---
+  website {
+    index_document = var.website_index
+    error_document = var.website_error
+  }
 }
 
 # Upload index.html
 resource "ibm_cos_bucket_object" "index_html" {
-  bucket_crn   = ibm_cos_bucket.vibe_bucket.crn
-  key          = "index.html"
-  content      = file("${path.module}/index.html")
-  content_type = "text/html"
+  bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
+  bucket_location = var.region # <-- FIX: Added required argument
+  key             = "index.html"
+  content         = file("${path.module}/index.html")
+  content_type    = "text/html"
 }
 
 # Upload error page
 resource "ibm_cos_bucket_object" "error_html" {
-  bucket_crn   = ibm_cos_bucket.vibe_bucket.crn
-  key          = "404.html"
-  content      = file("${path.module}/404.html")
-  content_type = "text/html"
+  bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
+  bucket_location = var.region # <-- FIX: Added required argument
+  key             = "404.html"
+  content         = file("${path.module}/404.html")
+  content_type    = "text/html"
 }
 
 # Optional: enable IBM Cloud Functions namespace
@@ -69,22 +77,38 @@ resource "ibm_function_namespace" "vibe_namespace" {
 
 # Push to COS Function Action
 resource "ibm_function_action" "push_to_cos" {
-  count       = var.enable_functions ? 1 : 0
-  name        = "push-to-cos-${random_string.suffix.result}"
-  namespace   = ibm_function_namespace.vibe_namespace[0].name
-  exec_kind   = "nodejs:18"
-  exec_code   = filebase64("${path.module}/push_to_cos.js")
-  publish     = true
-  annotations = { description = "Uploads updated index.html to COS" }
+  count     = var.enable_functions ? 1 : 0
+  name      = "push-to-cos-${random_string.suffix.result}"
+  namespace = ibm_function_namespace.vibe_namespace[0].name
+  publish   = true
+
+  # --- FIX: Updated to use 'exec' block ---
+  exec {
+    kind = "nodejs:18"
+    code = filebase64("${path.module}/push_to_cos.js")
+  }
+
+  # --- FIX: 'annotations' must be a JSON string ---
+  annotations = jsonencode({
+    description = "Uploads updated index.html to COS"
+  })
 }
 
 # Push to Project Function Action
 resource "ibm_function_action" "push_to_project" {
-  count       = var.enable_functions ? 1 : 0
-  name        = "push-to-project-${random_string.suffix.result}"
-  namespace   = ibm_function_namespace.vibe_namespace[0].name
-  exec_kind   = "nodejs:18"
-  exec_code   = filebase64("${path.module}/push_to_project.js")
-  publish     = true
-  annotations = { description = "Pushes updated files to the IBM Cloud Project" }
+  count     = var.enable_functions ? 1 : 0
+  name      = "push-to-project-${random_string.suffix.result}"
+  namespace = ibm_function_namespace.vibe_namespace[0].name
+  publish   = true
+
+  # --- FIX: Updated to use 'exec' block ---
+  exec {
+    kind = "nodejs:18"
+    code = filebase64("${path.module}/push_to_project.js")
+  }
+
+  # --- FIX: 'annotations' must be a JSON string ---
+  annotations = jsonencode({
+    description = "Pushes updated files to the IBM Cloud Project"
+  })
 }
