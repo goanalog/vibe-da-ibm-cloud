@@ -9,9 +9,9 @@ output "vibe_bucket_crn" {
 }
 
 output "vibe_bucket_website_endpoint" {
-  description = "The public website endpoint for the COS bucket."
-  # --- Use bucket's own website_endpoint attribute (assuming newer version provides it) ---
-  value       = try(ibm_cos_bucket.vibe_bucket.website_endpoint, "Website endpoint not available")
+  description = "The public website endpoint for the COS bucket. Note: Public access must be configured manually via IAM policy if needed."
+  # --- Correctly reference the website config resource ---
+  value       = try(ibm_cos_bucket_website_configuration.vibe_bucket_website.website_endpoint, "Website endpoint not available (Public access likely needed)")
 }
 
 output "push_cos_url" {
@@ -25,7 +25,7 @@ output "push_project_url" {
 }
 
 output "primaryoutputlink" {
-  description = "Primary access URL for the deployed website (used by IBM Cloud Projects)."
-  # --- Use bucket's own website_endpoint attribute (assuming newer version provides it) ---
-  value       = try(ibm_cos_bucket.vibe_bucket.website_endpoint, "Website endpoint not available")
+  description = "Primary access URL for the deployed website (used by IBM Cloud Projects). Note: Public access must be configured manually via IAM policy if needed."
+  # --- Correctly reference the website config resource ---
+  value       = try(ibm_cos_bucket_website_configuration.vibe_bucket_website.website_endpoint, "Website endpoint not available (Public access likely needed)")
 }

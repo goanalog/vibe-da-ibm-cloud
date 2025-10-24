@@ -2,7 +2,7 @@ terraform {
   required_providers {
     ibm = {
       source  = "ibm-cloud/ibm"
-      version = ">= 1.84.3"
+      version = ">= 1.84.3" # Keep the version required by the environment
     }
     random = {
       source  = "hashicorp/random"
@@ -44,24 +44,20 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   force_delete         = true
 }
 
-# --- REMOVED: IAM Policy Block ---
-
-# Upload index.html and set public read access
+# Upload index.html
 resource "ibm_cos_bucket_object" "index_html" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
   bucket_location = var.region
   key             = "index.html"
   content         = file("${path.module}/index.html")
-  acl             = "public-read" # <-- Set ACL on the object
 }
 
-# Upload error page and set public read access
+# Upload error page
 resource "ibm_cos_bucket_object" "error_html" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
   bucket_location = var.region
   key             = "404.html"
   content         = file("${path.module}/404.html")
-  acl             = "public-read" # <-- Set ACL on the object
 }
 
 # Optional: enable IBM Cloud Functions namespace
