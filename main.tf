@@ -109,3 +109,16 @@ resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
     }
   }
 }
+
+resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
+  bucket_crn    = ibm_cos_bucket.vibe_bucket.crn
+  endpoint_type = "public"
+
+  index_document {
+    suffix = var.website_index
+  }
+
+  error_document {
+    key = var.website_error
+  }
+}
