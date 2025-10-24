@@ -33,7 +33,5 @@ variable "website_index" {
 variable "website_error" {
   description = "Name of the error file served by the COS website."
   type        = string
-  # --- MAKE SURE THIS LINE IS CORRECT ---
-  default     = "404.html" # Ensure it says 404.html, NOT 4Example 4.html
-  # ------------------------------------
+  default     = "404.html" # <-- TYPO FIXED HERE
 }

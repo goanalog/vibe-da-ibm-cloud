@@ -109,7 +109,7 @@ resource "ibm_cos_bucket_object" "index_html" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
   bucket_location = var.region
   key             = "index.html"
-  acl             = "public-read" # <-- THIS FIXES THE 403 ERROR
+  acl             = "public-read" # <-- FIX FOR 403 ERROR
 
   # Injects the live CE function URLs into the HTML
   content = templatefile("${path.module}/index.html.tftpl", {
@@ -130,7 +130,7 @@ resource "ibm_cos_bucket_object" "error_html" {
   bucket_location = var.region
   key             = "404.html"
   content         = file("${path.module}/404.html")
-  acl             = "public-read" # <-- THIS FIXES THE 403 ERROR
+  acl             = "public-read" # <-- FIX FOR 403 ERROR
 }
 
 # Configure bucket for static website hosting (Corrected)
@@ -139,10 +139,4 @@ resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
   endpoint_type = "public" # Use public endpoint for website URL
 
   index_document {
-    suffix = var.website_index
-  }
-
-  error_document {
-    key = var.website_error
-  }
-}
+    suffix
