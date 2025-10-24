@@ -31,8 +31,7 @@ resource "ibm_resource_instance" "cos_instance" {
   name              = "vibe-instance-${random_string.suffix.result}"
   service           = "cloud-object-storage"
   plan              = "lite"
-  location          
-= "global"
+  location          = "global"
   resource_group_id = var.resource_group_id
 }
 
@@ -53,8 +52,7 @@ resource "ibm_cos_bucket_object" "index_html" {
   content_type = "text/html"
 }
 
-# Upload error 
-page
+# Upload error page
 resource "ibm_cos_bucket_object" "error_html" {
   bucket_crn   = ibm_cos_bucket.vibe_bucket.crn
   key          = "404.html"
@@ -64,16 +62,14 @@ resource "ibm_cos_bucket_object" "error_html" {
 
 # Optional: enable IBM Cloud Functions namespace
 resource "ibm_function_namespace" "vibe_namespace" {
-  count             = var.enable_functions ?
-1 : 0
+  count             = var.enable_functions ? 1 : 0
   name              = "vibe-namespace-${random_string.suffix.result}"
   resource_group_id = var.resource_group_id
 }
 
 # Push to COS Function Action
 resource "ibm_function_action" "push_to_cos" {
-  count       = var.enable_functions ?
-1 : 0
+  count       = var.enable_functions ? 1 : 0
   name        = "push-to-cos-${random_string.suffix.result}"
   namespace   = ibm_function_namespace.vibe_namespace[0].name
   exec_kind   = "nodejs:18"
@@ -84,8 +80,7 @@ resource "ibm_function_action" "push_to_cos" {
 
 # Push to Project Function Action
 resource "ibm_function_action" "push_to_project" {
-  count       = var.enable_functions ?
-1 : 0
+  count       = var.enable_functions ? 1 : 0
   name        = "push-to-project-${random_string.suffix.result}"
   namespace   = ibm_function_namespace.vibe_namespace[0].name
   exec_kind   = "nodejs:18"
