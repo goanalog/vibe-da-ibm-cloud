@@ -42,8 +42,24 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   region_location      = var.region
   storage_class        = "standard"
   force_delete         = true
-  acl                  = "public-read" # <-- FIX: Attempt to enable public read access
 }
+
+# --- ADDED: Grant public read access to the bucket via IAM policy ---
+resource "ibm_iam_access_group_policy" "cos_bucket_public_access" {
+  access_group_id = "PublicAccess" # Special ID for the Public access group
+  roles           = ["Reader"]     # Role allowing reading objects
+
+  resources {
+    resource_type      = "bucket"
+    resource           = ibm_cos_bucket.vibe_bucket.bucket_name
+    service            = "cloud-object-storage"
+    resource_instance_id = ibm_resource_instance.cos_instance.guid # Use GUID here
+  }
+
+  # Ensure the bucket exists before creating the policy
+  depends_on = [ibm_cos_bucket.vibe_bucket]
+}
+
 
 # Upload index.html
 resource "ibm_cos_bucket_object" "index_html" {
@@ -51,6 +67,9 @@ resource "ibm_cos_bucket_object" "index_html" {
   bucket_location = var.region
   key             = "index.html"
   content         = file("${path.module}/index.html")
+
+  # Ensure public access policy is created before uploading objects
+  depends_on = [ibm_iam_access_group_policy.cos_bucket_public_access]
 }
 
 # Upload error page
@@ -59,6 +78,9 @@ resource "ibm_cos_bucket_object" "error_html" {
   bucket_location = var.region
   key             = "404.html"
   content         = file("${path.module}/404.html")
+
+  # Ensure public access policy is created before uploading objects
+  depends_on = [ibm_iam_access_group_policy.cos_bucket_public_access]
 }
 
 # Optional: enable IBM Cloud Functions namespace
@@ -109,4 +131,6 @@ resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
       key = var.website_error
     }
   }
+  # Ensure public access policy exists before configuring website
+  depends_on = [ibm_iam_access_group_policy.cos_bucket_public_access]
 }
