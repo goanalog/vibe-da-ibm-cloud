@@ -10,26 +10,22 @@ output "vibe_bucket_crn" {
 
 output "vibe_bucket_website_endpoint" {
   description = "The public website endpoint for the COS bucket."
-  # --- FIX: Changed to output CRN as website is not configured ---
   value       = try(ibm_cos_bucket.vibe_bucket.crn, "Website not available")
 }
 
 output "push_cos_url" {
   description = "The URL endpoint for the 'push to COS' IBM Cloud Function action."
-  # --- FIX: Added [0] to access resource from count ---
-  value       = var.enable_functions ?
-  try(ibm_function_action.push_to_cos[0].target_endpoint_url, null) : null
+  # --- FIX: Collapsed conditional to a single line ---
+  value       = var.enable_functions ? try(ibm_function_action.push_to_cos[0].target_endpoint_url, null) : null
 }
 
 output "push_project_url" {
   description = "The URL endpoint for the 'push to Project' IBM Cloud Function action."
-  # --- FIX: Added [0] to access resource from count ---
-  value       = var.enable_functions ?
-  try(ibm_function_action.push_to_project[0].target_endpoint_url, null) : null
+  # --- FIX: Collapsed conditional to a single line ---
+  value       = var.enable_functions ? try(ibm_function_action.push_to_project[0].target_endpoint_url, null) : null
 }
 
 output "primaryoutputlink" {
   description = "Primary access URL for the deployed website (used by IBM Cloud Projects)."
-  # --- FIX: Changed to output CRN as website is not configured ---
   value       = try(ibm_cos_bucket.vibe_bucket.crn, "Website not available")
 }
