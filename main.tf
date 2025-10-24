@@ -20,7 +20,6 @@ resource "ibm_cos_bucket" "vibe_bucket" {
 
 resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
-  bucket_location = var.region
 
   website_configuration {
     index_document {
