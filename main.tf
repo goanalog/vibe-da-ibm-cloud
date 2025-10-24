@@ -80,7 +80,7 @@ resource "ibm_code_engine_project" "vibe_ce_project" {
 }
 
 # --- COS Function Security Setup ---
-resource "ibm_iam_service_id" "ce_cos_service_id" {
+resource "ibm_iam_service_id" "ce_cos_service_id" { # Renamed for clarity
   count = var.enable_code_engine && local.has_required_ids ? 1 : 0
   name  = "vibe-ce-cos-api-${random_string.suffix.result}"
 }
@@ -110,7 +110,7 @@ resource "ibm_iam_service_id" "project_service_id" {
   count = var.enable_code_engine && local.has_required_ids ? 1 : 0
   name  = "vibe-ce-project-api-${random_string.suffix.result}"
 }
-resource "ibm_iam_service_policy" "project_editor_deploy_policy" {
+resource "ibm_iam_service_policy" "project_editor_deploy_policy" { # Renamed policy
   count              = var.enable_code_engine && local.has_required_ids ? 1 : 0
   iam_service_id     = ibm_iam_service_id.project_service_id[0].iam_id
   roles              = ["Editor", "Operator"] # Added Operator role (Verify needed roles!)
@@ -134,9 +134,10 @@ resource "ibm_code_engine_secret" "project_secret" {
     PROJECT_API_KEY = ibm_iam_service_api_key.project_api_key[0].api_key
     PROJECT_ID      = local.effective_project_id
     CONFIG_ID       = var.config_id
-    REGION          = var.region
+    REGION          = var.region # Pass region for constructing review URL
   }
 }
+
 
 # --- Code Engine Functions ---
 resource "ibm_code_engine_function" "push_to_cos" {
@@ -163,7 +164,7 @@ resource "ibm_code_engine_function" "trigger_deploy" { # Trigger function
   name            = "trigger-project-deploy-${random_string.suffix.result}"
   runtime         = "nodejs-18"
   code_bundle     = filebase64("${path.module}/trigger_project_deploy.js")
-  env_from_secret = [ibm_code_engine_secret.project_secret[0].name]
+  env_from_secret = [ibm_code_engine_secret.project_secret[0].name] # Re-uses the same secret
   depends_on      = [ibm_code_engine_secret.project_secret]
 }
 
@@ -171,16 +172,18 @@ resource "ibm_code_engine_function" "trigger_deploy" { # Trigger function
 resource "ibm_cos_bucket_object" "index_html" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
   bucket_location = var.region
-  key             = var.website_index
+  key             = var.website_index # Use variable
   acl             = "public-read"
 
   content = templatefile("${path.module}/index.html.tftpl", {
+    # Use count index correctly to handle enable_code_engine = false
     push_cos_url       = var.enable_code_engine && local.has_required_ids ? one(ibm_code_engine_function.push_to_cos[*].url) : "null"
     push_project_url   = var.enable_code_engine && local.has_required_ids ? one(ibm_code_engine_function.push_to_project[*].url) : "null"
-    trigger_deploy_url = var.enable_code_engine && local.has_required_ids ? one(ibm_code_engine_function.trigger_deploy[*].url) : "null"
+    trigger_deploy_url = var.enable_code_engine && local.has_required_ids ? one(ibm_code_engine_function.trigger_deploy[*].url) : "null" # Inject new URL
   })
 
   depends_on = [
+    # Depend on all functions now
     ibm_code_engine_function.push_to_cos,
     ibm_code_engine_function.push_to_project,
     ibm_code_engine_function.trigger_deploy
@@ -189,8 +192,8 @@ resource "ibm_cos_bucket_object" "index_html" {
 resource "ibm_cos_bucket_object" "error_html" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
   bucket_location = var.region
-  key             = var.website_error
-  content         = file("${path.module}/404.html")
+  key             = var.website_error # Use variable
+  content         = file("${path.module}/404.html") # Assume filename is fixed
   acl             = "public-read"
 }
 resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
@@ -202,6 +205,7 @@ resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
   error_document {
     key = var.website_error
   }
+  # Ensure objects are uploaded before configuring website
   depends_on = [
     ibm_cos_bucket_object.index_html,
     ibm_cos_bucket_object.error_html
