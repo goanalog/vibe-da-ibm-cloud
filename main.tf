@@ -50,7 +50,6 @@ resource "ibm_cos_bucket_object" "index_html" {
   bucket_location = var.region
   key             = "index.html"
   content         = file("${path.module}/index.html")
-  # --- FIX: Removed unconfigurable 'content_type' argument ---
 }
 
 # Upload error page
@@ -59,19 +58,20 @@ resource "ibm_cos_bucket_object" "error_html" {
   bucket_location = var.region
   key             = "404.html"
   content         = file("${path.module}/404.html")
-  # --- FIX: Removed unconfigurable 'content_type' argument ---
 }
 
 # Optional: enable IBM Cloud Functions namespace
 resource "ibm_function_namespace" "vibe_namespace" {
-  count             = var.enable_functions ? 1 : 0
+  # --- FIX: Only create if functions are enabled AND resource_group_id is set ---
+  count             = var.enable_functions && var.resource_group_id != null ? 1 : 0
   name              = "vibe-namespace-${random_string.suffix.result}"
   resource_group_id = var.resource_group_id
 }
 
 # Push to COS Function Action
 resource "ibm_function_action" "push_to_cos" {
-  count     = var.enable_functions ? 1 : 0
+  # --- FIX: Only create if functions are enabled AND resource_group_id is set ---
+  count     = var.enable_functions && var.resource_group_id != null ? 1 : 0
   name      = "push-to-cos-${random_string.suffix.result}"
   namespace = ibm_function_namespace.vibe_namespace[0].name
   publish   = true
@@ -84,7 +84,8 @@ resource "ibm_function_action" "push_to_cos" {
 
 # Push to Project Function Action
 resource "ibm_function_action" "push_to_project" {
-  count     = var.enable_functions ? 1 : 0
+  # --- FIX: Only create if functions are enabled AND resource_group_id is set ---
+  count     = var.enable_functions && var.resource_group_id != null ? 1 : 0
   name      = "push-to-project-${random_string.suffix.result}"
   namespace = ibm_function_namespace.vibe_namespace[0].name
   publish   = true
