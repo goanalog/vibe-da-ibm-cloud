@@ -1,28 +1,11 @@
-terraform {
-  required_providers {
-    ibm = {
-      source  = "ibm-cloud/ibm"
-      version = ">= 1.84.3" # Keeping constraint, but aiming for newer schema
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = ">= 3.0.0"
-    }
-    external = {
-      source  = "hashicorp/external"
-      version = "~> 2.3"
-    }
-  }
-}
+# main.tf (Cleaned - Requires providers.tf)
 
-provider "ibm" {
-  region = var.region
-}
-
+# --- Data Source to Read Environment Variables ---
 data "external" "env_vars" {
   program = ["sh", "-c", "env | grep -E '^IC_PROJECT_ID=|^IC_RESOURCE_GROUP_ID=' | jq -R 'split(\"=\") | {(.[0]): .[1]}' | jq -s 'add // {}'"]
 }
 
+# --- Local Variables for Auto-Detection ---
 locals {
   effective_project_id      = coalesce(var.project_id, nonsensitive(try(yamldecode(data.external.env_vars.result)["IC_PROJECT_ID"], null)), "")
   effective_resource_group_id = coalesce(var.resource_group_id, nonsensitive(try(yamldecode(data.external.env_vars.result)["IC_RESOURCE_GROUP_ID"], null)), "")
@@ -31,19 +14,16 @@ locals {
     local.effective_resource_group_id != null && local.effective_resource_group_id != "" &&
     var.config_id != null && var.config_id != ""
   )
-
-  # Prepare base64 encoded data URLs for function code
-  push_to_cos_code    = base64encode(file("${path.module}/push_to_cos.js"))
-  push_to_project_code = base64encode(file("${path.module}/push_to_project.js"))
-  trigger_deploy_code = base64encode(file("${path.module}/trigger_project_deploy.js"))
 }
 
+# Random suffix for uniqueness
 resource "random_string" "suffix" {
   length  = 6
   upper   = false
   special = false
 }
 
+# Object Storage instance (Lite plan)
 resource "ibm_resource_instance" "cos_instance" {
   count             = local.has_required_ids ? 1 : 0 # Depend on base IDs
   name              = "vibe-instance-${random_string.suffix.result}"
@@ -53,6 +33,7 @@ resource "ibm_resource_instance" "cos_instance" {
   resource_group_id = local.effective_resource_group_id
 }
 
+# Create COS bucket
 resource "ibm_cos_bucket" "vibe_bucket" {
   count                = local.has_required_ids ? 1 : 0 # Depend on base IDs
   bucket_name          = "vibe-bucket-${random_string.suffix.result}"
@@ -62,8 +43,32 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   force_delete         = true
 }
 
-# --- REMOVED ibm_cos_bucket_public_access_block ---
+# --- Allow Public Access via IAM Policy ---
+# (Using this method since ACL and public_access_block had provider version issues)
+data "ibm_iam_policy_template_latest" "object_reader_template" {
+  template_type = "service"
+  service_name  = "cloud-object-storage"
+  policy_type   = "access"
+  roles         = ["Object Reader"] # Role allowing GET/HEAD on objects
+}
 
+resource "ibm_cos_bucket_policy" "public_read_policy" {
+  count                = local.has_required_ids ? 1 : 0
+  bucket_crn           = ibm_cos_bucket.vibe_bucket[0].crn
+  bucket_location      = var.region
+  iam_policy_id        = data.ibm_iam_policy_template_latest.object_reader_template.policy_id
+  iam_access_group_ids = [] # Not needed for public access
+  iam_user_ids         = [] # Not needed for public access
+  public_access        = true # Grant access to public
+
+  depends_on = [
+    ibm_cos_bucket_object.index_html, # Apply policy after objects exist
+    ibm_cos_bucket_object.error_html
+  ]
+}
+# -----------------------------------------------
+
+# --- Code Engine Project ---
 resource "ibm_code_engine_project" "vibe_ce_project" {
   count             = var.enable_code_engine && local.has_required_ids ? 1 : 0
   name              = "vibe-project-${random_string.suffix.result}"
@@ -95,10 +100,10 @@ resource "ibm_code_engine_secret" "cos_secret" {
   name       = "cos-credentials"
   format     = "generic"
   data = {
-    ACCESS_KEY_ID     = nonsensitive(try(ibm_resource_key.cos_hmac_key[0].credentials.cos_hmac_keys_access_key_id, "key-error")) # Added try()
-    SECRET_ACCESS_KEY = nonsensitive(try(ibm_resource_key.cos_hmac_key[0].credentials.cos_hmac_keys_secret_access_key, "secret-error")) # Added try()
+    ACCESS_KEY_ID     = nonsensitive(try(ibm_resource_key.cos_hmac_key[0].credentials.cos_hmac_keys_access_key_id, "key-error"))
+    SECRET_ACCESS_KEY = nonsensitive(try(ibm_resource_key.cos_hmac_key[0].credentials.cos_hmac_keys_secret_access_key, "secret-error"))
     COS_ENDPOINT      = "https://s3.${var.region}.cloud-object-storage.appdomain.cloud"
-    COS_BUCKET        = ibm_cos_bucket.vibe_bucket[0].bucket_name # Use count index
+    COS_BUCKET        = ibm_cos_bucket.vibe_bucket[0].bucket_name
     COS_REGION        = var.region
   }
   depends_on = [ibm_resource_key.cos_hmac_key]
@@ -131,7 +136,7 @@ resource "ibm_code_engine_secret" "project_secret" {
   name       = "project-credentials"
   format     = "generic"
   data = {
-    PROJECT_API_KEY = nonsensitive(try(ibm_iam_service_api_key.project_api_key[0].apikey, "apikey-error")) # Added try()
+    PROJECT_API_KEY = nonsensitive(try(ibm_iam_service_api_key.project_api_key[0].apikey, "apikey-error"))
     PROJECT_ID      = local.effective_project_id
     CONFIG_ID       = var.config_id
     REGION          = var.region
@@ -139,140 +144,64 @@ resource "ibm_code_engine_secret" "project_secret" {
   depends_on = [ibm_iam_service_api_key.project_api_key]
 }
 
-# --- Code Engine Functions (Aligning with provided docs) ---
+# --- Code Engine Functions (Using base64 data URL and run_env_variables) ---
+# Assuming a newer provider version that supports this schema is eventually used
 resource "ibm_code_engine_function" "push_to_cos" {
   count      = var.enable_code_engine && local.has_required_ids ? 1 : 0
   project_id = ibm_code_engine_project.vibe_ce_project[0].id
   name       = "push-to-cos-${random_string.suffix.result}"
-  runtime    = "nodejs-18" # You might need nodejs-20 based on docs example
+  runtime    = "nodejs-18" # Adjust if needed (e.g., nodejs-20)
 
-  # --- FIX: Use code_reference with base64 data URL ---
-  code_reference = "data:application/javascript;base64,${local.push_to_cos_code}"
-  # ---------------------------------------------------
+  code_reference = "data:application/javascript;base64,${base64encode(file("${path.module}/push_to_cos.js"))}"
 
-  # --- FIX: Use run_env_variables list structure ---
   run_env_variables = [
-    {
-      type      = "secret_key_reference"
-      name      = "ACCESS_KEY_ID" # Env var name seen by the function
-      reference = ibm_code_engine_secret.cos_secret[0].name # Secret resource name
-      key       = "ACCESS_KEY_ID" # Key within the secret
-    },
-    {
-      type      = "secret_key_reference"
-      name      = "SECRET_ACCESS_KEY"
-      reference = ibm_code_engine_secret.cos_secret[0].name
-      key       = "SECRET_ACCESS_KEY"
-    },
-    {
-      type      = "secret_key_reference"
-      name      = "COS_ENDPOINT"
-      reference = ibm_code_engine_secret.cos_secret[0].name
-      key       = "COS_ENDPOINT"
-    },
-    {
-      type      = "secret_key_reference"
-      name      = "COS_BUCKET"
-      reference = ibm_code_engine_secret.cos_secret[0].name
-      key       = "COS_BUCKET"
-    },
-    {
-      type      = "secret_key_reference"
-      name      = "COS_REGION"
-      reference = ibm_code_engine_secret.cos_secret[0].name
-      key       = "COS_REGION"
-    }
+    { type = "secret_key_reference", name = "ACCESS_KEY_ID", reference = ibm_code_engine_secret.cos_secret[0].name, key = "ACCESS_KEY_ID" },
+    { type = "secret_key_reference", name = "SECRET_ACCESS_KEY", reference = ibm_code_engine_secret.cos_secret[0].name, key = "SECRET_ACCESS_KEY" },
+    { type = "secret_key_reference", name = "COS_ENDPOINT", reference = ibm_code_engine_secret.cos_secret[0].name, key = "COS_ENDPOINT" },
+    { type = "secret_key_reference", name = "COS_BUCKET", reference = ibm_code_engine_secret.cos_secret[0].name, key = "COS_BUCKET" },
+    { type = "secret_key_reference", name = "COS_REGION", reference = ibm_code_engine_secret.cos_secret[0].name, key = "COS_REGION" }
   ]
-  # ----------------------------------------------------
   depends_on = [ibm_code_engine_secret.cos_secret]
 }
 
-resource "ibm_code_engine_function" "push_to_project" { # Staging function
+resource "ibm_code_engine_function" "push_to_project" {
   count      = var.enable_code_engine && local.has_required_ids ? 1 : 0
   project_id = ibm_code_engine_project.vibe_ce_project[0].id
   name       = "push-to-project-${random_string.suffix.result}"
   runtime    = "nodejs-18"
 
-  # --- FIX: Use code_reference with base64 data URL ---
-  code_reference = "data:application/javascript;base64,${local.push_to_project_code}"
-  # ---------------------------------------------------
+  code_reference = "data:application/javascript;base64,${base64encode(file("${path.module}/push_to_project.js"))}"
 
-  # --- FIX: Use run_env_variables list structure ---
   run_env_variables = [
-    {
-      type      = "secret_key_reference"
-      name      = "PROJECT_API_KEY"
-      reference = ibm_code_engine_secret.project_secret[0].name
-      key       = "PROJECT_API_KEY"
-    },
-    {
-      type      = "secret_key_reference"
-      name      = "PROJECT_ID"
-      reference = ibm_code_engine_secret.project_secret[0].name
-      key       = "PROJECT_ID"
-    },
-    {
-      type      = "secret_key_reference"
-      name      = "CONFIG_ID"
-      reference = ibm_code_engine_secret.project_secret[0].name
-      key       = "CONFIG_ID"
-    },
-    {
-      type      = "secret_key_reference"
-      name      = "REGION"
-      reference = ibm_code_engine_secret.project_secret[0].name
-      key       = "REGION"
-    }
+    { type = "secret_key_reference", name = "PROJECT_API_KEY", reference = ibm_code_engine_secret.project_secret[0].name, key = "PROJECT_API_KEY" },
+    { type = "secret_key_reference", name = "PROJECT_ID", reference = ibm_code_engine_secret.project_secret[0].name, key = "PROJECT_ID" },
+    { type = "secret_key_reference", name = "CONFIG_ID", reference = ibm_code_engine_secret.project_secret[0].name, key = "CONFIG_ID" },
+    { type = "secret_key_reference", name = "REGION", reference = ibm_code_engine_secret.project_secret[0].name, key = "REGION" }
   ]
-  # ----------------------------------------------------
   depends_on = [ibm_code_engine_secret.project_secret]
 }
 
-resource "ibm_code_engine_function" "trigger_deploy" { # Trigger function
+resource "ibm_code_engine_function" "trigger_deploy" {
   count      = var.enable_code_engine && local.has_required_ids ? 1 : 0
   project_id = ibm_code_engine_project.vibe_ce_project[0].id
   name       = "trigger-project-deploy-${random_string.suffix.result}"
   runtime    = "nodejs-18"
 
-  # --- FIX: Use code_reference with base64 data URL ---
-  code_reference = "data:application/javascript;base64,${local.trigger_deploy_code}"
-  # ---------------------------------------------------
+  code_reference = "data:application/javascript;base64,${base64encode(file("${path.module}/trigger_project_deploy.js"))}"
 
-  # --- FIX: Use run_env_variables list structure ---
   run_env_variables = [
-    {
-      type      = "secret_key_reference"
-      name      = "PROJECT_API_KEY"
-      reference = ibm_code_engine_secret.project_secret[0].name
-      key       = "PROJECT_API_KEY"
-    },
-    {
-      type      = "secret_key_reference"
-      name      = "PROJECT_ID"
-      reference = ibm_code_engine_secret.project_secret[0].name
-      key       = "PROJECT_ID"
-    },
-    {
-      type      = "secret_key_reference"
-      name      = "CONFIG_ID"
-      reference = ibm_code_engine_secret.project_secret[0].name
-      key       = "CONFIG_ID"
-    },
-    {
-      type      = "secret_key_reference"
-      name      = "REGION"
-      reference = ibm_code_engine_secret.project_secret[0].name
-      key       = "REGION"
-    }
+    { type = "secret_key_reference", name = "PROJECT_API_KEY", reference = ibm_code_engine_secret.project_secret[0].name, key = "PROJECT_API_KEY" },
+    { type = "secret_key_reference", name = "PROJECT_ID", reference = ibm_code_engine_secret.project_secret[0].name, key = "PROJECT_ID" },
+    { type = "secret_key_reference", name = "CONFIG_ID", reference = ibm_code_engine_secret.project_secret[0].name, key = "CONFIG_ID" },
+    { type = "secret_key_reference", name = "REGION", reference = ibm_code_engine_secret.project_secret[0].name, key = "REGION" }
   ]
-  # ----------------------------------------------------
   depends_on = [ibm_code_engine_secret.project_secret]
 }
 
 
 # --- COS Website & Content Upload ---
 resource "ibm_cos_bucket_object" "index_html" {
-  count           = local.has_required_ids ? 1 : 0 # Depend on base IDs
+  count           = local.has_required_ids ? 1 : 0
   bucket_crn      = ibm_cos_bucket.vibe_bucket[0].crn
   bucket_location = var.region
   key             = var.website_index
@@ -287,19 +216,22 @@ resource "ibm_cos_bucket_object" "index_html" {
   depends_on = [
     ibm_code_engine_function.push_to_cos,
     ibm_code_engine_function.push_to_project,
-    ibm_code_engine_function.trigger_deploy
+    ibm_code_engine_function.trigger_deploy,
+    ibm_cos_bucket_policy.public_read_policy # Depend on policy
   ]
 }
 resource "ibm_cos_bucket_object" "error_html" {
-  count           = local.has_required_ids ? 1 : 0 # Depend on base IDs
+  count           = local.has_required_ids ? 1 : 0
   bucket_crn      = ibm_cos_bucket.vibe_bucket[0].crn
   bucket_location = var.region
   key             = var.website_error
   content         = file("${path.module}/404.html")
   # acl removed
+
+  depends_on = [ibm_cos_bucket_policy.public_read_policy] # Depend on policy
 }
 resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
-  count         = local.has_required_ids ? 1 : 0 # Depend on base IDs
+  count         = local.has_required_ids ? 1 : 0
   bucket_crn    = ibm_cos_bucket.vibe_bucket[0].crn
   endpoint_type = "public"
   index_document {
@@ -309,7 +241,6 @@ resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
     key = var.website_error
   }
   depends_on = [
-    ibm_cos_bucket_object.index_html,
-    ibm_cos_bucket_object.error_html
+    ibm_cos_bucket_policy.public_read_policy
   ]
 }
