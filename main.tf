@@ -19,6 +19,9 @@ provider "ibm" {
   region = var.region
 }
 
+# Data source to get current account ID (No longer needed for this approach)
+# data "ibm_iam_account_settings" "account_settings" {}
+
 # Random suffix for uniqueness
 resource "random_string" "suffix" {
   length  = 6
@@ -44,43 +47,26 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   force_delete         = true
 }
 
-# Grant public read access to the specific bucket via IAM policy
-resource "ibm_iam_access_group_policy" "cos_bucket_public_access" {
-  access_group_id = "PublicAccess"
-  roles           = ["Reader"]
+# --- REMOVED: IAM Policy Block ---
 
-  resources {
-    # --- FIX: Target only the bucket name by type ---
-    service       = "cloud-object-storage"
-    resource_type = "bucket"
-    resource      = ibm_cos_bucket.vibe_bucket.bucket_name
-  }
-
-  # Ensure the bucket exists before creating the policy
-  depends_on = [ibm_cos_bucket.vibe_bucket]
-}
-
-
-# Upload index.html
+# Upload index.html and set public read access
 resource "ibm_cos_bucket_object" "index_html" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
   bucket_location = var.region
   key             = "index.html"
   content         = file("${path.module}/index.html")
-
-  # Ensure public access policy is created before uploading objects
-  depends_on = [ibm_iam_access_group_policy.cos_bucket_public_access]
+  acl             = "public-read" # <-- FIX: Set ACL on the object
+  # depends_on removed
 }
 
-# Upload error page
+# Upload error page and set public read access
 resource "ibm_cos_bucket_object" "error_html" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
   bucket_location = var.region
   key             = "404.html"
   content         = file("${path.module}/404.html")
-
-  # Ensure public access policy is created before uploading objects
-  depends_on = [ibm_iam_access_group_policy.cos_bucket_public_access]
+  acl             = "public-read" # <-- FIX: Set ACL on the object
+  # depends_on removed
 }
 
 # Optional: enable IBM Cloud Functions namespace
@@ -131,6 +117,5 @@ resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
       key = var.website_error
     }
   }
-  # Ensure public access policy exists before configuring website
-  depends_on = [ibm_iam_access_group_policy.cos_bucket_public_access]
+  # depends_on removed
 }
