@@ -30,14 +30,19 @@ data "external" "env_vars" {
 # --- Local Variables for Auto-Detection ---
 locals {
   # Use the input variable if provided, otherwise try the env var from data source
-  effective_project_id      = coalesce(var.project_id, nonsensitive(try(yamldecode(data.external.env_vars.result)["IC_PROJECT_ID"], null)))
-  effective_resource_group_id = coalesce(var.resource_group_id, nonsensitive(try(yamldecode(data.external.env_vars.result)["IC_RESOURCE_GROUP_ID"], null)))
+  effective_project_id      = coalesce(var.project_id, nonsensitive(try(yamldecode(data.external.env_vars.result)["IC_PROJECT_ID"], null)), "") # Added empty string default
+  effective_resource_group_id = coalesce(var.resource_group_id, nonsensitive(try(yamldecode(data.external.env_vars.result)["IC_RESOURCE_GROUP_ID"], null)), "") # Added empty string default
 
   # Check if essential values (auto-detected or input) are present
-  has_required_ids = local.effective_project_id != null && local.effective_project_id != "" &&
-                     local.effective_resource_group_id != null && local.effective_resource_group_id != "" &&
-                     var.config_id != null && var.config_id != ""
+  # --- FIX: Enclose multi-line expression in parentheses ---
+  has_required_ids = (
+    local.effective_project_id != null && local.effective_project_id != "" &&
+    local.effective_resource_group_id != null && local.effective_resource_group_id != "" &&
+    var.config_id != null && var.config_id != ""
+  )
+  # --------------------------------------------------------
 }
+
 
 # Random suffix for uniqueness
 resource "random_string" "suffix" {
@@ -75,7 +80,7 @@ resource "ibm_code_engine_project" "vibe_ce_project" {
 }
 
 # --- COS Function Security Setup ---
-resource "ibm_iam_service_id" "ce_cos_service_id" { # Renamed for clarity
+resource "ibm_iam_service_id" "ce_cos_service_id" {
   count = var.enable_code_engine && local.has_required_ids ? 1 : 0
   name  = "vibe-ce-cos-api-${random_string.suffix.result}"
 }
@@ -105,21 +110,20 @@ resource "ibm_iam_service_id" "project_service_id" {
   count = var.enable_code_engine && local.has_required_ids ? 1 : 0
   name  = "vibe-ce-project-api-${random_string.suffix.result}"
 }
-resource "ibm_iam_service_policy" "project_editor_policy" {
+resource "ibm_iam_service_policy" "project_editor_deploy_policy" {
   count              = var.enable_code_engine && local.has_required_ids ? 1 : 0
   iam_service_id     = ibm_iam_service_id.project_service_id[0].iam_id
-  roles              = ["Editor"] # Required to GET/PUT project configurations
+  roles              = ["Editor", "Operator"] # Added Operator role (Verify needed roles!)
 
   resources {
     service = "project"
-    # Note: Could scope to specific project: resource_instance_id = local.effective_project_id
   }
 }
 resource "ibm_iam_service_api_key" "project_api_key" {
   count          = var.enable_code_engine && local.has_required_ids ? 1 : 0
   name           = "vibe-ce-project-key-${random_string.suffix.result}"
   iam_service_id = ibm_iam_service_id.project_service_id[0].iam_id
-  depends_on     = [ibm_iam_service_policy.project_editor_policy]
+  depends_on     = [ibm_iam_service_policy.project_editor_deploy_policy]
 }
 resource "ibm_code_engine_secret" "project_secret" {
   count      = var.enable_code_engine && local.has_required_ids ? 1 : 0
@@ -130,10 +134,9 @@ resource "ibm_code_engine_secret" "project_secret" {
     PROJECT_API_KEY = ibm_iam_service_api_key.project_api_key[0].api_key
     PROJECT_ID      = local.effective_project_id
     CONFIG_ID       = var.config_id
-    REGION          = var.region # Pass region for constructing review URL
+    REGION          = var.region
   }
 }
-
 
 # --- Code Engine Functions ---
 resource "ibm_code_engine_function" "push_to_cos" {
@@ -145,7 +148,7 @@ resource "ibm_code_engine_function" "push_to_cos" {
   env_from_secret = [ibm_code_engine_secret.cos_secret[0].name]
   depends_on      = [ibm_code_engine_secret.cos_secret]
 }
-resource "ibm_code_engine_function" "push_to_project" {
+resource "ibm_code_engine_function" "push_to_project" { # Staging function
   count           = var.enable_code_engine && local.has_required_ids ? 1 : 0
   project_id      = ibm_code_engine_project.vibe_ce_project[0].id
   name            = "push-to-project-${random_string.suffix.result}"
@@ -154,30 +157,40 @@ resource "ibm_code_engine_function" "push_to_project" {
   env_from_secret = [ibm_code_engine_secret.project_secret[0].name]
   depends_on      = [ibm_code_engine_secret.project_secret]
 }
+resource "ibm_code_engine_function" "trigger_deploy" { # Trigger function
+  count           = var.enable_code_engine && local.has_required_ids ? 1 : 0
+  project_id      = ibm_code_engine_project.vibe_ce_project[0].id
+  name            = "trigger-project-deploy-${random_string.suffix.result}"
+  runtime         = "nodejs-18"
+  code_bundle     = filebase64("${path.module}/trigger_project_deploy.js")
+  env_from_secret = [ibm_code_engine_secret.project_secret[0].name]
+  depends_on      = [ibm_code_engine_secret.project_secret]
+}
 
 # --- COS Website & Content Upload ---
 resource "ibm_cos_bucket_object" "index_html" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
   bucket_location = var.region
-  key             = var.website_index # Use variable
+  key             = var.website_index
   acl             = "public-read"
 
   content = templatefile("${path.module}/index.html.tftpl", {
-    # Use count index correctly to handle enable_code_engine = false
-    push_cos_url     = var.enable_code_engine && local.has_required_ids ? one(ibm_code_engine_function.push_to_cos[*].url) : "null"
-    push_project_url = var.enable_code_engine && local.has_required_ids ? one(ibm_code_engine_function.push_to_project[*].url) : "null"
+    push_cos_url       = var.enable_code_engine && local.has_required_ids ? one(ibm_code_engine_function.push_to_cos[*].url) : "null"
+    push_project_url   = var.enable_code_engine && local.has_required_ids ? one(ibm_code_engine_function.push_to_project[*].url) : "null"
+    trigger_deploy_url = var.enable_code_engine && local.has_required_ids ? one(ibm_code_engine_function.trigger_deploy[*].url) : "null"
   })
 
   depends_on = [
     ibm_code_engine_function.push_to_cos,
-    ibm_code_engine_function.push_to_project
+    ibm_code_engine_function.push_to_project,
+    ibm_code_engine_function.trigger_deploy
   ]
 }
 resource "ibm_cos_bucket_object" "error_html" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
   bucket_location = var.region
-  key             = var.website_error # Use variable
-  content         = file("${path.module}/404.html") # Assume filename is fixed
+  key             = var.website_error
+  content         = file("${path.module}/404.html")
   acl             = "public-read"
 }
 resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
@@ -189,7 +202,6 @@ resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
   error_document {
     key = var.website_error
   }
-  # Ensure objects are uploaded before configuring website
   depends_on = [
     ibm_cos_bucket_object.index_html,
     ibm_cos_bucket_object.error_html

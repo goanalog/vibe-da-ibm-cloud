@@ -1,4 +1,4 @@
-# variables.tf (Corrected Version - Replace Entire File Contents)
+# variables.tf
 
 variable "region" {
   description = "The IBM Cloud region where resources will be deployed (e.g., us-south, eu-de). Usually inferred from the Project."
