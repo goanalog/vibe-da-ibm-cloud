@@ -44,7 +44,7 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   force_delete         = true
 }
 
-# Upload index.html
+# Upload index.html (ACL removed)
 resource "ibm_cos_bucket_object" "index_html" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
   bucket_location = var.region
@@ -52,7 +52,7 @@ resource "ibm_cos_bucket_object" "index_html" {
   content         = file("${path.module}/index.html")
 }
 
-# Upload error page
+# Upload error page (ACL removed)
 resource "ibm_cos_bucket_object" "error_html" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
   bucket_location = var.region
