@@ -56,7 +56,6 @@ resource "ibm_cos_bucket" "vibe_bucket" {
 }
 
 # --- REMOVED ibm_cos_bucket_public_access_block ---
-# If 403 error returns, we need another way to set public access, maybe IAM policy?
 
 resource "ibm_code_engine_project" "vibe_ce_project" {
   count             = var.enable_code_engine && local.has_required_ids ? 1 : 0
@@ -70,19 +69,21 @@ resource "ibm_iam_service_id" "ce_cos_service_id" {
   name  = "vibe-ce-cos-api-${random_string.suffix.result}"
 }
 
+# --- Use ibm_resource_key for HMAC ---
 resource "ibm_resource_key" "cos_hmac_key" {
   count                 = var.enable_code_engine && local.has_required_ids ? 1 : 0
   name                  = "vibe-cos-hmac-key-${random_string.suffix.result}"
   resource_instance_id  = ibm_resource_instance.cos_instance.id
   role                  = "Writer"
-  # --- FIX: Try serviceid_crn again ---
-  serviceid_crn         = ibm_iam_service_id.ce_cos_service_id[0].crn
-  # -----------------------------------
+  # --- FIX: Removed serviceid_crn and iam_service_id ---
+  # Linking might be implicit via role + instance_id, or need another arg
+  # Let's hope this works, otherwise key might have too broad permissions.
+  # ----------------------------------------------------
 
   parameters = {
     HMAC = true
   }
-  depends_on = [ibm_iam_service_id.ce_cos_service_id]
+  depends_on = [ibm_iam_service_id.ce_cos_service_id] # Still good practice
 }
 
 resource "ibm_code_engine_secret" "cos_secret" {
@@ -135,29 +136,18 @@ resource "ibm_code_engine_secret" "project_secret" {
   depends_on = [ibm_iam_service_api_key.project_api_key]
 }
 
-# --- Code Engine Functions ---
+# --- Code Engine Functions (Reverting to simpler structure) ---
 resource "ibm_code_engine_function" "push_to_cos" {
   count      = var.enable_code_engine && local.has_required_ids ? 1 : 0
   project_id = ibm_code_engine_project.vibe_ce_project[0].id
   name       = "push-to-cos-${random_string.suffix.result}"
   runtime    = "nodejs-18"
-
-  # --- FIX: Define code using nested 'code' block ---
-  code {
-    source_type = "inline"
-    source_code = file("${path.module}/push_to_cos.js")
-  }
-  # ----------------------------------------------------
-
-  # --- FIX: Define env vars using 'env_variables' map ---
-  env_variables = {
-    ACCESS_KEY_ID     = "{secret_key_ref: {name: ${ibm_code_engine_secret.cos_secret[0].name}, key: ACCESS_KEY_ID}}"
-    SECRET_ACCESS_KEY = "{secret_key_ref: {name: ${ibm_code_engine_secret.cos_secret[0].name}, key: SECRET_ACCESS_KEY}}"
-    COS_ENDPOINT      = "{secret_key_ref: {name: ${ibm_code_engine_secret.cos_secret[0].name}, key: COS_ENDPOINT}}"
-    COS_BUCKET        = "{secret_key_ref: {name: ${ibm_code_engine_secret.cos_secret[0].name}, key: COS_BUCKET}}"
-    COS_REGION        = "{secret_key_ref: {name: ${ibm_code_engine_secret.cos_secret[0].name}, key: COS_REGION}}"
-  }
-  # --------------------------------------------------------
+  # --- FIX: Trying code_bundle directly again ---
+  code_bundle     = filebase64("${path.module}/push_to_cos.js")
+  # -----------------------------------------------
+  # --- FIX: Trying env_from_secret directly again ---
+  env_from_secret = [ibm_code_engine_secret.cos_secret[0].name]
+  # -----------------------------------------------
   depends_on = [ibm_code_engine_secret.cos_secret]
 }
 
@@ -166,22 +156,12 @@ resource "ibm_code_engine_function" "push_to_project" { # Staging function
   project_id = ibm_code_engine_project.vibe_ce_project[0].id
   name       = "push-to-project-${random_string.suffix.result}"
   runtime    = "nodejs-18"
-
-  # --- FIX: Define code using nested 'code' block ---
-  code {
-    source_type = "inline"
-    source_code = file("${path.module}/push_to_project.js")
-  }
-  # ----------------------------------------------------
-
-  # --- FIX: Define env vars using 'env_variables' map ---
-  env_variables = {
-    PROJECT_API_KEY = "{secret_key_ref: {name: ${ibm_code_engine_secret.project_secret[0].name}, key: PROJECT_API_KEY}}"
-    PROJECT_ID      = "{secret_key_ref: {name: ${ibm_code_engine_secret.project_secret[0].name}, key: PROJECT_ID}}"
-    CONFIG_ID       = "{secret_key_ref: {name: ${ibm_code_engine_secret.project_secret[0].name}, key: CONFIG_ID}}"
-    REGION          = "{secret_key_ref: {name: ${ibm_code_engine_secret.project_secret[0].name}, key: REGION}}"
-  }
-  # --------------------------------------------------------
+  # --- FIX: Trying code_bundle directly again ---
+  code_bundle     = filebase64("${path.module}/push_to_project.js")
+  # -----------------------------------------------
+  # --- FIX: Trying env_from_secret directly again ---
+  env_from_secret = [ibm_code_engine_secret.project_secret[0].name]
+  # -----------------------------------------------
   depends_on = [ibm_code_engine_secret.project_secret]
 }
 
@@ -190,22 +170,12 @@ resource "ibm_code_engine_function" "trigger_deploy" { # Trigger function
   project_id = ibm_code_engine_project.vibe_ce_project[0].id
   name       = "trigger-project-deploy-${random_string.suffix.result}"
   runtime    = "nodejs-18"
-
-  # --- FIX: Define code using nested 'code' block ---
-  code {
-    source_type = "inline"
-    source_code = file("${path.module}/trigger_project_deploy.js")
-  }
-  # ----------------------------------------------------
-
-  # --- FIX: Define env vars using 'env_variables' map ---
-  env_variables = {
-    PROJECT_API_KEY = "{secret_key_ref: {name: ${ibm_code_engine_secret.project_secret[0].name}, key: PROJECT_API_KEY}}"
-    PROJECT_ID      = "{secret_key_ref: {name: ${ibm_code_engine_secret.project_secret[0].name}, key: PROJECT_ID}}"
-    CONFIG_ID       = "{secret_key_ref: {name: ${ibm_code_engine_secret.project_secret[0].name}, key: CONFIG_ID}}"
-    REGION          = "{secret_key_ref: {name: ${ibm_code_engine_secret.project_secret[0].name}, key: REGION}}"
-  }
-  # --------------------------------------------------------
+  # --- FIX: Trying code_bundle directly again ---
+  code_bundle     = filebase64("${path.module}/trigger_project_deploy.js")
+  # -----------------------------------------------
+  # --- FIX: Trying env_from_secret directly again ---
+  env_from_secret = [ibm_code_engine_secret.project_secret[0].name]
+  # -----------------------------------------------
   depends_on = [ibm_code_engine_secret.project_secret]
 }
 
