@@ -1,30 +1,36 @@
 {
   "name": "vibe-da-ibm-cloud",
-  "version": "1.0.0",
+  "version": "1.1.0", // Increment version maybe?
   "type": "terraform",
   "display_name": "🌀 Vibe Landing Zone — IBM Cloud Edition",
-  "description": "Deploy a live Vibe Landing Zone with IBM Cloud Object Storage (Lite) and optional IBM Cloud Code Engine for push-to-COS and push-to-Project actions.",
-  "tags": ["ibm-cloud", "vibe-coding", "object-storage", "deployable-architecture", "code-engine"],
-  "icon_url": "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/icon.png",  "documentation_url": "https://github.com/goanalog/vibe-da-ibm-cloud/blob/main/README.md",
+  "description": "Deploy a live Vibe Landing Zone with IBM Cloud Object Storage (Lite) and optional IBM Cloud Code Engine for push-to-COS and staging Project updates.",
+  "tags": ["ibm-cloud", "vibe-coding", "object-storage", "deployable-architecture", "code-engine", "projects"],
+  "icon_url": "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/icon.png",
+  "documentation_url": "https://github.com/goanalog/vibe-da-ibm-cloud/blob/main/README.md",
   "source_url": "https://github.com/goanalog/vibe-da-ibm-cloud",
   "variables": [
     {
-      "name": "ibmcloud_api_key",
-      "type": "string",
-      "description": "IBM Cloud API key for authentication.",
-      "sensitive": true,
-      "required": true
-    },
-    {
       "name": "region",
       "type": "string",
-      "description": "IBM Cloud region for deployment (e.g. us-south).",
+      "description": "IBM Cloud region (e.g., us-south). Usually inferred from Project.",
       "default": "us-south"
+    },
+    {
+      "name": "project_id",
+      "type": "string",
+      "description": "(Optional) Project ID. Auto-detected when deployed via IBM Cloud Projects.",
+      "required": false
     },
     {
       "name": "resource_group_id",
       "type": "string",
-      "description": "Resource Group ID where resources are deployed.",
+      "description": "(Optional) Resource Group ID. Auto-detected when deployed via IBM Cloud Projects.",
+      "required": false
+    },
+    {
+      "name": "config_id",
+      "type": "string",
+      "description": "(Required) The Configuration ID from the Project URL or CLI. See docs.",
       "required": true
     },
     {

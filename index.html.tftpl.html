@@ -60,8 +60,7 @@
     </div>
 
     <footer>
-      Edit this page in <code>${location.pathname.replace(/[^/]+$/,'')}index.html</code>.
-      Tip: press <span class="kbd">R</span> to “remix” the vibe gradient.
+      Edit this page in <code>index.html</code>. Tip: press <span class="kbd">R</span> to “remix” the vibe gradient.
     </footer>
   </main>
 
@@ -71,11 +70,32 @@
     const PUSH_PROJECT_URL = "${push_project_url}";
 
     function call(url){
-      if(!url || url === "null"){ alert("Function is disabled in this deploy (enable_code_engine=false)"); return; }
+      if(!url || url === "null"){
+        alert("Functionality is disabled or not configured in this deployment (enable_code_engine=false or missing Project/Config IDs).");
+        return;
+      }
+      // Indicate loading state (optional)
+      const clickedButton = event ? event.target : null;
+      if (clickedButton) clickedButton.textContent = 'Processing...';
+
       fetch(url, { method:"POST" })
-        .then(r => r.text())
-        .then(t => alert("Response: " + t))
-        .catch(e => alert("Error: " + e));
+        .then(async res => {
+           const text = await res.text();
+           if (!res.ok) {
+               // Throw an error to be caught by .catch block
+               throw new Error(`HTTP error ${res.status}: ${text}`);
+           }
+           return text; // Pass successful text response to next .then
+        })
+        .then(t => {
+          alert("Response:\n" + t); // Display success response
+          if (clickedButton) clickedButton.textContent = clickedButton.id === 'pushCos' ? 'Push to COS' : 'Push to Project'; // Reset button text
+        })
+        .catch(e => {
+          console.error("Fetch Error:", e);
+          alert("Error:\n" + e.message); // Display error message
+          if (clickedButton) clickedButton.textContent = clickedButton.id === 'pushCos' ? 'Push to COS' : 'Push to Project'; // Reset button text on error
+        });
     }
     document.getElementById("pushCos").onclick = () => call(PUSH_COS_URL);
     document.getElementById("pushProject").onclick = () => call(PUSH_PROJECT_URL);

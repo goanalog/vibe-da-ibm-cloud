@@ -10,22 +10,23 @@ output "vibe_bucket_crn" {
 
 output "vibe_bucket_website_endpoint" {
   description = "The public website endpoint for the COS bucket."
-  # --- FIX: Use the actual website endpoint attribute ---
   value       = try(ibm_cos_bucket_website_configuration.vibe_bucket_website.website_endpoint, "Website endpoint not available")
 }
 
 output "push_cos_url" {
   description = "The URL endpoint for the 'push to COS' Code Engine function."
-  value       = var.enable_code_engine && var.resource_group_id != null ? try(ibm_code_engine_function.push_to_cos[0].url, null) : null
+  # Use 'one()' and '[*]' to safely handle conditional creation
+  value       = var.enable_code_engine && local.has_required_ids ? one(ibm_code_engine_function.push_to_cos[*].url) : null
 }
 
 output "push_project_url" {
   description = "The URL endpoint for the 'push to Project' Code Engine function."
-  value       = var.enable_code_engine && var.resource_group_id != null ? try(ibm_code_engine_function.push_to_project[0].url, null) : null
+  # Use 'one()' and '[*]' to safely handle conditional creation
+  value       = var.enable_code_engine && local.has_required_ids ? one(ibm_code_engine_function.push_to_project[*].url) : null
 }
 
+# This is the primary output users will click
 output "primaryoutputlink" {
   description = "Primary access URL for the deployed website (used by IBM Cloud Projects)."
-  # --- FIX: Use the actual website endpoint attribute ---
   value       = try(ibm_cos_bucket_website_configuration.vibe_bucket_website.website_endpoint, "Website endpoint not available")
 }

@@ -53,7 +53,7 @@ function s3Put({ endpoint, region, bucket, key, body, accessKey, secretKey }) {
       let data = "";
       res.on("data", d => (data += d));
       res.on("end", () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) resolve(data || "OK");
+        if (res.statusCode >= 200 && res.statusCode < 300) resolve({ statusCode: res.statusCode, body: data || "OK" });
         else reject(new Error(`COS PUT failed ${res.statusCode}: ${data}`));
       });
     });
@@ -72,13 +72,14 @@ exports.main = async (params) => {
   const secret   = process.env.SECRET_ACCESS_KEY;
 
   if(!endpoint || !bucket || !region || !access || !secret){
-    return { statusCode: 400, body: "Missing required COS params from env" };
+     console.error("Missing required COS environment variables");
+     return { statusCode: 400, body: "Configuration Error: Missing required COS environment variables." };
   }
 
   const key  = `vibe-writecheck-${Date.now()}.txt`;
   const body = `max-vibe OK @ ${new Date().toISOString()}\n`;
   try {
-    await s3Put({
+    const result = await s3Put({
       endpoint,
       region,
       bucket,
@@ -87,8 +88,10 @@ exports.main = async (params) => {
       accessKey: access,
       secretKey: secret
     });
-    return { statusCode: 200, body: `Wrote ${key} to ${bucket}` };
+    console.log(`Successfully wrote ${key} to ${bucket}`);
+    return { statusCode: result.statusCode, body: `Wrote ${key} to ${bucket}` };
   } catch (e) {
-    return { statusCode: 500, body: String(e) };
+    console.error(`Error writing to COS: ${e.message}`);
+    return { statusCode: 500, body: `Error writing to COS: ${e.message}` };
   }
 };
