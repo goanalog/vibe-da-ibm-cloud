@@ -62,7 +62,6 @@ resource "ibm_cos_bucket_object" "error_html" {
 
 # Optional: enable IBM Cloud Functions namespace
 resource "ibm_function_namespace" "vibe_namespace" {
-  # --- FIX: Only create if functions are enabled AND resource_group_id is set ---
   count             = var.enable_functions && var.resource_group_id != null ? 1 : 0
   name              = "vibe-namespace-${random_string.suffix.result}"
   resource_group_id = var.resource_group_id
@@ -70,7 +69,6 @@ resource "ibm_function_namespace" "vibe_namespace" {
 
 # Push to COS Function Action
 resource "ibm_function_action" "push_to_cos" {
-  # --- FIX: Only create if functions are enabled AND resource_group_id is set ---
   count     = var.enable_functions && var.resource_group_id != null ? 1 : 0
   name      = "push-to-cos-${random_string.suffix.result}"
   namespace = ibm_function_namespace.vibe_namespace[0].name
@@ -84,7 +82,6 @@ resource "ibm_function_action" "push_to_cos" {
 
 # Push to Project Function Action
 resource "ibm_function_action" "push_to_project" {
-  # --- FIX: Only create if functions are enabled AND resource_group_id is set ---
   count     = var.enable_functions && var.resource_group_id != null ? 1 : 0
   name      = "push-to-project-${random_string.suffix.result}"
   namespace = ibm_function_namespace.vibe_namespace[0].name
@@ -94,4 +91,19 @@ resource "ibm_function_action" "push_to_project" {
     kind = "nodejs:18"
     code = filebase64("${path.module}/push_to_project.js")
   }
+}
+
+# --- ADDED: Configure bucket for static website hosting ---
+resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
+  bucket_crn    = ibm_cos_bucket.vibe_bucket.crn
+  endpoint_type = "public" # Use public endpoint for website URL
+
+  index_document {
+    suffix = var.website_index # From variables.tf (default: index.html)
+  }
+
+  error_document {
+    key = var.website_error # From variables.tf (default: 404.html)
+  }
+  # Note: DependsOn not strictly needed as bucket_crn creates implicit dependency
 }
