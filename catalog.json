@@ -1,0 +1,32 @@
+{
+  "name": "vibe-da-ibm-cloud",
+  "type": "terraform",
+  "display_name": "Vibe Landing Zone \u2014 Perfect Tens Edition",
+  "description": "Deploy a live, remixable sample site on IBM Cloud Object Storage (Lite).",
+  "long_description": "A flagship-quality Deployable Architecture that provisions IBM Cloud Object Storage (Lite) and hosts a live sample site with a high\u2011polish UX. Includes Projects\u2011friendly inputs/outputs, a primary output link, and modern provider constraints for Schematics.",
+  "tags": [
+    "ibm-cloud",
+    "deployable-architecture",
+    "object-storage",
+    "static-website",
+    "vibe-coding"
+  ],
+  "images": {
+    "icon": "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/icon.png",
+    "diagram": "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/diagram.svg",
+    "banner": "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/banner.png",
+    "tile": "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/tile.png"
+  },
+  "source_url": "https://github.com/goanalog/vibe-da-ibm-cloud",
+  "documentation_url": "https://github.com/goanalog/vibe-da-ibm-cloud/blob/main/README.md",
+  "support_url": "https://github.com/goanalog/vibe-da-ibm-cloud/issues",
+  "versions": [
+    {
+      "version": "1.3.0",
+      "tgzUrl": "https://github.com/goanalog/vibe-da-ibm-cloud/releases/download/v1.3.0/vibe-da-ibm-cloud-1.3.0.tgz",
+      "targetKind": "terraform",
+      "installType": "terraform",
+      "provider": "ibm-cloud"
+    }
+  ]
+}

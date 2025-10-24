@@ -1,0 +1,6 @@
+{
+  "region": "us-south",
+  "bucket_prefix": "vibe-bucket",
+  "website_index": "index.html",
+  "website_error": "404.html"
+}
