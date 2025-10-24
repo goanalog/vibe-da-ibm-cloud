@@ -19,9 +19,6 @@ provider "ibm" {
   region = var.region
 }
 
-# Data source to get current account ID (No longer needed for this approach)
-# data "ibm_iam_account_settings" "account_settings" {}
-
 # Random suffix for uniqueness
 resource "random_string" "suffix" {
   length  = 6
