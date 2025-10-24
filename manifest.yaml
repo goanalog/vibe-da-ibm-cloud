@@ -1,0 +1,63 @@
+# IBM Cloud Deployable Architecture Manifest
+schema_version: "1.0"
+
+name: vibe-da-ibm-cloud
+version: 1.0.0
+type: terraform
+
+# Friendly metadata
+display_name: "🌀 Vibe Landing Zone — IBM Cloud Edition"
+description: >
+  Deploy a fully hosted, instantly remixable “Vibe Landing Zone” on IBM Cloud.
+  This architecture provisions an Object Storage (Lite) bucket, uploads a live
+  HTML sample app, and optionally enables IBM Cloud Code Engine for easy updates
+  and pushes to IBM Cloud Projects.
+
+# Entry points
+variables:
+  - name: ibmcloud_api_key
+    type: string
+    description: "Your IBM Cloud API key used for authentication."
+    sensitive: true
+    required: true
+
+  - name: region
+    type: string
+    description: "IBM Cloud region to deploy into (for example, us-south)."
+    required: true
+    default: "us-south"
+
+  - name: resource_group_id
+    type: string
+    description: "Resource Group ID in which to create resources."
+    required: true
+
+  - name: enable_code_engine
+    type: bool
+    description: "Enable IBM Cloud Code Engine to push updates to COS and Projects."
+    default: true
+
+  - name: website_index
+    type: string
+    description: "Name of the index file for the COS website."
+    default: "index.html"
+
+  - name: website_error
+    type: string
+    description: "Name of the error file for the COS website."
+    default: "404.html"
+
+outputs:
+  - name: primaryoutputlink
+    type: string
+    description: "Primary link to your deployed Vibe website."
+    required: true
+    usage_hint: "Open your deployed site in a new tab to feel the vibe."
+
+  - name: vibe_bucket_name
+    type: string
+    description: "COS bucket name created for your deployment."
+
+  - name: vibe_bucket_crn
+    type: string
+    description: "COS bucket CRN for reference and governance."
