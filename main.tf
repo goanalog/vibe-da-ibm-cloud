@@ -42,10 +42,7 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   region_location      = var.region
   storage_class        = "standard"
   force_delete         = true
-
-  # --- FIX: Use top-level arguments for website config ---
-  website_index_document = var.website_index
-  website_error_document = var.website_error
+  # --- FIX: Removed unsupported website arguments ---
 }
 
 # Upload index.html
@@ -84,8 +81,6 @@ resource "ibm_function_action" "push_to_cos" {
     kind = "nodejs:18"
     code = filebase64("${path.module}/push_to_cos.js")
   }
-
-  # --- FIX: Removed 'annotations' as it is unconfigurable ---
 }
 
 # Push to Project Function Action
@@ -99,6 +94,4 @@ resource "ibm_function_action" "push_to_project" {
     kind = "nodejs:18"
     code = filebase64("${path.module}/push_to_project.js")
   }
-
-  # --- FIX: Removed 'annotations' as it is unconfigurable ---
 }
