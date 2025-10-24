@@ -17,12 +17,15 @@ terraform {
 
 provider "ibm" {
   region = var.region
+  # API Key is implicitly handled by Trusted Profile in Projects/Schematics
 }
 
+# --- Data Source to Read Environment Variables ---
 data "external" "env_vars" {
   program = ["sh", "-c", "env | grep -E '^IC_PROJECT_ID=|^IC_RESOURCE_GROUP_ID=' | jq -R 'split(\"=\") | {(.[0]): .[1]}' | jq -s 'add // {}'"]
 }
 
+# --- Local Variables for Auto-Detection ---
 locals {
   effective_project_id      = coalesce(var.project_id, nonsensitive(try(yamldecode(data.external.env_vars.result)["IC_PROJECT_ID"], null)), "")
   effective_resource_group_id = coalesce(var.resource_group_id, nonsensitive(try(yamldecode(data.external.env_vars.result)["IC_RESOURCE_GROUP_ID"], null)), "")
@@ -33,12 +36,14 @@ locals {
   )
 }
 
+# Random suffix for uniqueness
 resource "random_string" "suffix" {
   length  = 6
   upper   = false
   special = false
 }
 
+# Object Storage instance (Lite plan)
 resource "ibm_resource_instance" "cos_instance" {
   name              = "vibe-instance-${random_string.suffix.result}"
   service           = "cloud-object-storage"
@@ -47,6 +52,7 @@ resource "ibm_resource_instance" "cos_instance" {
   resource_group_id = local.effective_resource_group_id
 }
 
+# Create COS bucket
 resource "ibm_cos_bucket" "vibe_bucket" {
   bucket_name          = "vibe-bucket-${random_string.suffix.result}"
   resource_instance_id = ibm_resource_instance.cos_instance.id
@@ -55,7 +61,7 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   force_delete         = true
 }
 
-# --- FIX 3b: Add resource to allow public access at bucket level ---
+# --- Allow Public Access at Bucket Level ---
 resource "ibm_cos_bucket_public_access_block" "vibe_bucket_public_access" {
   bucket_crn = ibm_cos_bucket.vibe_bucket.crn
   # Set all to false to allow public read needed for static website
@@ -63,9 +69,12 @@ resource "ibm_cos_bucket_public_access_block" "vibe_bucket_public_access" {
   block_public_policy     = false
   ignore_public_acls      = false
   restrict_public_buckets = false
-}
-# -----------------------------------------------------------------
 
+  # Ensure bucket exists before modifying its access policy
+  depends_on = [ibm_cos_bucket.vibe_bucket]
+}
+
+# --- Code Engine Project ---
 resource "ibm_code_engine_project" "vibe_ce_project" {
   count             = var.enable_code_engine && local.has_required_ids ? 1 : 0
   name              = "vibe-project-${random_string.suffix.result}"
@@ -78,7 +87,7 @@ resource "ibm_iam_service_id" "ce_cos_service_id" {
   name  = "vibe-ce-cos-api-${random_string.suffix.result}"
 }
 
-# --- FIX 1: Replace ibm_cos_credentials with ibm_resource_key ---
+# --- Use ibm_resource_key for HMAC ---
 resource "ibm_resource_key" "cos_hmac_key" {
   count                 = var.enable_code_engine && local.has_required_ids ? 1 : 0
   name                  = "vibe-cos-hmac-key-${random_string.suffix.result}"
@@ -90,8 +99,9 @@ resource "ibm_resource_key" "cos_hmac_key" {
   parameters = {
     HMAC = true
   }
+  # Ensure Service ID exists before creating key for it
+  depends_on = [ibm_iam_service_id.ce_cos_service_id]
 }
-# ----------------------------------------------------------------
 
 resource "ibm_code_engine_secret" "cos_secret" {
   count      = var.enable_code_engine && local.has_required_ids ? 1 : 0
@@ -122,6 +132,8 @@ resource "ibm_iam_service_policy" "project_editor_deploy_policy" {
   resources {
     service = "project"
   }
+  # Ensure Service ID exists before applying policy
+  depends_on = [ibm_iam_service_id.project_service_id]
 }
 resource "ibm_iam_service_api_key" "project_api_key" {
   count          = var.enable_code_engine && local.has_required_ids ? 1 : 0
@@ -135,9 +147,9 @@ resource "ibm_code_engine_secret" "project_secret" {
   name       = "project-credentials"
   format     = "generic"
   data = {
-    # --- FIX 2: Change api_key to apikey ---
+    # --- Corrected attribute name ---
     PROJECT_API_KEY = nonsensitive(ibm_iam_service_api_key.project_api_key[0].apikey)
-    # --------------------------------------
+    # --------------------------------
     PROJECT_ID      = local.effective_project_id
     CONFIG_ID       = var.config_id
     REGION          = var.region
@@ -179,9 +191,7 @@ resource "ibm_cos_bucket_object" "index_html" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
   bucket_location = var.region
   key             = var.website_index
-  # --- FIX 3a: Remove unsupported acl argument ---
-  # acl             = "public-read"
-  # -----------------------------------------------
+  # --- Removed acl argument ---
 
   content = templatefile("${path.module}/index.html.tftpl", {
     push_cos_url       = var.enable_code_engine && local.has_required_ids ? one(ibm_code_engine_function.push_to_cos[*].url) : "null"
@@ -192,7 +202,9 @@ resource "ibm_cos_bucket_object" "index_html" {
   depends_on = [
     ibm_code_engine_function.push_to_cos,
     ibm_code_engine_function.push_to_project,
-    ibm_code_engine_function.trigger_deploy
+    ibm_code_engine_function.trigger_deploy,
+    # Ensure public access is set before uploading content that relies on it
+    ibm_cos_bucket_public_access_block.vibe_bucket_public_access
   ]
 }
 resource "ibm_cos_bucket_object" "error_html" {
@@ -200,9 +212,10 @@ resource "ibm_cos_bucket_object" "error_html" {
   bucket_location = var.region
   key             = var.website_error
   content         = file("${path.module}/404.html")
-  # --- FIX 3a: Remove unsupported acl argument ---
-  # acl             = "public-read"
-  # -----------------------------------------------
+  # --- Removed acl argument ---
+
+  # Ensure public access is set before uploading content that relies on it
+  depends_on = [ibm_cos_bucket_public_access_block.vibe_bucket_public_access]
 }
 resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
   bucket_crn    = ibm_cos_bucket.vibe_bucket.crn
@@ -216,7 +229,6 @@ resource "ibm_cos_bucket_website_configuration" "vibe_bucket_website" {
   depends_on = [
     ibm_cos_bucket_object.index_html,
     ibm_cos_bucket_object.error_html,
-    # Also depend on the public access block being configured
     ibm_cos_bucket_public_access_block.vibe_bucket_public_access
   ]
 }
