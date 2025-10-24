@@ -1,0 +1,74 @@
+{
+  "name": "vibe-da-ibm-cloud",
+  "version": "1.2.0",
+  "type": "terraform",
+  "display_name": "🌀 Vibe Landing Zone — IBM Cloud Edition",
+  "description": "Deploy a live Vibe Landing Zone with IBM Cloud Object Storage (Lite) and optional IBM Cloud Code Engine for push-to-COS and staging/triggering Project updates.",
+  "tags": ["ibm-cloud", "vibe-coding", "object-storage", "deployable-architecture", "code-engine", "projects"],
+  "icon_url": "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/icon.png",
+  "documentation_url": "https://github.com/goanalog/vibe-da-ibm-cloud/blob/main/README.md",
+  "source_url": "https://github.com/goanalog/vibe-da-ibm-cloud",
+  "variables": [
+    {
+      "name": "region",
+      "type": "string",
+      "description": "IBM Cloud region (e.g., us-south). Usually inferred from Project.",
+      "default": "us-south"
+    },
+    {
+      "name": "project_id",
+      "type": "string",
+      "description": "(Optional) Project ID. Auto-detected when deployed via IBM Cloud Projects.",
+      "required": false
+    },
+    {
+      "name": "resource_group_id",
+      "type": "string",
+      "description": "(Optional) Resource Group ID. Auto-detected when deployed via IBM Cloud Projects.",
+      "required": false
+    },
+    {
+      "name": "config_id",
+      "type": "string",
+      "description": "(Required) The Configuration ID from the Project URL or CLI. See docs.",
+      "required": true
+    },
+    {
+      "name": "enable_code_engine",
+      "type": "bool",
+      "description": "Enable IBM Cloud Code Engine integration.",
+      "default": true
+    },
+    {
+      "name": "website_index",
+      "type": "string",
+      "description": "Index document for website hosting.",
+      "default": "index.html"
+    },
+    {
+      "name": "website_error",
+      "type": "string",
+      "description": "Error document for website hosting.",
+      "default": "404.html"
+    }
+    // auto_deploy_project_changes variable removed
+  ],
+  "outputs": [
+    {
+      "name": "primaryoutputlink",
+      "description": "Public website URL for your deployed vibe app.",
+      "type": "string",
+      "is_primary": true
+    },
+    {
+      "name": "vibe_bucket_name",
+      "description": "COS bucket name created for your deployment.",
+      "type": "string"
+    },
+    {
+      "name": "vibe_bucket_crn",
+      "description": "COS bucket CRN for reference and governance.",
+      "type": "string"
+    }
+  ]
+}
