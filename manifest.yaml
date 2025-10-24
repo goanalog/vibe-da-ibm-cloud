@@ -53,3 +53,11 @@ outputs:
     description: "Primary link to your deployed Vibe website."
     required: true
     usage_hint: "Open your deployed site in a new tab to feel the vibe."
+
+  - name: vibe_bucket_name
+    type: string
+    description: "COS bucket name created for your deployment."
+
+  - name: vibe_bucket_crn
+    type: string
+    description: "COS bucket CRN for reference and governance."
