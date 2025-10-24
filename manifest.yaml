@@ -1,87 +1,68 @@
-# IBM Cloud Deployable Architecture Manifest
 schema_version: "1.0"
 
 name: vibe-da-ibm-cloud
 version: 1.2.0
 type: terraform
 
-# Friendly metadata
-display_name: "🌀 Vibe Landing Zone — IBM Cloud Edition"
+display_name: "Vibe Landing Zone — IBM Cloud Edition"
 description: >
-  Deploy a fully hosted, instantly remixable “Vibe Landing Zone” on IBM Cloud.
-  This architecture provisions an Object Storage (Lite) bucket, uploads a live
-  HTML sample app, and optionally enables IBM Cloud Code Engine for easy updates
-  to COS and staging/triggering changes in IBM Cloud Projects via the web UI.
+  Deploy a live, remixable sample site on IBM Cloud.
+  Provisions Object Storage (Lite), uploads a sample index.html,
+  and can add Code Engine helpers for easy pushes and triggers.
 
-# Entry points
-variables:
+inputs:
   - name: region
     type: string
-    description: "IBM Cloud region (e.g., us-south). Usually inferred from Project."
     default: "us-south"
+    description: >
+      IBM Cloud region (e.g., us-south).
+      Usually inherited from Project.
+      Override only for manual runs.
 
-  - name: project_id
+  - name: bucket_prefix
     type: string
-    description: "(Optional) Project ID. Auto-detected when deployed via IBM Cloud Projects. Required otherwise."
-    required: false
-
-  - name: resource_group_id
-    type: string
-    description: "(Optional) Resource Group ID. Auto-detected when deployed via IBM Cloud Projects. Required otherwise."
-    required: false
-
-  - name: config_id
-    type: string
-    description: |-
-      (Required) The Configuration ID from the Project URL or CLI.
-      Example URL: .../projects/{project_id}/configurations/{config_id}
-      Example CLI: ibmcloud project config-get --project-id {pid} --id {cid}
-    required: true
-
-  - name: enable_code_engine
-    type: bool
-    description: "Enable IBM Cloud Code Engine functions for COS/Project interaction."
-    default: true
+    default: "vibe-bucket"
+    description: >
+      Prefix for the bucket name.
+      A random suffix ensures uniqueness.
+      Keep simple and lowercase.
 
   - name: website_index
     type: string
-    description: "Name of the index file for the COS website."
     default: "index.html"
+    description: >
+      The index file name for website hosting.
+      Must match what Terraform uploads.
+      Usually index.html.
 
   - name: website_error
     type: string
-    description: "Name of the error file for the COS website."
     default: "404.html"
+    description: >
+      The error page file name.
+      Optional; falls back to index if absent.
+      Keep small and simple.
 
-  # auto_deploy_project_changes variable removed
+  - name: enable_code_engine
+    type: boolean
+    default: false
+    description: >
+      Provision Code Engine helpers.
+      Enables push-to-COS endpoints.
+      Useful for no-CLI updates.
 
 outputs:
   - name: primaryoutputlink
     type: string
-    description: "Primary link to your deployed Vibe website."
-    required: true # Output itself is always required/generated
-    is_primary: true # Mark as the main output
-    usage_hint: "Open your deployed site in a new tab to feel the vibe."
-
+    description: "Your live website URL."
+    ui:
+      primary: true
   - name: vibe_bucket_name
     type: string
-    description: "COS bucket name created for your deployment."
-
+    description: "Deployed bucket name."
   - name: vibe_bucket_crn
     type: string
-    description: "COS bucket CRN for reference and governance."
-
-  - name: push_cos_url # Exposing function URLs might be useful for debugging/integration
+    description: "Deployed bucket CRN."
+  - name: vibe_bucket_website_endpoint
     type: string
-    description: "URL for the 'Push to COS' function."
-    required: false # Only generated if code engine is enabled
-
-  - name: push_project_url # Staging function
-    type: string
-    description: "URL for the 'Push to Project' (staging) function."
-    required: false
-
-  - name: trigger_deploy_url # Trigger function
-    type: string
-    description: "URL for the 'Trigger Project Deploy' function."
-    required: false
+    description: "Public website endpoint."

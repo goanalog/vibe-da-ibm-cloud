@@ -1,30 +1,24 @@
 terraform {
+  required_version = ">= 1.5.0"
+
   required_providers {
     ibm = {
-      source = "ibm-cloud/ibm"
-      # Specify the minimum version known to work, or a newer one
-      # Example: Require at least version 1.90.0 (check latest compatible 1.x)
-      # Or, if you know a specific later version works: version = "~> 1.90"
-      # For now, let's keep the original minimum, but ideally, you'd increase this
-      # once you confirm the version used in your environment.
-      version = ">= 1.84.3" # Or ideally a higher known-good version like ">= 1.90.0"
+      source  = "IBM-Cloud/ibm"
+      # --- IMPORTANT: Provider version ---
+      # Supports Code Engine function deployment arguments like
+      # code_reference and run_env_variables.
+      # Adjust as needed if Schematics upgrades provider versions.
+      version = ">= 1.87.0"
     }
     random = {
       source  = "hashicorp/random"
       version = ">= 3.0.0"
     }
-    external = {
-      source  = "hashicorp/external"
-      version = "~> 2.3"
-    }
   }
-  # You might also specify required Terraform version here if needed
-  # required_version = ">= 1.1.0"
 }
 
 provider "ibm" {
   region = var.region
-  # No API key needed if using Trusted Profiles
+  # No API key specified – relies on IBM Cloud Trusted Profile or
+  # environment variables automatically set by Schematics/Projects.
 }
-
-# Keep the provider "ibm" block here too for organization
