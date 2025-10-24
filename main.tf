@@ -44,20 +44,19 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   force_delete         = true
 }
 
-# --- ADDED: Grant public read access to the bucket via IAM policy ---
+# Grant public read access to the COS *instance* via IAM policy
 resource "ibm_iam_access_group_policy" "cos_bucket_public_access" {
-  access_group_id = "PublicAccess" # Special ID for the Public access group
-  roles           = ["Reader"]     # Role allowing reading objects
+  access_group_id = "PublicAccess"
+  roles           = ["Reader"]
 
   resources {
-    resource_type      = "bucket"
-    resource           = ibm_cos_bucket.vibe_bucket.bucket_name
+    # --- FIX: Target the service instance instead of the specific bucket name ---
     service            = "cloud-object-storage"
-    resource_instance_id = ibm_resource_instance.cos_instance.guid # Use GUID here
+    resource_instance_id = ibm_resource_instance.cos_instance.guid
   }
 
-  # Ensure the bucket exists before creating the policy
-  depends_on = [ibm_cos_bucket.vibe_bucket]
+  # Ensure the COS instance exists before creating the policy
+  depends_on = [ibm_resource_instance.cos_instance]
 }
 
 
