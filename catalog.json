@@ -1,21 +1,68 @@
 {
-  "name": "Vibe IDE \u2014 Max Vibe Edition",
-  "short_description": "Branded static site on IBM Cloud with optional Cloud Functions.",
-  "long_description": "Deploys a COS static website and, optionally, IBM Cloud Functions to push updates to the site or a project. Designed for frictionless demos and repeatable vibes.",
-  "labels": [
-    "vibe",
-    "website",
-    "functions"
-  ],
-  "primaryoutputlink": "vibe_bucket_website_endpoint",
-  "inputs": [
+  "name": "vibe-da-ibm-cloud",
+  "version": "1.0.0",
+  "type": "terraform",
+  "display_name": "🌀 Vibe Landing Zone — IBM Cloud Edition",
+  "description": "Deploy a live Vibe Landing Zone with IBM Cloud Object Storage (Lite) and optional IBM Cloud Functions for push-to-COS and push-to-Project actions.",
+  "tags": ["ibm-cloud", "vibe-coding", "object-storage", "deployable-architecture"],
+  "icon_url": "https://raw.githubusercontent.com/goanalog/vibe-da-ibm-cloud/main/icon.png",
+  "documentation_url": "https://github.com/goanalog/vibe-da-ibm-cloud/blob/main/README.md",
+  "source_url": "https://github.com/goanalog/vibe-da-ibm-cloud",
+  "variables": [
+    {
+      "name": "ibmcloud_api_key",
+      "type": "string",
+      "description": "IBM Cloud API key for authentication.",
+      "sensitive": true,
+      "required": true
+    },
+    {
+      "name": "region",
+      "type": "string",
+      "description": "IBM Cloud region for deployment (e.g. us-south).",
+      "default": "us-south"
+    },
     {
       "name": "resource_group_id",
       "type": "string",
-      "required": true,
-      "hidden": true,
-      "description": "The ID of the IBM Cloud resource group in which to create resources.",
-      "default": "${project.resource_group_id}"
+      "description": "Resource Group ID where resources are deployed.",
+      "required": true
+    },
+    {
+      "name": "enable_functions",
+      "type": "bool",
+      "description": "Enable IBM Cloud Functions integration.",
+      "default": true
+    },
+    {
+      "name": "website_index",
+      "type": "string",
+      "description": "Index document for website hosting.",
+      "default": "index.html"
+    },
+    {
+      "name": "website_error",
+      "type": "string",
+      "description": "Error document for website hosting.",
+      "default": "404.html"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "primaryoutputlink",
+      "description": "Public website URL for your deployed vibe app.",
+      "type": "string",
+      "is_primary": true
+    },
+    {
+      "name": "vibe_bucket_name",
+      "description": "COS bucket name created for your deployment.",
+      "type": "string"
+    },
+    {
+      "name": "vibe_bucket_crn",
+      "description": "COS bucket CRN for reference and governance.",
+      "type": "string"
     }
   ]
 }
