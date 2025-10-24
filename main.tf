@@ -43,17 +43,15 @@ resource "ibm_cos_bucket" "vibe_bucket" {
   storage_class        = "standard"
   force_delete         = true
 
-  # --- FIX: Enable static website hosting ---
-  website {
-    index_document = var.website_index
-    error_document = var.website_error
-  }
+  # --- FIX: Use top-level arguments for website config ---
+  website_index_document = var.website_index
+  website_error_document = var.website_error
 }
 
 # Upload index.html
 resource "ibm_cos_bucket_object" "index_html" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
-  bucket_location = var.region # <-- FIX: Added required argument
+  bucket_location = var.region
   key             = "index.html"
   content         = file("${path.module}/index.html")
   content_type    = "text/html"
@@ -62,7 +60,7 @@ resource "ibm_cos_bucket_object" "index_html" {
 # Upload error page
 resource "ibm_cos_bucket_object" "error_html" {
   bucket_crn      = ibm_cos_bucket.vibe_bucket.crn
-  bucket_location = var.region # <-- FIX: Added required argument
+  bucket_location = var.region
   key             = "404.html"
   content         = file("${path.module}/404.html")
   content_type    = "text/html"
@@ -82,16 +80,12 @@ resource "ibm_function_action" "push_to_cos" {
   namespace = ibm_function_namespace.vibe_namespace[0].name
   publish   = true
 
-  # --- FIX: Updated to use 'exec' block ---
   exec {
     kind = "nodejs:18"
     code = filebase64("${path.module}/push_to_cos.js")
   }
 
-  # --- FIX: 'annotations' must be a JSON string ---
-  annotations = jsonencode({
-    description = "Uploads updated index.html to COS"
-  })
+  # --- FIX: Removed 'annotations' as it is unconfigurable ---
 }
 
 # Push to Project Function Action
@@ -101,14 +95,10 @@ resource "ibm_function_action" "push_to_project" {
   namespace = ibm_function_namespace.vibe_namespace[0].name
   publish   = true
 
-  # --- FIX: Updated to use 'exec' block ---
   exec {
     kind = "nodejs:18"
     code = filebase64("${path.module}/push_to_project.js")
   }
 
-  # --- FIX: 'annotations' must be a JSON string ---
-  annotations = jsonencode({
-    description = "Pushes updated files to the IBM Cloud Project"
-  })
+  # --- FIX: Removed 'annotations' as it is unconfigurable ---
 }
