@@ -75,7 +75,7 @@
       fetch(url, { method:"POST" })
         .then(r => r.text())
         .then(t => alert("Response: " + t))
-        .catch(e => alert("Error: " + e));
+        .catch(e => alert("Error: "D + e));
     }
     document.getElementById("pushCos").onclick = () => call(PUSH_COS_URL);
     document.getElementById("pushProject").onclick = () => call(PUSH_PROJECT_URL);
