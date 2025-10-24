@@ -4,8 +4,8 @@ terraform {
   required_providers {
     ibm = {
       source  = "IBM-Cloud/ibm"
-      # Provider supports modern features and Schematics fleet
-      version = ">= 1.87.0"
+      # Adjusted version for Schematics compatibility
+      version = ">= 1.84.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -16,5 +16,4 @@ terraform {
 
 provider "ibm" {
   region = var.region
-  # Relies on IBM Cloud Trusted Profile / env in Projects & Schematics
 }

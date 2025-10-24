@@ -1,47 +1,42 @@
 schema_version: "1.0"
 
 name: vibe-da-ibm-cloud
-version: 1.3.0
+version: 1.3.1
 type: terraform
 
 display_name: "Vibe Landing Zone — Perfect Tens Edition"
 description: >
-  Deploy a live, remixable sample site on IBM Cloud.
-  Provisions Object Storage (Lite), uploads a sample index.html,
-  and can add Code Engine helpers for easy pushes and triggers.
+  One-click deployment of a remixable sample site on IBM Cloud.
+  Users do not need to configure any fields — all inputs are hidden with sensible defaults.
 
 inputs:
   - name: region
     type: string
     default: "us-south"
-    description: >
-      IBM Cloud region (e.g., us-south).
-      Usually inherited from Project.
-      Override only for manual runs.
+    description: "IBM Cloud region (hidden from user)."
+    ui:
+      hidden: true
 
   - name: bucket_prefix
     type: string
     default: "vibe-bucket"
-    description: >
-      Prefix for the bucket name.
-      A random suffix ensures uniqueness.
-      Keep simple and lowercase.
+    description: "Prefix for the bucket name (hidden from user)."
+    ui:
+      hidden: true
 
   - name: website_index
     type: string
     default: "index.html"
-    description: >
-      The index file name for website hosting.
-      Must match what Terraform uploads.
-      Usually index.html.
+    description: "Index document (hidden from user)."
+    ui:
+      hidden: true
 
   - name: website_error
     type: string
     default: "404.html"
-    description: >
-      The error page file name.
-      Optional; falls back to index if absent.
-      Keep small and simple.
+    description: "Error document (hidden from user)."
+    ui:
+      hidden: true
 
 outputs:
   - name: primaryoutputlink

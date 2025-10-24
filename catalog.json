@@ -3,7 +3,7 @@
   "type": "terraform",
   "display_name": "Vibe Landing Zone \u2014 Perfect Tens Edition",
   "description": "Deploy a live, remixable sample site on IBM Cloud Object Storage (Lite).",
-  "long_description": "A flagship-quality Deployable Architecture that provisions IBM Cloud Object Storage (Lite) and hosts a live sample site with a high\u2011polish UX. Includes Projects\u2011friendly inputs/outputs, a primary output link, and modern provider constraints for Schematics.",
+  "long_description": "A one-click Deployable Architecture for IBM Cloud Object Storage (Lite). Hides all configuration fields so users simply click Deploy and receive a live website URL instantly.",
   "tags": [
     "ibm-cloud",
     "deployable-architecture",
@@ -22,8 +22,8 @@
   "support_url": "https://github.com/goanalog/vibe-da-ibm-cloud/issues",
   "versions": [
     {
-      "version": "1.3.0",
-      "tgzUrl": "https://github.com/goanalog/vibe-da-ibm-cloud/releases/download/v1.3.0/vibe-da-ibm-cloud-1.3.0.tgz",
+      "version": "1.3.1",
+      "tgzUrl": "https://github.com/goanalog/vibe-da-ibm-cloud/releases/download/v1.3.1/vibe-da-ibm-cloud-1.3.1.tgz",
       "targetKind": "terraform",
       "installType": "terraform",
       "provider": "ibm-cloud"
