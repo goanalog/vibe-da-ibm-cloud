@@ -50,7 +50,7 @@ resource "ibm_cos_bucket_object" "index_html" {
   bucket_location = var.region
   key             = "index.html"
   content         = file("${path.module}/index.html")
-  content_type    = "text/html"
+  # --- FIX: Removed unconfigurable 'content_type' argument ---
 }
 
 # Upload error page
@@ -59,7 +59,7 @@ resource "ibm_cos_bucket_object" "error_html" {
   bucket_location = var.region
   key             = "404.html"
   content         = file("${path.module}/404.html")
-  content_type    = "text/html"
+  # --- FIX: Removed unconfigurable 'content_type' argument ---
 }
 
 # Optional: enable IBM Cloud Functions namespace
